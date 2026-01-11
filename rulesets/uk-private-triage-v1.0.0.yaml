@@ -1,0 +1,396 @@
+# UK Private Psychiatric Clinic Triage Ruleset
+# Version: 1.0.0
+# Effective: 2024-01-01
+#
+# IMPORTANT: This is a STUB ruleset for development and testing.
+# Actual clinical rules must be developed with clinical oversight.
+# Do NOT use these stub rules for real patient triage.
+
+id: uk-private-triage
+version: "1.0.0"
+description: "UK private psychiatric clinic triage rules (DEVELOPMENT STUB)"
+effective_date: "2024-01-01"
+author: "Clinical Team (placeholder)"
+status: development
+
+# Tier definitions:
+# - RED: Urgent - immediate clinical review required, no self-booking
+# - AMBER: Moderate - requires clinical review before booking
+# - GREEN: Routine - patient can self-book appointments
+
+ruleset:
+  id: "uk-private-triage"
+  version: "1.0.0"
+  created_at: "2026-01-11"
+  author: "Clinical Governance"
+  evaluation:
+    mode: "first_match_wins"
+    default:
+      tier: "GREEN"
+      pathway: "THERAPY_ASSESSMENT"
+      booking:
+        self_book_allowed: true
+    tier_sla_hours:
+      RED: 2
+      AMBER: 72
+      GREEN: 336   # 2 weeks (example; clinic-defined)
+      BLUE: 336
+  outputs:
+    include_explanations: true
+    include_rules_fired: true
+
+# Pathways are labels your scheduling/service layer maps to clinicians/slot types.
+pathways:
+  - id: "CRISIS_ESCALATION"
+    description: "Immediate safety escalation; not a booking pathway."
+    self_book_allowed: false
+
+  - id: "DUTY_CLINICIAN_REVIEW"
+    description: "Rapid clinician contact/review; booking restricted."
+    self_book_allowed: false
+
+  - id: "PSYCHIATRY_ASSESSMENT"
+    description: "Psychiatrist-led diagnostic assessment."
+    self_book_allowed: false
+
+  - id: "PSYCHIATRY_MED_REVIEW"
+    description: "Medication review (psychiatrist or prescribing clinician)."
+    self_book_allowed: false
+
+  - id: "PSYCHOLOGY_ASSESSMENT"
+    description: "Psychologist-led assessment / formulation."
+    self_book_allowed: true
+
+  - id: "THERAPY_ASSESSMENT"
+    description: "Therapist-led assessment / treatment planning."
+    self_book_allowed: true
+
+  - id: "TRAUMA_THERAPY_PATHWAY"
+    description: "Trauma-informed therapy pathway."
+    self_book_allowed: true
+
+  - id: "SUBSTANCE_PATHWAY"
+    description: "Substance-focused treatment with MH liaison."
+    self_book_allowed: false
+
+  - id: "NEURODEVELOPMENTAL_TRIAGE"
+    description: "ADHD/ASD triage stream (non-urgent unless risk)."
+    self_book_allowed: true
+
+  - id: "LOW_INTENSITY_DIGITAL"
+    description: "Digital CBT / guided self-help / coaching."
+    self_book_allowed: true
+
+rules:
+
+  # ----------------------------
+  # RED: Immediate safety risks
+  # ----------------------------
+
+  - id: "RED_SUICIDE_INTENT_PLAN_MEANS"
+    priority: 10
+    when:
+      all:
+        - { fact: "risk.suicidal_intent_now", op: "==", value: true }
+        - { fact: "risk.suicide_plan", op: "==", value: true }
+        - { fact: "risk.means_access", op: "==", value: true }
+    then:
+      tier: "RED"
+      pathway: "CRISIS_ESCALATION"
+      booking: { self_book_allowed: false }
+      flags:
+        - { type: "SUICIDE_RISK", severity: "HIGH" }
+      explain: "Active suicidal intent with plan and access to means."
+
+  - id: "RED_RECENT_SERIOUS_ATTEMPT"
+    priority: 11
+    when:
+      all:
+        - { fact: "risk.recent_suicide_attempt", op: "==", value: true }
+        - { fact: "risk.attempt_required_medical_attention", op: "==", value: true }
+    then:
+      tier: "RED"
+      pathway: "CRISIS_ESCALATION"
+      booking: { self_book_allowed: false }
+      flags:
+        - { type: "SUICIDE_RISK", severity: "HIGH" }
+      explain: "Recent serious suicide attempt with medical attention required."
+
+  - id: "RED_COMMAND_HALLUCINATIONS_HARM"
+    priority: 12
+    when:
+      all:
+        - { fact: "risk.command_hallucinations_harm", op: "==", value: true }
+        - { fact: "risk.intent_to_act_on_commands", op: "==", value: true }
+    then:
+      tier: "RED"
+      pathway: "CRISIS_ESCALATION"
+      booking: { self_book_allowed: false }
+      flags:
+        - { type: "PSYCHOSIS_RISK", severity: "HIGH" }
+      explain: "Command hallucinations with intent to act."
+
+  - id: "RED_IMMINENT_VIOLENCE_RISK"
+    priority: 13
+    when:
+      all:
+        - { fact: "risk.violence_imminent", op: "==", value: true }
+        - { fact: "risk.access_to_weapons_or_means", op: "==", value: true }
+    then:
+      tier: "RED"
+      pathway: "CRISIS_ESCALATION"
+      booking: { self_book_allowed: false }
+      flags:
+        - { type: "VIOLENCE_RISK", severity: "HIGH" }
+      explain: "Imminent violence risk with access to means."
+
+  - id: "RED_SEVERE_PSYCHOSIS_UNABLE_SELFCARE"
+    priority: 14
+    when:
+      all:
+        - { fact: "risk.psychosis_severe", op: "==", value: true }
+        - { fact: "risk.unable_to_care_for_self", op: "==", value: true }
+    then:
+      tier: "RED"
+      pathway: "CRISIS_ESCALATION"
+      booking: { self_book_allowed: false }
+      flags:
+        - { type: "PSYCHOSIS_RISK", severity: "HIGH" }
+      explain: "Severe psychosis with inability to care for self."
+
+  - id: "RED_SEVERE_MANIA_DANGEROUS"
+    priority: 15
+    when:
+      all:
+        - { fact: "risk.mania_severe", op: "==", value: true }
+        - { fact: "risk.dangerous_behaviour", op: "==", value: true }
+    then:
+      tier: "RED"
+      pathway: "CRISIS_ESCALATION"
+      booking: { self_book_allowed: false }
+      flags:
+        - { type: "MANIA_RISK", severity: "HIGH" }
+      explain: "Severe mania with dangerous behaviour."
+
+  # --------------------------------
+  # AMBER: Significant risk/complexity
+  # --------------------------------
+
+  - id: "AMBER_PHQ9_ITEM9_POSITIVE_MODERATE_OR_HIGH"
+    priority: 20
+    when:
+      all:
+        - { fact: "scores.phq9.item9_positive", op: "==", value: true }
+        - { fact: "scores.phq9.total", op: ">=", value: 10 }
+        - { fact: "risk.suicidal_intent_now", op: "==", value: false }
+    then:
+      tier: "AMBER"
+      pathway: "DUTY_CLINICIAN_REVIEW"
+      booking: { self_book_allowed: false }
+      flags:
+        - { type: "SUICIDE_RISK", severity: "MEDIUM" }
+      explain: "PHQ-9 self-harm item positive with at least moderate depression; requires clinician review."
+
+  - id: "AMBER_PASSIVE_SI_WITH_RISK_FACTORS"
+    priority: 21
+    when:
+      all:
+        - { fact: "risk.suicidal_thoughts_present", op: "==", value: true }
+        - { fact: "risk.suicidal_intent_now", op: "==", value: false }
+        - { fact: "risk.suicide_plan", op: "==", value: false }
+        - { fact: "risk.suicide_risk_factors_count", op: ">=", value: 2 }
+    then:
+      tier: "AMBER"
+      pathway: "DUTY_CLINICIAN_REVIEW"
+      booking: { self_book_allowed: false }
+      flags:
+        - { type: "SUICIDE_RISK", severity: "MEDIUM" }
+      explain: "Suicidal thoughts without intent/plan but multiple risk factors; clinician review required."
+
+  - id: "AMBER_NEW_PSYCHOSIS"
+    priority: 22
+    when:
+      all:
+        - { fact: "risk.new_psychosis", op: "==", value: true }
+    then:
+      tier: "AMBER"
+      pathway: "PSYCHIATRY_ASSESSMENT"
+      booking: { self_book_allowed: false }
+      flags:
+        - { type: "COMPLEXITY", severity: "HIGH" }
+      explain: "New psychotic symptoms; psychiatry assessment required."
+
+  - id: "AMBER_BIPOLAR_OR_MANIA_FLAGS"
+    priority: 23
+    when:
+      any:
+        - { fact: "risk.mania_red_flag", op: "==", value: true }
+        - { fact: "scores.mdq.positive", op: "==", value: true }
+    then:
+      tier: "AMBER"
+      pathway: "PSYCHIATRY_ASSESSMENT"
+      booking: { self_book_allowed: false }
+      flags:
+        - { type: "COMPLEXITY", severity: "HIGH" }
+      explain: "Bipolar/mania screening positive or red flags; psychiatry assessment required."
+
+  - id: "AMBER_SEVERE_DEPRESSION_FUNCTIONAL_IMPAIRMENT"
+    priority: 24
+    when:
+      all:
+        - { fact: "scores.phq9.total", op: ">=", value: 20 }
+        - { fact: "risk.functional_impairment_severe", op: "==", value: true }
+        - { fact: "risk.suicidal_intent_now", op: "==", value: false }
+    then:
+      tier: "AMBER"
+      pathway: "DUTY_CLINICIAN_REVIEW"
+      booking: { self_book_allowed: false }
+      flags:
+        - { type: "SEVERITY", severity: "HIGH" }
+      explain: "Severe depression with severe functional impairment; rapid clinician review."
+
+  - id: "AMBER_SEVERE_ANXIETY_PANIC_WITH_RISK"
+    priority: 25
+    when:
+      all:
+        - { fact: "scores.gad7.total", op: ">=", value: 15 }
+        - { fact: "risk.panic_severe_or_frequent", op: "==", value: true }
+        - { fact: "risk.functional_impairment_severe", op: "==", value: true }
+    then:
+      tier: "AMBER"
+      pathway: "PSYCHOLOGY_ASSESSMENT"
+      booking: { self_book_allowed: false }
+      flags:
+        - { type: "SEVERITY", severity: "MEDIUM" }
+      explain: "Severe anxiety/panic with severe impairment; psychology assessment prioritised."
+
+  - id: "AMBER_SUBSTANCE_WITHDRAWAL_OR_HIGH_RISK"
+    priority: 26
+    when:
+      any:
+        - { fact: "risk.substance_withdrawal_risk", op: "==", value: true }
+        - { fact: "scores.auditc.total", op: ">=", value: 8 }
+        - { fact: "scores.dast10.total", op: ">=", value: 6 }
+    then:
+      tier: "AMBER"
+      pathway: "SUBSTANCE_PATHWAY"
+      booking: { self_book_allowed: false }
+      flags:
+        - { type: "SUBSTANCE_RISK", severity: "HIGH" }
+      explain: "Substance misuse or withdrawal risk; route to substance pathway with MH liaison."
+
+  - id: "AMBER_MEDICATION_SAFETY_RED_FLAG"
+    priority: 27
+    when:
+      any:
+        - { fact: "risk.medication_toxicity_symptoms", op: "==", value: true }
+        - { fact: "risk.serious_med_side_effects", op: "==", value: true }
+    then:
+      tier: "AMBER"
+      pathway: "PSYCHIATRY_MED_REVIEW"
+      booking: { self_book_allowed: false }
+      flags:
+        - { type: "MEDICATION_RISK", severity: "HIGH" }
+      explain: "Medication safety red flags present; prompt medication review required."
+
+  # ------------------------------------
+  # GREEN: Standard care (self-book allowed)
+  # ------------------------------------
+
+  - id: "GREEN_TRAUMA_PRESENT_ROUTE_TRAUMA_PATHWAY"
+    priority: 40
+    when:
+      all:
+        - { fact: "risk.any_red_amber_flag", op: "==", value: false }
+        - { fact: "presentation.trauma_primary", op: "==", value: true }
+        - { fact: "risk.dissociation_severe", op: "==", value: false }
+    then:
+      tier: "GREEN"
+      pathway: "TRAUMA_THERAPY_PATHWAY"
+      booking: { self_book_allowed: true }
+      flags:
+        - { type: "PRESENTATION", severity: "LOW" }
+      explain: "Trauma primary without severe dissociation; route to trauma therapy pathway."
+
+  - id: "GREEN_MODERATE_DEPRESSION_OR_ANXIETY_TO_THERAPY"
+    priority: 41
+    when:
+      all:
+        - { fact: "risk.any_red_amber_flag", op: "==", value: false }
+        - any:
+            - { fact: "scores.phq9.total", op: ">=", value: 10 }
+            - { fact: "scores.gad7.total", op: ">=", value: 10 }
+        - { fact: "risk.functional_impairment_severe", op: "==", value: false }
+    then:
+      tier: "GREEN"
+      pathway: "THERAPY_ASSESSMENT"
+      booking: { self_book_allowed: true }
+      flags:
+        - { type: "SEVERITY", severity: "LOW" }
+      explain: "Moderate anxiety/depression without acute risk; therapist assessment."
+
+  - id: "GREEN_PREFER_PSYCHOLOGY_FOR_COMPLEX_NONPSYCHIATRIC"
+    priority: 42
+    when:
+      all:
+        - { fact: "risk.any_red_amber_flag", op: "==", value: false }
+        - { fact: "presentation.complex_formulation_needed", op: "==", value: true }
+        - { fact: "risk.psychosis_any", op: "==", value: false }
+        - { fact: "risk.mania_red_flag", op: "==", value: false }
+    then:
+      tier: "GREEN"
+      pathway: "PSYCHOLOGY_ASSESSMENT"
+      booking: { self_book_allowed: true }
+      flags:
+        - { type: "COMPLEXITY", severity: "MEDIUM" }
+      explain: "Complex formulation need without psychosis/mania; psychology assessment."
+
+  - id: "GREEN_NEURODEVELOPMENTAL_REQUEST_LOW_RISK"
+    priority: 43
+    when:
+      all:
+        - { fact: "risk.any_red_amber_flag", op: "==", value: false }
+        - { fact: "presentation.neurodevelopmental_primary", op: "==", value: true }
+    then:
+      tier: "GREEN"
+      pathway: "NEURODEVELOPMENTAL_TRIAGE"
+      booking: { self_book_allowed: true }
+      flags:
+        - { type: "PRESENTATION", severity: "LOW" }
+      explain: "Neurodevelopmental primary request without acute risk; ND triage stream."
+
+  # ------------------------------------
+  # BLUE: Low intensity / digital-first
+  # ------------------------------------
+
+  - id: "BLUE_MILD_SYMPTOMS_LOW_IMPAIRMENT_DIGITAL"
+    priority: 60
+    when:
+      all:
+        - { fact: "risk.any_red_amber_flag", op: "==", value: false }
+        - { fact: "scores.phq9.total", op: "<=", value: 9 }
+        - { fact: "scores.gad7.total", op: "<=", value: 9 }
+        - { fact: "risk.functional_impairment_severe", op: "==", value: false }
+        - { fact: "preferences.open_to_digital", op: "==", value: true }
+    then:
+      tier: "BLUE"
+      pathway: "LOW_INTENSITY_DIGITAL"
+      booking: { self_book_allowed: true }
+      flags: []
+      explain: "Mild symptoms and low impairment with preference for digital; route to low-intensity digital care."
+
+  # ------------------------------------
+  # Fallback (explicit): keep deterministic & auditable
+  # ------------------------------------
+
+  - id: "FALLBACK_GREEN_THERAPY_ASSESSMENT"
+    priority: 999
+    when:
+      all:
+        - { fact: "risk.any_red_amber_flag", op: "==", value: false }
+    then:
+      tier: "GREEN"
+      pathway: "THERAPY_ASSESSMENT"
+      booking: { self_book_allowed: true }
+      flags: []
+      explain: "Default routing: no acute risk; therapist assessment."

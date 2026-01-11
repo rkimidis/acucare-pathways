@@ -1,0 +1,552 @@
+{
+  "metadata": {
+    "document_owner": "Clinical Governance Committee",
+    "last_updated": "2024-01-15",
+    "review_cadence": "monthly",
+    "next_review": "2024-02-15",
+    "version": "1.0"
+  },
+  "risks": [
+    {
+      "id": "RISK-C001",
+      "title": "Missed High-Risk Suicidal Ideation",
+      "category": "clinical",
+      "owner": "Clinical Lead",
+      "owner_email": "clinical.lead@clinic.nhs.uk",
+      "likelihood": "low",
+      "impact": "severe",
+      "rating": "mitigate",
+      "status": "active",
+      "description": "Patient with active suicidal ideation is not identified or escalated appropriately, leading to potential patient harm.",
+      "mitigations": [
+        {
+          "control": "Mandatory SI questions in all intake pathways",
+          "implemented": true,
+          "evidence": "PHQ-9 item 9 + direct risk questions required"
+        },
+        {
+          "control": "Deterministic escalation rules with no manual override for RED tier",
+          "implemented": true,
+          "evidence": "Rule RED_SUICIDE_INTENT_PLAN_MEANS in ruleset"
+        },
+        {
+          "control": "Duty clinician review required for all RED/AMBER cases",
+          "implemented": true,
+          "evidence": "Workflow enforced in code"
+        },
+        {
+          "control": "Automated golden tests for SI detection rules",
+          "implemented": true,
+          "evidence": "tests/test_rules_golden.py"
+        },
+        {
+          "control": "Self-booking automatically disabled for RED/AMBER tiers",
+          "implemented": true,
+          "evidence": "app/booking/policy.py"
+        }
+      ],
+      "monitoring": [
+        {
+          "metric": "SI flagged vs clinical outcomes",
+          "frequency": "monthly",
+          "threshold": "Any missed SI requiring crisis intervention",
+          "action": "Immediate rule review"
+        },
+        {
+          "metric": "RED tier SLA compliance",
+          "frequency": "weekly",
+          "threshold": "< 95% contacted within 2 hours",
+          "action": "Duty staffing review"
+        }
+      ],
+      "review_history": [
+        {
+          "date": "2024-01-15",
+          "reviewer": "Clinical Lead",
+          "notes": "Initial risk assessment"
+        }
+      ]
+    },
+    {
+      "id": "RISK-C002",
+      "title": "Alert Fatigue (Excessive AMBER Cases)",
+      "category": "clinical",
+      "owner": "Duty Clinician Lead",
+      "owner_email": "duty.lead@clinic.nhs.uk",
+      "likelihood": "medium",
+      "impact": "high",
+      "rating": "mitigate",
+      "status": "active",
+      "description": "Too many AMBER tier cases overwhelm duty clinicians, leading to delayed response times or desensitization to genuine urgent cases.",
+      "mitigations": [
+        {
+          "control": "Tune AMBER thresholds based on clinical review data",
+          "implemented": false,
+          "evidence": null
+        },
+        {
+          "control": "Require protective factor capture",
+          "implemented": false,
+          "evidence": null
+        },
+        {
+          "control": "Batch non-urgent AMBER alerts",
+          "implemented": false,
+          "evidence": null
+        }
+      ],
+      "monitoring": [
+        {
+          "metric": "AMBER cases per duty clinician per day",
+          "frequency": "weekly",
+          "threshold": "> 15 cases/day average",
+          "action": "Threshold review meeting"
+        },
+        {
+          "metric": "AMBER → GREEN downgrade rate",
+          "frequency": "monthly",
+          "threshold": "> 40% downgraded",
+          "action": "Rule sensitivity review"
+        }
+      ],
+      "review_history": [
+        {
+          "date": "2024-01-15",
+          "reviewer": "Duty Clinician Lead",
+          "notes": "Monitoring baseline established"
+        }
+      ]
+    },
+    {
+      "id": "RISK-C003",
+      "title": "Wrong Pathway Assignment",
+      "category": "clinical",
+      "owner": "Operations Lead",
+      "owner_email": "ops.lead@clinic.nhs.uk",
+      "likelihood": "medium",
+      "impact": "medium",
+      "rating": "monitor",
+      "status": "active",
+      "description": "Patients routed to incorrect pathway, causing delays and inefficient resource use.",
+      "mitigations": [
+        {
+          "control": "Separate neurodevelopmental triage stream",
+          "implemented": true,
+          "evidence": "GREEN_NEURODEVELOPMENTAL_REQUEST_LOW_RISK rule"
+        },
+        {
+          "control": "Clear inclusion/exclusion criteria",
+          "implemented": true,
+          "evidence": "Documented in ruleset"
+        }
+      ],
+      "monitoring": [
+        {
+          "metric": "Pathway reassignment rate",
+          "frequency": "monthly",
+          "threshold": "> 15% reassigned",
+          "action": "Rule refinement"
+        }
+      ],
+      "review_history": [
+        {
+          "date": "2024-01-15",
+          "reviewer": "Operations Lead",
+          "notes": "ND stream launched"
+        }
+      ]
+    },
+    {
+      "id": "RISK-L001",
+      "title": "Unlawful Processing / Missing DPIA",
+      "category": "legal",
+      "owner": "Data Protection Lead",
+      "owner_email": "dpo@clinic.nhs.uk",
+      "likelihood": "medium",
+      "impact": "severe",
+      "rating": "mitigate",
+      "status": "active",
+      "description": "Processing of special category health data without appropriate lawful basis, DPIA, or documentation.",
+      "mitigations": [
+        {
+          "control": "DPIA completed before new feature processing health data",
+          "implemented": true,
+          "evidence": "docs/DPIA.md"
+        },
+        {
+          "control": "Data map maintained",
+          "implemented": true,
+          "evidence": "docs/DATA_MAP.md"
+        },
+        {
+          "control": "Retention policy implemented technically",
+          "implemented": true,
+          "evidence": "Soft delete with retention enforcement"
+        }
+      ],
+      "monitoring": [
+        {
+          "metric": "DPIA coverage for new features",
+          "frequency": "per_release",
+          "threshold": "100% coverage",
+          "action": "Block release"
+        },
+        {
+          "metric": "SAR response time",
+          "frequency": "per_request",
+          "threshold": "> 30 days",
+          "action": "Escalate to DPO"
+        }
+      ],
+      "review_history": [
+        {
+          "date": "2024-01-15",
+          "reviewer": "Data Protection Lead",
+          "notes": "DPIA v1 approved"
+        }
+      ]
+    },
+    {
+      "id": "RISK-L002",
+      "title": "Access Control Failure",
+      "category": "legal",
+      "owner": "Tech Lead",
+      "owner_email": "tech.lead@clinic.nhs.uk",
+      "likelihood": "low",
+      "impact": "severe",
+      "rating": "mitigate",
+      "status": "active",
+      "description": "Staff member accesses patient data they are not authorized to see.",
+      "mitigations": [
+        {
+          "control": "Role-based access control (RBAC)",
+          "implemented": true,
+          "evidence": "app/auth/rbac.py"
+        },
+        {
+          "control": "Care relationship checks",
+          "implemented": true,
+          "evidence": "tests/test_rbac.py"
+        },
+        {
+          "control": "Automated permission tests in CI",
+          "implemented": true,
+          "evidence": "CI pipeline configuration"
+        },
+        {
+          "control": "Break-glass access with justification logging",
+          "implemented": true,
+          "evidence": "Audit log captures break-glass events"
+        }
+      ],
+      "monitoring": [
+        {
+          "metric": "Unauthorized access attempts",
+          "frequency": "realtime",
+          "threshold": "Any blocked attempt",
+          "action": "Security review"
+        },
+        {
+          "metric": "Permission test coverage",
+          "frequency": "per_release",
+          "threshold": "< 100%",
+          "action": "Block release"
+        }
+      ],
+      "review_history": [
+        {
+          "date": "2024-01-15",
+          "reviewer": "Tech Lead",
+          "notes": "RBAC audit complete"
+        }
+      ]
+    },
+    {
+      "id": "RISK-L003",
+      "title": "Vendor Risk (SMS/Email Providers)",
+      "category": "legal",
+      "owner": "Operations Lead",
+      "owner_email": "ops.lead@clinic.nhs.uk",
+      "likelihood": "medium",
+      "impact": "high",
+      "rating": "mitigate",
+      "status": "active",
+      "description": "Third-party messaging providers process patient data inappropriately or experience data breach.",
+      "mitigations": [
+        {
+          "control": "Data Processing Agreement with all vendors",
+          "implemented": true,
+          "evidence": "Contracts on file"
+        },
+        {
+          "control": "Data minimisation in messages",
+          "implemented": true,
+          "evidence": "No clinical content in SMS/email, only links"
+        },
+        {
+          "control": "UK/EU data residency requirement",
+          "implemented": true,
+          "evidence": "Vendor contracts"
+        }
+      ],
+      "monitoring": [
+        {
+          "metric": "Vendor security review",
+          "frequency": "annually",
+          "threshold": "Overdue > 30 days",
+          "action": "Escalate to DPO"
+        },
+        {
+          "metric": "Delivery success rate",
+          "frequency": "daily",
+          "threshold": "< 95%",
+          "action": "Switch to backup provider"
+        }
+      ],
+      "vendors": [
+        {
+          "name": "Twilio",
+          "service": "SMS",
+          "dpa_signed": "2024-01-01",
+          "last_security_review": "2024-01-01",
+          "data_location": "UK"
+        },
+        {
+          "name": "SendGrid",
+          "service": "Email",
+          "dpa_signed": "2024-01-01",
+          "last_security_review": "2024-01-01",
+          "data_location": "EU"
+        }
+      ],
+      "review_history": [
+        {
+          "date": "2024-01-15",
+          "reviewer": "Operations Lead",
+          "notes": "Vendor DPAs renewed"
+        }
+      ]
+    },
+    {
+      "id": "RISK-T001",
+      "title": "Rules Regression",
+      "category": "technical",
+      "owner": "Tech Lead",
+      "owner_email": "tech.lead@clinic.nhs.uk",
+      "likelihood": "medium",
+      "impact": "high",
+      "rating": "mitigate",
+      "status": "active",
+      "description": "Change to triage rules introduces regression that causes incorrect tier assignment.",
+      "mitigations": [
+        {
+          "control": "Golden tests for critical rule paths",
+          "implemented": true,
+          "evidence": "tests/test_rules_golden.py"
+        },
+        {
+          "control": "Ruleset version pinned per case",
+          "implemented": true,
+          "evidence": "ruleset_hash stored with decision"
+        },
+        {
+          "control": "Change approval workflow",
+          "implemented": true,
+          "evidence": "Cannot self-approve ruleset changes"
+        },
+        {
+          "control": "CI gate blocks merge on test failure",
+          "implemented": true,
+          "evidence": "CI configuration"
+        }
+      ],
+      "monitoring": [
+        {
+          "metric": "Golden test pass rate",
+          "frequency": "per_commit",
+          "threshold": "< 100%",
+          "action": "Block merge"
+        },
+        {
+          "metric": "Post-change tier distribution shift",
+          "frequency": "per_release",
+          "threshold": "> 10% shift",
+          "action": "Clinical review"
+        }
+      ],
+      "review_history": [
+        {
+          "date": "2024-01-15",
+          "reviewer": "Tech Lead",
+          "notes": "Golden tests expanded"
+        }
+      ]
+    },
+    {
+      "id": "RISK-T002",
+      "title": "Data Loss / Corruption",
+      "category": "technical",
+      "owner": "Tech Lead",
+      "owner_email": "tech.lead@clinic.nhs.uk",
+      "likelihood": "low",
+      "impact": "severe",
+      "rating": "mitigate",
+      "status": "active",
+      "description": "Database failure, corruption, or accidental deletion causes loss of patient records.",
+      "mitigations": [
+        {
+          "control": "Point-in-time recovery (35-day retention)",
+          "implemented": true,
+          "evidence": "Database configuration"
+        },
+        {
+          "control": "Daily automated backups with offsite replication",
+          "implemented": true,
+          "evidence": "Backup logs"
+        },
+        {
+          "control": "Monthly restore drills",
+          "implemented": true,
+          "evidence": "Drill log in risk register"
+        },
+        {
+          "control": "Immutable audit log snapshots",
+          "implemented": true,
+          "evidence": "Separate audit storage"
+        },
+        {
+          "control": "Soft delete for all patient data",
+          "implemented": true,
+          "evidence": "No hard deletes in code"
+        }
+      ],
+      "monitoring": [
+        {
+          "metric": "Backup success rate",
+          "frequency": "daily",
+          "threshold": "< 100%",
+          "action": "Immediate investigation"
+        },
+        {
+          "metric": "Restore drill success",
+          "frequency": "monthly",
+          "threshold": "Any failure",
+          "action": "DR plan review"
+        }
+      ],
+      "restore_drills": [
+        {
+          "date": "2024-01-10",
+          "environment": "staging",
+          "data_set": "full_db",
+          "result": "success",
+          "time_to_restore_minutes": 45
+        }
+      ],
+      "review_history": [
+        {
+          "date": "2024-01-15",
+          "reviewer": "Tech Lead",
+          "notes": "PITR verified"
+        }
+      ]
+    },
+    {
+      "id": "RISK-T003",
+      "title": "Messaging Failures",
+      "category": "technical",
+      "owner": "Operations Lead",
+      "owner_email": "ops.lead@clinic.nhs.uk",
+      "likelihood": "medium",
+      "impact": "medium",
+      "rating": "monitor",
+      "status": "active",
+      "description": "SMS/email delivery failures cause patients to miss appointment reminders.",
+      "mitigations": [
+        {
+          "control": "Delivery receipt tracking",
+          "implemented": true,
+          "evidence": "Message status tracking in DB"
+        },
+        {
+          "control": "Automatic retry with exponential backoff",
+          "implemented": true,
+          "evidence": "Message queue configuration"
+        },
+        {
+          "control": "Fallback channel (SMS → email → phone)",
+          "implemented": true,
+          "evidence": "Messaging service logic"
+        },
+        {
+          "control": "Dashboard showing failed messages",
+          "implemented": true,
+          "evidence": "Staff dashboard"
+        }
+      ],
+      "monitoring": [
+        {
+          "metric": "SMS delivery rate",
+          "frequency": "daily",
+          "threshold": "< 95%",
+          "action": "Switch provider"
+        },
+        {
+          "metric": "Failed message queue size",
+          "frequency": "realtime",
+          "threshold": "> 50 messages",
+          "action": "Manual follow-up"
+        }
+      ],
+      "review_history": [
+        {
+          "date": "2024-01-15",
+          "reviewer": "Operations Lead",
+          "notes": "Fallback channels implemented"
+        }
+      ]
+    }
+  ],
+  "review_schedule": [
+    {
+      "category": "clinical",
+      "frequency": "monthly",
+      "next_review": "2024-02-15",
+      "reviewer": "Clinical Lead"
+    },
+    {
+      "category": "legal",
+      "frequency": "quarterly",
+      "next_review": "2024-04-15",
+      "reviewer": "Data Protection Lead"
+    },
+    {
+      "category": "technical",
+      "frequency": "monthly",
+      "next_review": "2024-02-15",
+      "reviewer": "Tech Lead"
+    }
+  ],
+  "escalation_matrix": {
+    "critical": {
+      "response_time": "immediate",
+      "escalation_path": ["CEO", "Board"]
+    },
+    "urgent": {
+      "response_time": "24_hours",
+      "escalation_path": ["Clinical Governance Committee"]
+    },
+    "mitigate": {
+      "response_time": "1_week",
+      "escalation_path": ["Risk Owner", "Line Manager"]
+    },
+    "monitor": {
+      "response_time": "next_scheduled_review",
+      "escalation_path": ["Risk Owner"]
+    },
+    "accept": {
+      "response_time": "annual_review",
+      "escalation_path": ["Risk Owner"]
+    }
+  }
+}

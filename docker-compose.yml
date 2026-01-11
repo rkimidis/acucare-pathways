@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: acucare-db
+    environment:
+      POSTGRES_USER: acucare
+      POSTGRES_PASSWORD: acucare
+      POSTGRES_DB: acucare
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U acucare -d acucare"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: acucare-api
+    ports:
+      - "8000:8000"
+    environment:
+      - ENV=dev
+      - DATABASE_URL=postgresql+asyncpg://acucare:acucare@db:5432/acucare
+      - SECRET_KEY=dev_secret_key_change_in_production_32chars
+      - PATIENT_MAGIC_LINK_TTL_MINUTES=30
+      - LOG_LEVEL=INFO
+      - ACCESS_TOKEN_EXPIRE_MINUTES=60
+      - INIT_DB_ON_STARTUP=false
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

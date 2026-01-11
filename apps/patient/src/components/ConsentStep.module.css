@@ -1,0 +1,138 @@
+.consentStep {
+  max-width: 100%;
+}
+
+.title {
+  font-size: 1.5rem;
+  color: #1a365d;
+  margin-bottom: 0.5rem;
+}
+
+.version {
+  color: #718096;
+  font-size: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+
+.section {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.section:last-of-type {
+  border-bottom: none;
+}
+
+.sectionTitle {
+  font-size: 1.1rem;
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+}
+
+.sectionDescription {
+  color: #718096;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.consentItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.consentItem:hover {
+  border-color: #cbd5e0;
+  background: #f7fafc;
+}
+
+.consentItem.required {
+  border-left: 3px solid #4299e1;
+}
+
+.consentItem input[type='checkbox'] {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.125rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.consentContent {
+  flex: 1;
+}
+
+.consentLabel {
+  font-weight: 500;
+  color: #2d3748;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.requiredMark {
+  color: #e53e3e;
+  margin-left: 0.25rem;
+}
+
+.consentDescription {
+  color: #4a5568;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.consentDescription a {
+  color: #3182ce;
+  text-decoration: underline;
+}
+
+.consentDescription a:hover {
+  color: #2c5282;
+}
+
+.error {
+  background: #fff5f5;
+  border: 1px solid #feb2b2;
+  color: #c53030;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.continueButton {
+  width: 100%;
+  padding: 1rem;
+  background: #3182ce;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 1rem;
+}
+
+.continueButton:hover:not(:disabled) {
+  background: #2c5282;
+}
+
+.continueButton:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+}
+
+.note {
+  color: #718096;
+  font-size: 0.85rem;
+  text-align: center;
+  line-height: 1.5;
+}

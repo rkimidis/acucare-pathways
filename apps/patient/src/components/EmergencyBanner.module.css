@@ -1,0 +1,107 @@
+.banner {
+  background: linear-gradient(135deg, #fef3cd 0%, #fff3cd 100%);
+  border: 2px solid #ffc107;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2);
+}
+
+.icon {
+  color: #856404;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.content {
+  flex: 1;
+}
+
+.content strong {
+  display: block;
+  color: #856404;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.content p {
+  color: #664d03;
+  margin: 0 0 0.75rem 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.contacts {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.emergencyLink {
+  background: #dc3545;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.emergencyLink:hover {
+  background: #c82333;
+}
+
+.helplineLink {
+  background: #28a745;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.helplineLink:hover {
+  background: #218838;
+}
+
+.dismissButton {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: transparent;
+  border: none;
+  color: #856404;
+  cursor: pointer;
+  padding: 0.25rem;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.dismissButton:hover {
+  opacity: 1;
+}
+
+@media (max-width: 600px) {
+  .banner {
+    flex-direction: column;
+    padding: 1rem;
+  }
+
+  .contacts {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .emergencyLink,
+  .helplineLink {
+    text-align: center;
+    width: 100%;
+  }
+}

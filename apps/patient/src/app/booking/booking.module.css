@@ -1,0 +1,373 @@
+.main {
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: white;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.header h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.backButton {
+  padding: 0.5rem 1rem;
+  background-color: white;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.backButton:hover {
+  background-color: #f8fafc;
+}
+
+.content {
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.card {
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.card h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 1rem;
+}
+
+.successCard {
+  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  border: 1px solid #28a745;
+  border-radius: 0.5rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.successCard h2 {
+  color: #155724;
+  margin-bottom: 1rem;
+}
+
+.successCard p {
+  color: #155724;
+  margin-bottom: 1.5rem;
+}
+
+.blockedCard {
+  background: #fef2f2;
+  border: 1px solid #dc2626;
+  border-radius: 0.5rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.blockedCard h2 {
+  color: #dc2626;
+  margin-bottom: 1rem;
+}
+
+.blockedCard p {
+  color: #7f1d1d;
+  margin-bottom: 0.5rem;
+}
+
+.helpText {
+  font-size: 0.875rem;
+  color: #991b1b;
+  margin-top: 1rem;
+}
+
+.errorBanner {
+  background: #fef2f2;
+  border: 1px solid #dc2626;
+  color: #dc2626;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+/* Appointment Type Selection */
+.typeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.typeCard {
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.typeCard:hover {
+  border-color: #94a3b8;
+}
+
+.typeCardSelected {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.typeCard h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 0.5rem;
+}
+
+.typeCard p {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.duration {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.remoteBadge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.5rem;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.75rem;
+  border-radius: 9999px;
+}
+
+/* Clinician Selection */
+.clinicianGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.clinicianCard {
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clinicianCard:hover {
+  border-color: #94a3b8;
+}
+
+.clinicianCardSelected {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.clinicianCard h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 0.25rem;
+}
+
+.specialties {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+  text-transform: capitalize;
+}
+
+.bio {
+  font-size: 0.875rem;
+  color: #475569;
+  line-height: 1.4;
+}
+
+/* Time Slot Selection */
+.slotsContainer {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.dateGroup {
+  margin-bottom: 1.5rem;
+}
+
+.dateHeader {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0f172a;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 0.75rem;
+}
+
+.slotGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.slotButton {
+  padding: 0.5rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.slotButton:hover {
+  border-color: #94a3b8;
+  background: white;
+}
+
+.slotButtonSelected {
+  border-color: #3b82f6;
+  background: #3b82f6;
+  color: white;
+}
+
+.remoteIcon {
+  font-size: 0.75rem;
+}
+
+.noSlots {
+  text-align: center;
+  color: #64748b;
+  font-style: italic;
+  padding: 2rem;
+}
+
+/* Booking Confirmation */
+.summary {
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.summaryItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.summaryItem:last-child {
+  border-bottom: none;
+}
+
+.label {
+  font-weight: 500;
+  color: #64748b;
+}
+
+.remoteOption {
+  margin-bottom: 1rem;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #0f172a;
+}
+
+.checkboxLabel input {
+  width: 1rem;
+  height: 1rem;
+}
+
+.formGroup {
+  margin-bottom: 1rem;
+}
+
+.formGroup label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #0f172a;
+  margin-bottom: 0.5rem;
+}
+
+.formGroup textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  resize: vertical;
+}
+
+.formGroup textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.bookButton {
+  width: 100%;
+  padding: 1rem;
+  background: #16a34a;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.bookButton:hover:not(:disabled) {
+  background: #15803d;
+}
+
+.bookButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.primaryButton {
+  padding: 0.75rem 1.5rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.primaryButton:hover {
+  background: #2563eb;
+}

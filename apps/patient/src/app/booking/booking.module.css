@@ -371,3 +371,327 @@
 .primaryButton:hover {
   background: #2563eb;
 }
+
+/* Soft Nudge Banner */
+.nudgeBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #f59e0b;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: #92400e;
+}
+
+.nudgeIcon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+/* Availability Insights */
+.availabilityNudge {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: #f0fdf4;
+  border: 1px solid #22c55e;
+  border-radius: 0.5rem;
+}
+
+.nudgeHighlight {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #166534;
+}
+
+.todayBadge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.5rem;
+  background: #22c55e;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+}
+
+.earliestNudge {
+  font-size: 0.8rem;
+  color: #166534;
+  margin-left: 1.75rem;
+}
+
+/* Step Hints */
+.stepHint {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: -0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Early Slot Highlighting */
+.dateGroupHighlighted {
+  position: relative;
+}
+
+.dateGroupHighlighted::before {
+  content: '';
+  position: absolute;
+  left: -0.5rem;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #22c55e;
+  border-radius: 2px;
+}
+
+.earlyBadge {
+  display: inline-block;
+  margin-left: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 0.7rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  vertical-align: middle;
+}
+
+.slotButtonEarly {
+  border-color: #22c55e;
+  background: #f0fdf4;
+}
+
+.slotButtonEarly:hover {
+  background: #dcfce7;
+  border-color: #16a34a;
+}
+
+/* Success Card Enhancements */
+.successIcon {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 1rem;
+  background: #22c55e;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.successDetails {
+  text-align: left;
+  margin: 1.5rem auto;
+  max-width: 360px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 0.5rem;
+}
+
+.successDetails p {
+  margin-bottom: 0.5rem;
+}
+
+.successDetails ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.successDetails li {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.successDetails li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #16a34a;
+  font-weight: bold;
+}
+
+/* ========================================
+   PATHWAY EXPLANATION (GREEN/BLUE)
+   ======================================== */
+
+.pathwayExplanation {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  border: 1px solid #86efac;
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.pathwayMain {
+  font-size: 1.05rem;
+  color: #166534;
+  font-weight: 500;
+  margin: 0 0 0.75rem 0;
+  line-height: 1.5;
+}
+
+.clinicianTypeExplanation {
+  font-size: 0.95rem;
+  color: #15803d;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.careEscalation {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #22c55e;
+  font-style: italic;
+}
+
+/* Availability Framing */
+.availabilityFraming {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  background: #eff6ff;
+  border: 1px solid #93c5fd;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  color: #1d4ed8;
+  font-weight: 500;
+}
+
+.availabilityIcon {
+  font-size: 1.25rem;
+}
+
+/* Payment Notice */
+.paymentNotice {
+  background: #fefce8;
+  border: 1px solid #fde047;
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.paymentNotice p {
+  margin: 0;
+  color: #854d0e;
+}
+
+.paymentNotice p:first-child {
+  margin-bottom: 0.25rem;
+}
+
+.paymentReason {
+  font-size: 0.875rem;
+  color: #a16207;
+}
+
+/* ========================================
+   AMBER REVIEW CARD
+   ======================================== */
+
+.reviewCard {
+  text-align: center;
+  padding: 2rem;
+}
+
+.reviewIcon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1.5rem;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+}
+
+.reviewMainCopy {
+  font-size: 1.1rem;
+  color: #374151;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.reviewCard .reassuranceBox {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 0.75rem;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.reviewCard .reassuranceBox p {
+  margin: 0;
+  color: #166534;
+  line-height: 1.6;
+}
+
+.reviewCard .whatHappensNext {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.reviewCard .whatHappensNext h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 0.75rem 0;
+}
+
+.reviewCard .whatHappensNext ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #475569;
+}
+
+.reviewCard .whatHappensNext li {
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.reviewCard .safetyReminder {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.reviewCard .safetyReminder p {
+  margin: 0;
+  color: #991b1b;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.warningIcon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}

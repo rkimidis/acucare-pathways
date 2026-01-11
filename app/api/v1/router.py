@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    admin_friction,
     audit,
     auth_patient,
     auth_staff,
@@ -126,4 +127,11 @@ api_router.include_router(
 api_router.include_router(
     change_control.router,
     tags=["change-control"],
+)
+
+# Admin Friction Reduction
+api_router.include_router(
+    admin_friction.router,
+    prefix="/admin",
+    tags=["admin-friction"],
 )

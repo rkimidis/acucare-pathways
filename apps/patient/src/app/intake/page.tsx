@@ -432,16 +432,26 @@ export default function IntakePage() {
           </div>
         )}
 
-        {/* Progress indicator (visible after landing) */}
+        {/* Progress indicator (persistent at top) */}
         {step !== 'landing' && step !== 'complete' && (
           <div className={styles.progressContainer}>
             <div className={styles.progressHeader}>
-              <span className={styles.stepIndicator}>
-                Step {getCurrentStepNumber()} of {progressSteps.length}
-              </span>
-              <span className={styles.stepLabel}>
-                — {STEP_LABELS[step]}
-              </span>
+              <div className={styles.progressHeaderMain}>
+                <span className={styles.stepIndicator}>
+                  Step {getCurrentStepNumber()} of {progressSteps.length}
+                </span>
+                <span className={styles.stepLabel}>
+                  — {STEP_LABELS[step]}
+                </span>
+              </div>
+              <div className={styles.progressTooltipWrapper}>
+                <span className={styles.infoIcon} title="Most people complete this in one sitting. You can save and return at any time.">
+                  ⓘ
+                </span>
+                <div className={styles.progressTooltip}>
+                  Most people complete this in one sitting. You can save and return at any time.
+                </div>
+              </div>
             </div>
             <div className={styles.progressBar}>
               <div
@@ -451,9 +461,6 @@ export default function IntakePage() {
                 }}
               />
             </div>
-            <p className={styles.progressTooltip}>
-              Most people complete this in one sitting. Your progress is saved automatically.
-            </p>
           </div>
         )}
 

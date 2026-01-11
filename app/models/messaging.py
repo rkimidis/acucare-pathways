@@ -38,6 +38,14 @@ class MessageTemplateType(str, Enum):
     # Triage-related
     TRIAGE_COMPLETE = "triage_complete"
     TRIAGE_ESCALATION = "triage_escalation"
+    # Abandoned intake recovery
+    INTAKE_REMINDER_24H = "intake_reminder_24h"
+    INTAKE_REMINDER_72H = "intake_reminder_72h"
+    # Appointment confirmation
+    APPOINTMENT_CONFIRM_REQUEST = "appointment_confirm_request"
+    APPOINTMENT_CONFIRMED_ACK = "appointment_confirmed_ack"
+    # Inactive patient outreach
+    STILL_WANT_APPOINTMENT = "still_want_appointment"
     # General
     WELCOME = "welcome"
     PASSWORD_RESET = "password_reset"

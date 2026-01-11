@@ -17,6 +17,7 @@ from app.api.deps import (
     require_permissions,
 )
 from app.models.messaging import MessageChannel, MessageTemplateType
+from app.services.intake_recovery import IntakeRecoveryService
 from app.services.messaging import MessagingService
 from app.services.rbac import Permission
 
@@ -459,3 +460,159 @@ async def sendgrid_webhook(
                 processed += 1
 
     return {"status": "processed", "count": processed}
+
+
+# ============================================================================
+# Intake Recovery Endpoints
+# ============================================================================
+
+
+class IntakeRecoveryStatsResponse(BaseModel):
+    """Statistics about abandoned intakes."""
+
+    total_incomplete: int
+    under_24h: int
+    needs_24h_reminder: int
+    awaiting_72h: int = Field(alias="24h_sent_awaiting_72h")
+    needs_72h_reminder: int
+    final_reminder_sent: int = Field(alias="72h_sent_final")
+
+    class Config:
+        from_attributes = True
+        populate_by_name = True
+
+
+class IntakeRecoveryJobResponse(BaseModel):
+    """Result of running the intake recovery job."""
+
+    reminders_24h_sent: int = Field(alias="24h_reminders_sent")
+    reminders_24h_failed: int = Field(alias="24h_reminders_failed")
+    reminders_72h_sent: int = Field(alias="72h_reminders_sent")
+    reminders_72h_failed: int = Field(alias="72h_reminders_failed")
+    total_cases: int
+
+    class Config:
+        from_attributes = True
+        populate_by_name = True
+
+
+class SendReminderRequest(BaseModel):
+    """Request to send an intake reminder."""
+
+    channel: str = "email"
+
+
+@router.get(
+    "/intake-recovery/stats",
+    response_model=IntakeRecoveryStatsResponse,
+    dependencies=[Depends(require_permissions(Permission.TRIAGE_READ))],
+)
+async def get_intake_recovery_stats(
+    user: CurrentUser,
+    session: DbSession,
+) -> IntakeRecoveryStatsResponse:
+    """Get statistics about abandoned intakes.
+
+    Shows counts of incomplete intakes at various stages of the recovery funnel.
+    """
+    service = IntakeRecoveryService(session)
+    stats = await service.get_recovery_stats()
+    return IntakeRecoveryStatsResponse(**stats)
+
+
+@router.post(
+    "/intake-recovery/run",
+    response_model=IntakeRecoveryJobResponse,
+    dependencies=[Depends(require_permissions(Permission.TRIAGE_WRITE))],
+)
+async def run_intake_recovery_job(
+    user: CurrentUser,
+    session: DbSession,
+    channel: str = Query("email", description="Communication channel: email or sms"),
+) -> IntakeRecoveryJobResponse:
+    """Manually run the intake recovery job.
+
+    Sends 24h and 72h reminders to all eligible patients with incomplete intakes.
+    This is typically run by a scheduler but can be triggered manually.
+    """
+    try:
+        msg_channel = MessageChannel(channel)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid channel: {channel}. Use 'email' or 'sms'.",
+        )
+
+    service = IntakeRecoveryService(session)
+    results = await service.run_recovery_job(channel=msg_channel)
+    return IntakeRecoveryJobResponse(**results)
+
+
+@router.post(
+    "/intake-recovery/send-24h/{triage_case_id}",
+    response_model=MessageResponse,
+    dependencies=[Depends(require_permissions(Permission.TRIAGE_WRITE))],
+)
+async def send_24h_reminder(
+    triage_case_id: str,
+    user: CurrentUser,
+    session: DbSession,
+    request: SendReminderRequest,
+) -> MessageResponse:
+    """Send 24h intake reminder for a specific case.
+
+    Only sends if the case meets criteria (incomplete, 24h reminder not yet sent).
+    """
+    try:
+        channel = MessageChannel(request.channel)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid channel: {request.channel}",
+        )
+
+    service = IntakeRecoveryService(session)
+    message = await service.send_24h_reminder(triage_case_id, channel)
+
+    if not message:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Case not found, already reminded, or intake complete",
+        )
+
+    return MessageResponse.model_validate(message)
+
+
+@router.post(
+    "/intake-recovery/send-72h/{triage_case_id}",
+    response_model=MessageResponse,
+    dependencies=[Depends(require_permissions(Permission.TRIAGE_WRITE))],
+)
+async def send_72h_reminder(
+    triage_case_id: str,
+    user: CurrentUser,
+    session: DbSession,
+    request: SendReminderRequest,
+) -> MessageResponse:
+    """Send 72h final intake reminder for a specific case.
+
+    Only sends if the case meets criteria (incomplete, 24h sent, 72h not yet sent).
+    """
+    try:
+        channel = MessageChannel(request.channel)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid channel: {request.channel}",
+        )
+
+    service = IntakeRecoveryService(session)
+    message = await service.send_72h_reminder(triage_case_id, channel)
+
+    if not message:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Case not found, 24h not sent yet, or 72h already sent",
+        )
+
+    return MessageResponse.model_validate(message)

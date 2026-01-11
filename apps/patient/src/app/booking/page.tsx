@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import EmergencyBanner from '@/components/EmergencyBanner';
 import styles from './booking.module.css';
@@ -32,6 +32,12 @@ interface AvailableSlot {
 interface SelfBookCheck {
   allowed: boolean;
   reason: string | null;
+  tier?: string;
+}
+
+interface TriageCaseInfo {
+  tier: string | null;
+  pathway: string | null;
 }
 
 export default function BookingPage() {
@@ -53,8 +59,9 @@ export default function BookingPage() {
   const [isRemote, setIsRemote] = useState(false);
   const [patientNotes, setPatientNotes] = useState('');
 
-  // Self-book eligibility
+  // Self-book eligibility and triage info
   const [selfBookCheck, setSelfBookCheck] = useState<SelfBookCheck | null>(null);
+  const [triageCaseInfo, setTriageCaseInfo] = useState<TriageCaseInfo | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const getToken = () => localStorage.getItem('access_token');
@@ -73,11 +80,21 @@ export default function BookingPage() {
       const token = getToken();
       const headers = { Authorization: `Bearer ${token}` };
 
-      // Load clinicians and appointment types in parallel
-      const [cliniciansRes, typesRes] = await Promise.all([
+      // Load clinicians, appointment types, and triage info in parallel
+      const fetchPromises: Promise<Response>[] = [
         fetch('/api/v1/scheduling/patient/clinicians', { headers }),
         fetch('/api/v1/scheduling/patient/appointment-types', { headers }),
-      ]);
+      ];
+
+      // Also fetch triage case info if we have a case ID
+      if (triageCaseId) {
+        fetchPromises.push(
+          fetch(`/api/v1/admin/cases/${triageCaseId}/eligibility`, { headers })
+        );
+      }
+
+      const responses = await Promise.all(fetchPromises);
+      const [cliniciansRes, typesRes, triageRes] = responses;
 
       if (!cliniciansRes.ok || !typesRes.ok) {
         throw new Error('Failed to load booking options');
@@ -88,6 +105,16 @@ export default function BookingPage() {
 
       setClinicians(cliniciansData);
       setAppointmentTypes(typesData);
+
+      // Set triage case info if available
+      if (triageRes && triageRes.ok) {
+        const triageData = await triageRes.json();
+        setTriageCaseInfo({
+          tier: triageData.tier,
+          pathway: triageData.pathway,
+        });
+      }
+
       setLoading(false);
     } catch (err) {
       setError('Failed to load booking options. Please try again.');
@@ -205,9 +232,47 @@ export default function BookingPage() {
     });
   };
 
+  // Compute availability insights for soft nudges
+  const availabilityInsights = useMemo(() => {
+    if (availableSlots.length === 0) return null;
+
+    const now = new Date();
+    const today = now.toDateString();
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000).toDateString();
+    const thisWeekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    const slotsToday = availableSlots.filter(
+      (s) => new Date(s.start).toDateString() === today
+    );
+    const slotsTomorrow = availableSlots.filter(
+      (s) => new Date(s.start).toDateString() === tomorrow
+    );
+    const slotsThisWeek = availableSlots.filter(
+      (s) => new Date(s.start) <= thisWeekEnd
+    );
+
+    // Find earliest slot
+    const sortedSlots = [...availableSlots].sort(
+      (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()
+    );
+    const earliestSlot = sortedSlots[0];
+    const daysUntilEarliest = Math.ceil(
+      (new Date(earliestSlot.start).getTime() - now.getTime()) / (24 * 60 * 60 * 1000)
+    );
+
+    return {
+      totalSlots: availableSlots.length,
+      slotsToday: slotsToday.length,
+      slotsTomorrow: slotsTomorrow.length,
+      slotsThisWeek: slotsThisWeek.length,
+      earliestSlot,
+      daysUntilEarliest,
+    };
+  }, [availableSlots]);
+
   const groupSlotsByDate = (slots: AvailableSlot[]) => {
     const groups: Record<string, AvailableSlot[]> = {};
-    slots.forEach(slot => {
+    slots.forEach((slot) => {
       const date = new Date(slot.start).toLocaleDateString('en-GB', {
         weekday: 'long',
         day: 'numeric',
@@ -217,6 +282,13 @@ export default function BookingPage() {
       groups[date].push(slot);
     });
     return groups;
+  };
+
+  // Highlight "soonest" slots
+  const isEarlySlot = (slot: AvailableSlot) => {
+    const slotDate = new Date(slot.start);
+    const threeDaysFromNow = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+    return slotDate <= threeDaysFromNow;
   };
 
   if (loading) {
@@ -236,11 +308,22 @@ export default function BookingPage() {
         <EmergencyBanner />
         <div className={styles.content}>
           <div className={styles.successCard}>
-            <h2>Appointment Booked</h2>
+            <div className={styles.successIcon}>✓</div>
+            <h2>Appointment Booked!</h2>
             <p>
-              Your appointment has been successfully scheduled. You will receive
-              a confirmation email with the details.
+              Your appointment has been successfully scheduled. You will receive a
+              confirmation email with the details.
             </p>
+            <div className={styles.successDetails}>
+              <p>
+                <strong>What happens next:</strong>
+              </p>
+              <ul>
+                <li>Check your email for confirmation and calendar invite</li>
+                <li>You can view and manage your appointment on your dashboard</li>
+                <li>We&apos;ll send you a reminder 24 hours before</li>
+              </ul>
+            </div>
             <button
               onClick={() => router.push('/dashboard')}
               className={styles.primaryButton}
@@ -253,24 +336,55 @@ export default function BookingPage() {
     );
   }
 
+  // AMBER tier - Booking restricted, clinician review required
   if (selfBookCheck && !selfBookCheck.allowed) {
     return (
       <main className={styles.main}>
         <EmergencyBanner />
         <header className={styles.header}>
-          <h1>Book an Appointment</h1>
+          <h1>We&apos;re reviewing your assessment</h1>
           <button onClick={() => router.push('/dashboard')} className={styles.backButton}>
             Back to Dashboard
           </button>
         </header>
         <div className={styles.content}>
-          <div className={styles.blockedCard}>
-            <h2>Booking Not Available</h2>
-            <p>{selfBookCheck.reason}</p>
-            <p className={styles.helpText}>
-              Please wait for our clinical team to contact you, or call our
-              reception to schedule an appointment.
+          <div className={styles.reviewCard}>
+            <div className={styles.reviewIcon}>🔍</div>
+            <p className={styles.reviewMainCopy}>
+              Some aspects of your assessment mean a clinician needs to review it
+              before booking an appointment.
             </p>
+
+            <div className={styles.reassuranceBox}>
+              <p>
+                <strong>This doesn&apos;t mean something is &quot;wrong&quot;</strong> — it helps
+                ensure your care is safe and appropriate.
+              </p>
+            </div>
+
+            <div className={styles.whatHappensNext}>
+              <h3>What happens next:</h3>
+              <ul>
+                <li>A clinician will review your information</li>
+                <li>We&apos;ll contact you to arrange the next step</li>
+                <li>This usually happens within 24–72 hours</li>
+              </ul>
+            </div>
+
+            <div className={styles.safetyReminder}>
+              <span className={styles.warningIcon}>⚠️</span>
+              <p>
+                If your situation worsens or you feel unsafe, please contact 999
+                or attend A&amp;E.
+              </p>
+            </div>
+
+            <button
+              onClick={() => router.push('/dashboard')}
+              className={styles.primaryButton}
+            >
+              Return to Dashboard
+            </button>
           </div>
         </div>
       </main>
@@ -279,28 +393,69 @@ export default function BookingPage() {
 
   const slotsByDate = groupSlotsByDate(availableSlots);
 
+  // Get clinician type description based on selected type
+  const getClinicianTypeDescription = () => {
+    const selectedTypeObj = appointmentTypes.find((t) => t.id === selectedType);
+    const typeName = selectedTypeObj?.name?.toLowerCase() || 'clinician';
+
+    if (typeName.includes('therapy') || typeName.includes('counselling')) {
+      return "You'll meet with a qualified therapist who specialises in concerns like yours.";
+    } else if (typeName.includes('psychiatr')) {
+      return "You'll meet with a psychiatrist who can provide specialist assessment and support.";
+    } else if (typeName.includes('assessment')) {
+      return "You'll have an initial assessment with one of our qualified clinicians.";
+    }
+    return "You'll meet with a qualified clinician who can provide the support you need.";
+  };
+
   return (
     <main className={styles.main}>
       <EmergencyBanner />
 
       <header className={styles.header}>
-        <h1>Book an Appointment</h1>
+        <h1>Book your appointment</h1>
         <button onClick={() => router.push('/dashboard')} className={styles.backButton}>
           Back to Dashboard
         </button>
       </header>
 
       <div className={styles.content}>
+        {/* Pathway explanation for trust */}
+        <div className={styles.pathwayExplanation}>
+          <p className={styles.pathwayMain}>
+            Based on your assessment, this is the most appropriate starting point for your care.
+          </p>
+          {selectedType && (
+            <p className={styles.clinicianTypeExplanation}>
+              {getClinicianTypeDescription()}
+              <br />
+              <span className={styles.careEscalation}>
+                If at any point a different level of care is needed, we&apos;ll guide you through that.
+              </span>
+            </p>
+          )}
+        </div>
+
+        {/* Availability framing */}
+        {availabilityInsights && availabilityInsights.slotsThisWeek > 0 && (
+          <div className={styles.availabilityFraming}>
+            <span className={styles.availabilityIcon}>📅</span>
+            <span>Appointments available as soon as this week.</span>
+          </div>
+        )}
+
         {error && <div className={styles.errorBanner}>{error}</div>}
 
         {/* Step 1: Select Appointment Type */}
         <section className={styles.card}>
           <h2>1. Select Appointment Type</h2>
           <div className={styles.typeGrid}>
-            {appointmentTypes.map(type => (
+            {appointmentTypes.map((type) => (
               <button
                 key={type.id}
-                className={`${styles.typeCard} ${selectedType === type.id ? styles.typeCardSelected : ''}`}
+                className={`${styles.typeCard} ${
+                  selectedType === type.id ? styles.typeCardSelected : ''
+                }`}
                 onClick={() => {
                   setSelectedType(type.id);
                   setSelectedSlot(null);
@@ -319,20 +474,23 @@ export default function BookingPage() {
         {selectedType && (
           <section className={styles.card}>
             <h2>2. Select Clinician</h2>
+            <p className={styles.stepHint}>
+              Any of our clinicians can help you. Choose based on availability or specialty.
+            </p>
             <div className={styles.clinicianGrid}>
-              {clinicians.map(clinician => (
+              {clinicians.map((clinician) => (
                 <button
                   key={clinician.id}
-                  className={`${styles.clinicianCard} ${selectedClinician === clinician.id ? styles.clinicianCardSelected : ''}`}
+                  className={`${styles.clinicianCard} ${
+                    selectedClinician === clinician.id ? styles.clinicianCardSelected : ''
+                  }`}
                   onClick={() => {
                     setSelectedClinician(clinician.id);
                     setSelectedSlot(null);
                   }}
                 >
                   <h3>{clinician.title}</h3>
-                  <p className={styles.specialties}>
-                    {clinician.specialties.join(', ')}
-                  </p>
+                  <p className={styles.specialties}>{clinician.specialties.join(', ')}</p>
                   {clinician.bio && <p className={styles.bio}>{clinician.bio}</p>}
                 </button>
               ))}
@@ -344,33 +502,82 @@ export default function BookingPage() {
         {selectedClinician && selectedType && (
           <section className={styles.card}>
             <h2>3. Select Date and Time</h2>
+
+            {/* Availability insights nudge */}
+            {availabilityInsights && (
+              <div className={styles.availabilityNudge}>
+                {availabilityInsights.slotsThisWeek > 0 && (
+                  <div className={styles.nudgeHighlight}>
+                    <span className={styles.nudgeIcon}>⚡</span>
+                    <span>
+                      <strong>{availabilityInsights.slotsThisWeek} appointments</strong> available
+                      this week
+                      {availabilityInsights.slotsToday > 0 && (
+                        <span className={styles.todayBadge}>
+                          {availabilityInsights.slotsToday} today!
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                )}
+                {availabilityInsights.daysUntilEarliest <= 2 && (
+                  <div className={styles.earliestNudge}>
+                    Earliest available:{' '}
+                    <strong>
+                      {availabilityInsights.daysUntilEarliest === 0
+                        ? 'Today'
+                        : availabilityInsights.daysUntilEarliest === 1
+                        ? 'Tomorrow'
+                        : `In ${availabilityInsights.daysUntilEarliest} days`}
+                    </strong>
+                  </div>
+                )}
+              </div>
+            )}
+
             {availableSlots.length === 0 ? (
               <p className={styles.noSlots}>No available slots in the next 14 days.</p>
             ) : (
               <div className={styles.slotsContainer}>
-                {Object.entries(slotsByDate).map(([date, slots]) => (
-                  <div key={date} className={styles.dateGroup}>
-                    <h3 className={styles.dateHeader}>{date}</h3>
-                    <div className={styles.slotGrid}>
-                      {slots.map((slot, idx) => {
-                        const time = new Date(slot.start).toLocaleTimeString('en-GB', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        });
-                        return (
-                          <button
-                            key={idx}
-                            className={`${styles.slotButton} ${selectedSlot?.start === slot.start ? styles.slotButtonSelected : ''}`}
-                            onClick={() => setSelectedSlot(slot)}
-                          >
-                            {time}
-                            {slot.is_remote && <span className={styles.remoteIcon}>📹</span>}
-                          </button>
-                        );
-                      })}
+                {Object.entries(slotsByDate).map(([date, slots]) => {
+                  const hasEarlySlots = slots.some(isEarlySlot);
+                  return (
+                    <div
+                      key={date}
+                      className={`${styles.dateGroup} ${
+                        hasEarlySlots ? styles.dateGroupHighlighted : ''
+                      }`}
+                    >
+                      <h3 className={styles.dateHeader}>
+                        {date}
+                        {hasEarlySlots && (
+                          <span className={styles.earlyBadge}>Earlier availability</span>
+                        )}
+                      </h3>
+                      <div className={styles.slotGrid}>
+                        {slots.map((slot, idx) => {
+                          const time = new Date(slot.start).toLocaleTimeString('en-GB', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          });
+                          const isEarly = isEarlySlot(slot);
+                          return (
+                            <button
+                              key={idx}
+                              className={`${styles.slotButton} ${
+                                selectedSlot?.start === slot.start ? styles.slotButtonSelected : ''
+                              } ${isEarly ? styles.slotButtonEarly : ''}`}
+                              onClick={() => setSelectedSlot(slot)}
+                            >
+                              {time}
+                              {slot.is_remote && <span className={styles.remoteIcon}>📹</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </section>
@@ -384,11 +591,11 @@ export default function BookingPage() {
             <div className={styles.summary}>
               <div className={styles.summaryItem}>
                 <span className={styles.label}>Appointment:</span>
-                <span>{appointmentTypes.find(t => t.id === selectedType)?.name}</span>
+                <span>{appointmentTypes.find((t) => t.id === selectedType)?.name}</span>
               </div>
               <div className={styles.summaryItem}>
                 <span className={styles.label}>Clinician:</span>
-                <span>{clinicians.find(c => c.id === selectedClinician)?.title}</span>
+                <span>{clinicians.find((c) => c.id === selectedClinician)?.title}</span>
               </div>
               <div className={styles.summaryItem}>
                 <span className={styles.label}>Date & Time:</span>
@@ -408,7 +615,7 @@ export default function BookingPage() {
                   <input
                     type="checkbox"
                     checked={isRemote}
-                    onChange={e => setIsRemote(e.target.checked)}
+                    onChange={(e) => setIsRemote(e.target.checked)}
                   />
                   I would prefer a video consultation
                 </label>
@@ -420,11 +627,21 @@ export default function BookingPage() {
               <textarea
                 id="notes"
                 value={patientNotes}
-                onChange={e => setPatientNotes(e.target.value)}
+                onChange={(e) => setPatientNotes(e.target.value)}
                 placeholder="Any information you'd like the clinician to know before your appointment..."
                 maxLength={2000}
                 rows={3}
               />
+            </div>
+
+            {/* Payment copy */}
+            <div className={styles.paymentNotice}>
+              <p>
+                <strong>Payment is required to confirm your appointment.</strong>
+              </p>
+              <p className={styles.paymentReason}>
+                This helps us reduce missed appointments and keep waiting times short.
+              </p>
             </div>
 
             <button

@@ -34,12 +34,43 @@ interface ConsentStatus {
   needs_reconsent: boolean;
 }
 
-type WizardStep = 'consent' | 'questionnaire' | 'risk-warning' | 'confirmation';
+// 6-step wizard for clear progress tracking
+type WizardStep =
+  | 'landing'
+  | 'consent'
+  | 'background'
+  | 'symptoms'
+  | 'safety'
+  | 'review'
+  | 'complete';
+
+const STEP_LABELS: Record<WizardStep, string> = {
+  landing: 'Welcome',
+  consent: 'Consent',
+  background: 'Background',
+  symptoms: 'Current symptoms',
+  safety: 'Safety',
+  review: 'Review',
+  complete: 'Complete',
+};
+
+// Map sections to wizard steps (adjust based on your questionnaire schema)
+const SECTION_TO_STEP: Record<string, WizardStep> = {
+  demographics: 'background',
+  background: 'background',
+  presenting: 'symptoms',
+  symptoms: 'symptoms',
+  phq9: 'symptoms',
+  gad7: 'symptoms',
+  safety: 'safety',
+  risk: 'safety',
+  auditc: 'background',
+};
 
 export default function IntakePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [step, setStep] = useState<WizardStep>('consent');
+  const [step, setStep] = useState<WizardStep>('landing');
   const [questionnaire, setQuestionnaire] =
     useState<QuestionnaireDefinition | null>(null);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
@@ -49,6 +80,17 @@ export default function IntakePage() {
   const [draftSaveStatus, setDraftSaveStatus] = useState<
     'saved' | 'saving' | 'error' | null
   >(null);
+  const [currentQuestionnaireStep, setCurrentQuestionnaireStep] = useState(0);
+
+  // Define the main steps for progress display (6 visible steps)
+  const progressSteps: WizardStep[] = [
+    'consent',
+    'background',
+    'symptoms',
+    'safety',
+    'review',
+    'complete',
+  ];
 
   // Load consent status and questionnaire on mount
   useEffect(() => {
@@ -68,11 +110,6 @@ export default function IntakePage() {
         if (consentRes.ok) {
           const consent = await consentRes.json();
           setConsentStatus(consent);
-
-          // If already consented, skip to questionnaire
-          if (consent.has_consented && !consent.needs_reconsent) {
-            setStep('questionnaire');
-          }
         }
 
         // Fetch questionnaire
@@ -134,7 +171,9 @@ export default function IntakePage() {
 
   // Debounced auto-save
   useEffect(() => {
-    if (step !== 'questionnaire' || Object.keys(answers).length === 0) return;
+    const questionnaireSteps: WizardStep[] = ['background', 'symptoms', 'safety'];
+    if (!questionnaireSteps.includes(step) || Object.keys(answers).length === 0)
+      return;
 
     const timeout = setTimeout(() => {
       saveDraft();
@@ -162,7 +201,7 @@ export default function IntakePage() {
       });
 
       if (res.ok) {
-        setStep('questionnaire');
+        setStep('background');
       } else {
         const data = await res.json();
         alert(data.detail?.message || 'Failed to save consent');
@@ -175,7 +214,34 @@ export default function IntakePage() {
     }
   };
 
-  const validateAnswers = (): boolean => {
+  const validateCurrentSection = (): boolean => {
+    if (!questionnaire) return false;
+
+    const newErrors: Record<string, string> = {};
+    const fields = questionnaire.schema.fields || [];
+
+    // Get fields for current step
+    const currentFields = fields.filter((field) => {
+      const fieldStep = SECTION_TO_STEP[field.section || ''] || 'background';
+      return fieldStep === step;
+    });
+
+    currentFields.forEach((field) => {
+      if (field.required) {
+        const value = answers[field.id];
+        if (value === undefined || value === null || value === '') {
+          newErrors[field.id] = 'This field is required';
+        } else if (Array.isArray(value) && value.length === 0) {
+          newErrors[field.id] = 'Please select at least one option';
+        }
+      }
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateAllAnswers = (): boolean => {
     if (!questionnaire) return false;
 
     const newErrors: Record<string, string> = {};
@@ -196,29 +262,56 @@ export default function IntakePage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleQuestionnaireSubmit = () => {
-    if (!validateAnswers()) {
-      // Scroll to first error
+  const handleNextStep = () => {
+    if (!validateCurrentSection()) {
       const firstErrorField = Object.keys(errors)[0];
       const element = document.getElementById(firstErrorField);
       element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
-    // Check for risk indicators
-    const riskFields = ['suicidal_thoughts', 'self_harm', 'harm_to_others'];
-    const hasRiskIndicators = riskFields.some(
-      (field) => answers[field] === true || answers[field] === 'yes'
-    );
-
-    if (hasRiskIndicators) {
-      setStep('risk-warning');
-    } else {
-      setStep('confirmation');
+    // Move to next step
+    if (step === 'background') {
+      setStep('symptoms');
+    } else if (step === 'symptoms') {
+      setStep('safety');
+    } else if (step === 'safety') {
+      setStep('review');
     }
+
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handlePreviousStep = () => {
+    if (step === 'symptoms') {
+      setStep('background');
+    } else if (step === 'safety') {
+      setStep('symptoms');
+    } else if (step === 'review') {
+      setStep('safety');
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleFinalSubmit = async () => {
+    if (!validateAllAnswers()) {
+      // Find which step has the first error
+      const firstErrorField = Object.keys(errors)[0];
+      const field = questionnaire?.schema.fields.find(
+        (f) => f.id === firstErrorField
+      );
+      if (field) {
+        const fieldStep = SECTION_TO_STEP[field.section || ''] || 'background';
+        setStep(fieldStep);
+        setTimeout(() => {
+          const element = document.getElementById(firstErrorField);
+          element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+      return;
+    }
+
     const token = localStorage.getItem('access_token');
     if (!token) return;
 
@@ -234,7 +327,7 @@ export default function IntakePage() {
       });
 
       if (res.ok) {
-        router.push('/dashboard?intake=complete');
+        setStep('complete');
       } else {
         const data = await res.json();
         if (data.detail?.errors) {
@@ -246,7 +339,7 @@ export default function IntakePage() {
             }
           });
           setErrors(newErrors);
-          setStep('questionnaire');
+          setStep('background');
         } else {
           alert(data.detail?.message || 'Submission failed');
         }
@@ -259,6 +352,21 @@ export default function IntakePage() {
     }
   };
 
+  // Get current step number (1-indexed for display)
+  const getCurrentStepNumber = (): number => {
+    const index = progressSteps.indexOf(step);
+    return index >= 0 ? index + 1 : 1;
+  };
+
+  // Get fields for a specific wizard step
+  const getFieldsForStep = (wizardStep: WizardStep) => {
+    if (!questionnaire) return [];
+    return questionnaire.schema.fields.filter((field) => {
+      const fieldStep = SECTION_TO_STEP[field.section || ''] || 'background';
+      return fieldStep === wizardStep;
+    });
+  };
+
   if (loading) {
     return (
       <main className={styles.main}>
@@ -269,40 +377,88 @@ export default function IntakePage() {
 
   return (
     <main className={styles.main}>
-      <EmergencyBanner />
+      {step !== 'landing' && <EmergencyBanner />}
 
       <div className={styles.container}>
-        {/* Progress indicator */}
-        <div className={styles.progress}>
-          <div
-            className={`${styles.progressStep} ${
-              step === 'consent' ? styles.active : styles.completed
-            }`}
-          >
-            1. Consent
+        {/* Landing Page */}
+        {step === 'landing' && (
+          <div className={styles.landing}>
+            <div className={styles.landingContent}>
+              <h1 className={styles.landingHeader}>
+                Get matched to the right mental health professional
+              </h1>
+              <p className={styles.landingSubheader}>
+                This short assessment helps us understand what you&apos;re experiencing
+                so we can safely recommend the most appropriate care.
+              </p>
+
+              <div className={styles.timeIndicator}>
+                <span className={styles.timeIcon}>⏱</span>
+                Takes about 8–10 minutes
+              </div>
+
+              <div className={styles.reassuranceBox}>
+                <p>Your answers are reviewed by qualified clinicians.</p>
+                <p>We do not use automated diagnosis.</p>
+              </div>
+
+              <div className={styles.emergencyNotice}>
+                <span className={styles.warningIcon}>⚠️</span>
+                <div>
+                  <strong>This service is not for emergencies.</strong>
+                  <p>
+                    If you are in immediate danger or at risk of harming yourself
+                    or others, please call 999 or attend A&amp;E.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                className={styles.startButton}
+                onClick={() => {
+                  if (
+                    consentStatus?.has_consented &&
+                    !consentStatus?.needs_reconsent
+                  ) {
+                    setStep('background');
+                  } else {
+                    setStep('consent');
+                  }
+                }}
+              >
+                Start assessment
+              </button>
+            </div>
           </div>
-          <div
-            className={`${styles.progressStep} ${
-              step === 'questionnaire'
-                ? styles.active
-                : ['risk-warning', 'confirmation'].includes(step)
-                ? styles.completed
-                : ''
-            }`}
-          >
-            2. Questionnaire
+        )}
+
+        {/* Progress indicator (visible after landing) */}
+        {step !== 'landing' && step !== 'complete' && (
+          <div className={styles.progressContainer}>
+            <div className={styles.progressHeader}>
+              <span className={styles.stepIndicator}>
+                Step {getCurrentStepNumber()} of {progressSteps.length}
+              </span>
+              <span className={styles.stepLabel}>
+                — {STEP_LABELS[step]}
+              </span>
+            </div>
+            <div className={styles.progressBar}>
+              <div
+                className={styles.progressFill}
+                style={{
+                  width: `${(getCurrentStepNumber() / progressSteps.length) * 100}%`,
+                }}
+              />
+            </div>
+            <p className={styles.progressTooltip}>
+              Most people complete this in one sitting. Your progress is saved automatically.
+            </p>
           </div>
-          <div
-            className={`${styles.progressStep} ${
-              step === 'confirmation' ? styles.active : ''
-            }`}
-          >
-            3. Complete
-          </div>
-        </div>
+        )}
 
         {/* Step content */}
-        <div className={styles.content}>
+        <div className={step === 'landing' ? '' : styles.content}>
           {step === 'consent' && consentStatus && (
             <ConsentStep
               consentVersion={consentStatus.current_version}
@@ -311,18 +467,21 @@ export default function IntakePage() {
             />
           )}
 
-          {step === 'questionnaire' && questionnaire && (
+          {step === 'background' && questionnaire && (
             <>
               {draftSaveStatus && (
                 <div className={styles.draftStatus}>
-                  {draftSaveStatus === 'saving' && 'Saving draft...'}
-                  {draftSaveStatus === 'saved' && 'Draft saved'}
-                  {draftSaveStatus === 'error' && 'Failed to save draft'}
+                  {draftSaveStatus === 'saving' && 'Saving...'}
+                  {draftSaveStatus === 'saved' && '✓ Progress saved'}
+                  {draftSaveStatus === 'error' && 'Failed to save'}
                 </div>
               )}
 
               <QuestionnaireRenderer
-                schema={questionnaire.schema}
+                schema={{
+                  ...questionnaire.schema,
+                  fields: getFieldsForStep('background'),
+                }}
                 answers={answers}
                 onChange={setAnswers}
                 errors={errors}
@@ -331,15 +490,14 @@ export default function IntakePage() {
 
               <div className={styles.actions}>
                 <button
-                  className={styles.saveButton}
-                  onClick={saveDraft}
-                  disabled={submitting}
+                  className={styles.backButton}
+                  onClick={() => setStep('landing')}
                 >
-                  Save Draft
+                  Back
                 </button>
                 <button
                   className={styles.submitButton}
-                  onClick={handleQuestionnaireSubmit}
+                  onClick={handleNextStep}
                   disabled={submitting}
                 >
                   Continue
@@ -348,83 +506,122 @@ export default function IntakePage() {
             </>
           )}
 
-          {step === 'risk-warning' && (
-            <div className={styles.riskWarning}>
-              <EmergencyBanner />
+          {step === 'symptoms' && questionnaire && (
+            <>
+              {draftSaveStatus && (
+                <div className={styles.draftStatus}>
+                  {draftSaveStatus === 'saving' && 'Saving...'}
+                  {draftSaveStatus === 'saved' && '✓ Progress saved'}
+                  {draftSaveStatus === 'error' && 'Failed to save'}
+                </div>
+              )}
 
-              <h2>Important Safety Information</h2>
-              <p>
-                Based on your responses, we want to make sure you have access to
-                immediate support if needed.
-              </p>
-
-              <div className={styles.safetyInfo}>
-                <h3>If you are in immediate danger:</h3>
-                <ul>
-                  <li>
-                    <strong>Call 999</strong> for emergency services
-                  </li>
-                  <li>
-                    Go to your <strong>nearest A&E department</strong>
-                  </li>
-                </ul>
-
-                <h3>For non-emergency mental health support:</h3>
-                <ul>
-                  <li>
-                    <strong>Samaritans:</strong> 116 123 (free, 24/7)
-                  </li>
-                  <li>
-                    <strong>Crisis Text Line:</strong> Text &quot;SHOUT&quot; to
-                    85258
-                  </li>
-                  <li>
-                    <strong>NHS 111:</strong> Option 2 for mental health crisis
-                  </li>
-                </ul>
-              </div>
-
-              <p className={styles.confirmText}>
-                Please confirm you have read this information before continuing.
-              </p>
+              <QuestionnaireRenderer
+                schema={{
+                  ...questionnaire.schema,
+                  fields: getFieldsForStep('symptoms'),
+                }}
+                answers={answers}
+                onChange={setAnswers}
+                errors={errors}
+                disabled={submitting}
+              />
 
               <div className={styles.actions}>
                 <button
                   className={styles.backButton}
-                  onClick={() => setStep('questionnaire')}
+                  onClick={handlePreviousStep}
                 >
-                  Go Back
+                  Back
                 </button>
                 <button
                   className={styles.submitButton}
-                  onClick={() => setStep('confirmation')}
+                  onClick={handleNextStep}
+                  disabled={submitting}
                 >
-                  I Understand - Continue
+                  Continue
                 </button>
               </div>
-            </div>
+            </>
           )}
 
-          {step === 'confirmation' && (
-            <div className={styles.confirmation}>
-              <h2>Review Your Submission</h2>
-              <p>
-                Please review your responses before submitting. Once submitted,
-                a member of our clinical team will review your information.
+          {step === 'safety' && questionnaire && (
+            <>
+              {draftSaveStatus && (
+                <div className={styles.draftStatus}>
+                  {draftSaveStatus === 'saving' && 'Saving...'}
+                  {draftSaveStatus === 'saved' && '✓ Progress saved'}
+                  {draftSaveStatus === 'error' && 'Failed to save'}
+                </div>
+              )}
+
+              {/* Safety section framing - critical for reducing drop-off */}
+              <div className={styles.safetyFraming}>
+                <h2 className={styles.safetyFramingHeader}>Your safety matters</h2>
+                <p className={styles.safetyFramingText}>
+                  The next questions ask about safety and risk. We ask everyone
+                  these questions — answering honestly helps us make sure you
+                  receive the right level of support.
+                </p>
+                <div className={styles.microReassurance}>
+                  Your answers do not automatically mean emergency action. They
+                  help us plan care safely.
+                </div>
+              </div>
+
+              {/* Inline reassurance for SI questions */}
+              <div className={styles.siReassurance}>
+                Many people experience thoughts like these during periods of
+                distress. Sharing this information helps us respond appropriately
+                and safely.
+              </div>
+
+              <QuestionnaireRenderer
+                schema={{
+                  ...questionnaire.schema,
+                  fields: getFieldsForStep('safety'),
+                }}
+                answers={answers}
+                onChange={setAnswers}
+                errors={errors}
+                disabled={submitting}
+              />
+
+              <div className={styles.actions}>
+                <button
+                  className={styles.backButton}
+                  onClick={handlePreviousStep}
+                >
+                  Back
+                </button>
+                <button
+                  className={styles.submitButton}
+                  onClick={handleNextStep}
+                  disabled={submitting}
+                >
+                  Continue
+                </button>
+              </div>
+            </>
+          )}
+
+          {step === 'review' && (
+            <div className={styles.review}>
+              <h2>Review your information</h2>
+              <p className={styles.reviewIntro}>
+                Please review your responses before submitting. You can go back
+                to any section to make changes.
               </p>
 
-              <div className={styles.summaryNote}>
-                <strong>What happens next:</strong>
-                <ol>
-                  <li>Your responses will be reviewed by our clinical team</li>
-                  <li>
-                    You will receive a triage tier assignment (usually within 24
-                    hours)
-                  </li>
-                  <li>
-                    We will contact you with next steps based on your tier
-                  </li>
-                </ol>
+              <div className={styles.reviewSummary}>
+                <p>
+                  <strong>Sections completed:</strong> Background, Current
+                  symptoms, Safety
+                </p>
+                <p>
+                  <strong>Total questions answered:</strong>{' '}
+                  {Object.keys(answers).length}
+                </p>
               </div>
 
               <EmergencyBanner />
@@ -432,18 +629,62 @@ export default function IntakePage() {
               <div className={styles.actions}>
                 <button
                   className={styles.backButton}
-                  onClick={() => setStep('questionnaire')}
+                  onClick={handlePreviousStep}
                 >
-                  Go Back & Edit
+                  Go back & edit
                 </button>
                 <button
                   className={styles.submitButton}
                   onClick={handleFinalSubmit}
                   disabled={submitting}
                 >
-                  {submitting ? 'Submitting...' : 'Submit Questionnaire'}
+                  {submitting ? 'Submitting...' : 'Submit assessment'}
                 </button>
               </div>
+            </div>
+          )}
+
+          {step === 'complete' && (
+            <div className={styles.complete}>
+              <div className={styles.completeIcon}>✓</div>
+              <h1 className={styles.completeHeader}>
+                Thank you — your information has been received
+              </h1>
+              <p className={styles.completePrimary}>
+                A clinician will review your responses to determine the most
+                appropriate next step in your care.
+              </p>
+
+              <div className={styles.whatHappensNext}>
+                <h2>What happens next:</h2>
+                <ul>
+                  <li>We review your assessment carefully</li>
+                  <li>We match you to the most suitable professional</li>
+                  <li>
+                    You&apos;ll be able to book an appointment or we&apos;ll contact you
+                    if a review is needed
+                  </li>
+                </ul>
+              </div>
+
+              <div className={styles.timeExpectation}>
+                <strong>Most patients hear from us within 1–2 working days.</strong>
+              </div>
+
+              <div className={styles.safetyReminder}>
+                <span className={styles.warningIcon}>⚠️</span>
+                <p>
+                  If things worsen while you&apos;re waiting and you feel unsafe,
+                  please contact 999 or attend A&amp;E.
+                </p>
+              </div>
+
+              <button
+                className={styles.dashboardButton}
+                onClick={() => router.push('/dashboard')}
+              >
+                Go to your dashboard
+              </button>
             </div>
           )}
         </div>

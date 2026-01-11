@@ -18,6 +18,180 @@
   margin: 0 auto;
 }
 
+/* ========================================
+   LANDING PAGE
+   ======================================== */
+
+.landing {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.landingContent {
+  background: white;
+  border-radius: 16px;
+  padding: 3rem 2.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  max-width: 600px;
+}
+
+.landingHeader {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a365d;
+  line-height: 1.3;
+  margin-bottom: 1rem;
+}
+
+.landingSubheader {
+  font-size: 1.1rem;
+  color: #4a5568;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.timeIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ebf8ff;
+  color: #2b6cb0;
+  padding: 0.75rem 1.25rem;
+  border-radius: 24px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+}
+
+.timeIcon {
+  font-size: 1.1rem;
+}
+
+.reassuranceBox {
+  background: #f0fff4;
+  border: 1px solid #9ae6b4;
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.reassuranceBox p {
+  color: #276749;
+  font-size: 0.95rem;
+  margin: 0.25rem 0;
+  line-height: 1.5;
+}
+
+.emergencyNotice {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: #fff5f5;
+  border: 1px solid #feb2b2;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.warningIcon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.emergencyNotice strong {
+  color: #c53030;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.emergencyNotice p {
+  color: #742a2a;
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.startButton {
+  width: 100%;
+  padding: 1rem 2rem;
+  background: #3182ce;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.startButton:hover {
+  background: #2c5282;
+}
+
+.startButton:active {
+  transform: scale(0.98);
+}
+
+/* ========================================
+   PROGRESS INDICATOR
+   ======================================== */
+
+.progressContainer {
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.progressHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.stepIndicator {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2b6cb0;
+}
+
+.stepLabel {
+  font-size: 0.95rem;
+  color: #4a5568;
+}
+
+.progressBar {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #3182ce, #63b3ed);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progressTooltip {
+  font-size: 0.85rem;
+  color: #718096;
+  margin-top: 0.75rem;
+  margin-bottom: 0;
+}
+
+/* ========================================
+   OLD PROGRESS (keeping for compatibility)
+   ======================================== */
+
 .progress {
   display: flex;
   justify-content: space-between;
@@ -46,6 +220,10 @@
   color: #48bb78;
 }
 
+/* ========================================
+   CONTENT AREA
+   ======================================== */
+
 .content {
   background: white;
   border-radius: 12px;
@@ -62,6 +240,61 @@
   margin-bottom: 1rem;
   text-align: center;
 }
+
+/* ========================================
+   SAFETY SECTION FRAMING
+   ======================================== */
+
+.safetyFraming {
+  background: linear-gradient(135deg, #ebf8ff 0%, #e6fffa 100%);
+  border: 1px solid #90cdf4;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.safetyFramingHeader {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2c5282;
+  margin: 0 0 0.75rem 0;
+}
+
+.safetyFramingText {
+  font-size: 1rem;
+  color: #2d3748;
+  line-height: 1.6;
+  margin: 0 0 1rem 0;
+}
+
+.microReassurance {
+  background: white;
+  border-radius: 8px;
+  padding: 0.875rem 1rem;
+  font-size: 0.9rem;
+  color: #4a5568;
+  border-left: 3px solid #48bb78;
+}
+
+/* ========================================
+   SI REASSURANCE
+   ======================================== */
+
+.siReassurance {
+  background: #faf5ff;
+  border: 1px solid #d6bcfa;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  color: #553c9a;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+/* ========================================
+   ACTIONS
+   ======================================== */
 
 .actions {
   display: flex;
@@ -129,7 +362,43 @@
   border-color: #a0aec0;
 }
 
-/* Risk Warning Step */
+/* ========================================
+   REVIEW STEP
+   ======================================== */
+
+.review h2 {
+  font-size: 1.5rem;
+  color: #1a365d;
+  margin-bottom: 0.75rem;
+}
+
+.reviewIntro {
+  color: #4a5568;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.reviewSummary {
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.reviewSummary p {
+  margin: 0.5rem 0;
+  color: #4a5568;
+}
+
+.reviewSummary strong {
+  color: #2d3748;
+}
+
+/* ========================================
+   RISK WARNING STEP (legacy)
+   ======================================== */
+
 .riskWarning {
   text-align: left;
 }
@@ -181,7 +450,10 @@
   margin-bottom: 1rem;
 }
 
-/* Confirmation Step */
+/* ========================================
+   CONFIRMATION STEP (legacy)
+   ======================================== */
+
 .confirmation h2 {
   color: #1a365d;
   font-size: 1.5rem;
@@ -219,13 +491,145 @@
   line-height: 1.5;
 }
 
+/* ========================================
+   COMPLETE PAGE
+   ======================================== */
+
+.complete {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.completeIcon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #48bb78, #38a169);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  font-size: 2.5rem;
+  color: white;
+}
+
+.completeHeader {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a365d;
+  line-height: 1.3;
+  margin-bottom: 1rem;
+}
+
+.completePrimary {
+  font-size: 1.05rem;
+  color: #4a5568;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.whatHappensNext {
+  background: #ebf8ff;
+  border: 1px solid #90cdf4;
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.whatHappensNext h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2b6cb0;
+  margin: 0 0 1rem 0;
+}
+
+.whatHappensNext ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #2c5282;
+}
+
+.whatHappensNext li {
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.timeExpectation {
+  background: #f0fff4;
+  border: 1px solid #9ae6b4;
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  color: #276749;
+}
+
+.safetyReminder {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: #fffaf0;
+  border: 1px solid #fbd38d;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.safetyReminder p {
+  margin: 0;
+  color: #744210;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.dashboardButton {
+  padding: 0.875rem 2rem;
+  background: #3182ce;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dashboardButton:hover {
+  background: #2c5282;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
 @media (max-width: 600px) {
   .main {
     padding: 0.5rem;
   }
 
+  .landingContent {
+    padding: 2rem 1.5rem;
+  }
+
+  .landingHeader {
+    font-size: 1.5rem;
+  }
+
   .content {
     padding: 1.5rem 1rem;
+  }
+
+  .progressContainer {
+    padding: 1rem;
+  }
+
+  .progressHeader {
+    flex-direction: column;
+    gap: 0.25rem;
   }
 
   .progress {
@@ -245,5 +649,22 @@
   .submitButton,
   .backButton {
     flex: none;
+  }
+
+  .safetyFraming {
+    padding: 1.25rem;
+  }
+
+  .emergencyNotice {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .complete {
+    padding: 1rem 0.5rem;
+  }
+
+  .whatHappensNext {
+    padding: 1.25rem 1.5rem;
   }
 }

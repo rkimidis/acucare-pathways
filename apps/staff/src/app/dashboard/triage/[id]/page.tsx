@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import styles from './case-detail.module.css';
@@ -70,6 +70,7 @@ interface CaseSummary {
     first_name: string | null;
     last_name: string | null;
     date_of_birth: string | null;
+    phone?: string | null;
   } | null;
   scores: Score[];
   risk_flags: RiskFlag[];
@@ -78,7 +79,12 @@ interface CaseSummary {
   questionnaire_responses: QuestionnaireResponse[];
 }
 
-type TabType = 'overview' | 'scores' | 'rules' | 'answers' | 'disposition';
+interface QueueItem {
+  id: string;
+  tier: string | null;
+}
+
+type TabType = 'overview' | 'scores' | 'answers' | 'disposition';
 
 export default function CaseDetailPage() {
   const router = useRouter();
@@ -98,6 +104,22 @@ export default function CaseDetailPage() {
     clinical_notes: '',
   });
   const [dispositionError, setDispositionError] = useState('');
+  const [showWhyPathway, setShowWhyPathway] = useState(false);
+  const [queueCases, setQueueCases] = useState<QueueItem[]>([]);
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+
+  // Load queue for navigation
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    fetch('/api/v1/dashboard/queue', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => setQueueCases(data.items || []))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
@@ -108,6 +130,80 @@ export default function CaseDetailPage() {
 
     fetchCaseSummary(token);
   }, [caseId, router]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in an input
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement
+      ) {
+        return;
+      }
+
+      const currentIndex = queueCases.findIndex((c) => c.id === caseId);
+
+      switch (e.key.toLowerCase()) {
+        case 'j':
+        case 'arrowdown':
+          // Next case
+          if (currentIndex < queueCases.length - 1) {
+            e.preventDefault();
+            router.push(`/dashboard/triage/${queueCases[currentIndex + 1].id}`);
+          }
+          break;
+        case 'k':
+        case 'arrowup':
+          // Previous case
+          if (currentIndex > 0) {
+            e.preventDefault();
+            router.push(`/dashboard/triage/${queueCases[currentIndex - 1].id}`);
+          }
+          break;
+        case 'b':
+          // Book (for GREEN/BLUE)
+          if (
+            summary &&
+            (summary.case.tier?.toLowerCase() === 'green' ||
+              summary.case.tier?.toLowerCase() === 'blue') &&
+            !summary.final_disposition
+          ) {
+            e.preventDefault();
+            handleBookAppointment();
+          }
+          break;
+        case 'c':
+          // Call patient
+          if (summary?.patient?.phone) {
+            e.preventDefault();
+            window.open(`tel:${summary.patient.phone}`);
+          }
+          break;
+        case 'enter':
+          // Confirm disposition
+          if (summary?.draft_disposition && !summary.final_disposition && !isDisposing) {
+            e.preventDefault();
+            handleConfirmDisposition();
+          }
+          break;
+        case 'escape':
+          // Go back to queue
+          e.preventDefault();
+          router.push('/dashboard/triage');
+          break;
+        case '?':
+          // Show keyboard help
+          e.preventDefault();
+          setShowKeyboardHelp((prev) => !prev);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [caseId, queueCases, router, summary, isDisposing]);
 
   const fetchCaseSummary = async (token: string) => {
     try {
@@ -217,6 +313,10 @@ export default function CaseDetailPage() {
     }
   };
 
+  const handleBookAppointment = () => {
+    router.push(`/dashboard/scheduling?case_id=${caseId}`);
+  };
+
   const handleDownloadPdf = async () => {
     const token = localStorage.getItem('access_token');
     if (!token) return;
@@ -268,6 +368,71 @@ export default function CaseDetailPage() {
     }
   };
 
+  const formatSlaTime = (minutes: number | null): string => {
+    if (minutes === null) return '--';
+    if (minutes < 0) return 'OVERDUE';
+
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+
+    if (hours > 24) {
+      const days = Math.floor(hours / 24);
+      return `${days}d ${hours % 24}h`;
+    }
+    if (hours > 0) {
+      return `${hours}h ${mins}m`;
+    }
+    return `${mins}m`;
+  };
+
+  const getSlaClass = (status: string): string => {
+    switch (status) {
+      case 'breached':
+        return styles.slaBreach;
+      case 'critical':
+        return styles.slaCritical;
+      case 'warning':
+        return styles.slaWarning;
+      default:
+        return styles.slaNormal;
+    }
+  };
+
+  // Determine primary action based on tier
+  const getPrimaryAction = () => {
+    if (!summary || summary.final_disposition) return null;
+
+    const tier = summary.case.tier?.toLowerCase();
+
+    if (tier === 'green' || tier === 'blue') {
+      return {
+        label: 'Book Appointment',
+        shortcut: 'B',
+        action: handleBookAppointment,
+        className: styles.primaryActionBook,
+      };
+    } else if (tier === 'amber') {
+      return {
+        label: 'Call Patient',
+        shortcut: 'C',
+        action: () => window.open(`tel:${summary.patient?.phone || ''}`),
+        className: styles.primaryActionCall,
+      };
+    } else if (tier === 'red') {
+      return {
+        label: 'Escalate to Crisis',
+        shortcut: 'E',
+        action: () => router.push(`/dashboard/incidents/new?case_id=${caseId}&type=crisis`),
+        className: styles.primaryActionEscalate,
+      };
+    }
+    return null;
+  };
+
+  const currentIndex = queueCases.findIndex((c) => c.id === caseId);
+  const hasPrevious = currentIndex > 0;
+  const hasNext = currentIndex < queueCases.length - 1;
+
   if (loading) {
     return (
       <div className={styles.layout}>
@@ -290,6 +455,7 @@ export default function CaseDetailPage() {
   }
 
   const isFinalized = !!summary.final_disposition;
+  const primaryAction = getPrimaryAction();
 
   return (
     <div className={styles.layout}>
@@ -308,49 +474,158 @@ export default function CaseDetailPage() {
       </aside>
 
       <main className={styles.main}>
-        <header className={styles.header}>
-          <div>
-            <Link href="/dashboard/triage" className={styles.backLink}>
-              ← Back to Queue
-            </Link>
-            <h1>Case Review: {caseId.substring(0, 8)}...</h1>
-          </div>
-          <div className={styles.headerActions}>
-            <button onClick={handleDownloadPdf} className={styles.downloadButton}>
-              Download PDF
+        {/* Navigation Bar */}
+        <div className={styles.navBar}>
+          <Link href="/dashboard/triage" className={styles.backLink}>
+            ← Back to Queue
+          </Link>
+          <div className={styles.caseNavigation}>
+            <button
+              className={styles.navButton}
+              disabled={!hasPrevious}
+              onClick={() =>
+                hasPrevious && router.push(`/dashboard/triage/${queueCases[currentIndex - 1].id}`)
+              }
+              title="Previous case (K or ↑)"
+            >
+              ← Prev
+            </button>
+            <span className={styles.casePosition}>
+              {currentIndex + 1} / {queueCases.length}
+            </span>
+            <button
+              className={styles.navButton}
+              disabled={!hasNext}
+              onClick={() =>
+                hasNext && router.push(`/dashboard/triage/${queueCases[currentIndex + 1].id}`)
+              }
+              title="Next case (J or ↓)"
+            >
+              Next →
             </button>
           </div>
-        </header>
+          <button
+            className={styles.keyboardHelpButton}
+            onClick={() => setShowKeyboardHelp((prev) => !prev)}
+            title="Keyboard shortcuts (?)"
+          >
+            ⌨️ ?
+          </button>
+        </div>
+
+        {/* Keyboard Help Modal */}
+        {showKeyboardHelp && (
+          <div className={styles.keyboardHelp}>
+            <h4>Keyboard Shortcuts</h4>
+            <div className={styles.shortcutGrid}>
+              <kbd>J</kbd> <span>Next case</span>
+              <kbd>K</kbd> <span>Previous case</span>
+              <kbd>B</kbd> <span>Book appointment (GREEN/BLUE)</span>
+              <kbd>C</kbd> <span>Call patient</span>
+              <kbd>Enter</kbd> <span>Confirm disposition</span>
+              <kbd>Esc</kbd> <span>Back to queue</span>
+              <kbd>?</kbd> <span>Toggle this help</span>
+            </div>
+            <button onClick={() => setShowKeyboardHelp(false)}>Close</button>
+          </div>
+        )}
 
         {error && <div className={styles.error}>{error}</div>}
 
-        {/* Status Banner */}
-        <div className={styles.statusBanner}>
-          <div className={styles.statusItem}>
-            <span className={styles.statusLabel}>Tier</span>
-            <span className={getTierBadgeClass(summary.case.tier)}>
-              {summary.case.tier?.toUpperCase() || 'Pending'}
-            </span>
+        {/* ONE-GLANCE CASE HEADER */}
+        <div className={styles.caseHeader}>
+          <div className={styles.caseHeaderMain}>
+            {/* Large Tier Badge */}
+            <div className={`${styles.tierBadgeLarge} ${getTierBadgeClass(summary.case.tier)}`}>
+              {summary.case.tier?.toUpperCase() || 'PENDING'}
+            </div>
+
+            {/* Patient & Case Info */}
+            <div className={styles.caseInfo}>
+              <h1 className={styles.patientName}>
+                {summary.patient
+                  ? `${summary.patient.first_name} ${summary.patient.last_name}`
+                  : 'Unknown Patient'}
+              </h1>
+              <div className={styles.caseMetaRow}>
+                <span className={styles.caseId}>Case {caseId.substring(0, 8)}</span>
+                <span className={styles.pathwayBadge}>{summary.case.pathway || 'No pathway'}</span>
+                {isFinalized && <span className={styles.finalizedBadge}>✓ Finalized</span>}
+              </div>
+            </div>
+
+            {/* SLA Countdown */}
+            <div className={`${styles.slaBox} ${getSlaClass(summary.case.sla_status)}`}>
+              <span className={styles.slaLabel}>SLA</span>
+              <span className={styles.slaValue}>
+                {formatSlaTime(summary.case.sla_remaining_minutes)}
+              </span>
+            </div>
           </div>
-          <div className={styles.statusItem}>
-            <span className={styles.statusLabel}>Pathway</span>
-            <span>{summary.case.pathway || '--'}</span>
-          </div>
-          <div className={styles.statusItem}>
-            <span className={styles.statusLabel}>Status</span>
-            <span className={isFinalized ? styles.statusFinalized : styles.statusPending}>
-              {isFinalized ? 'Finalized' : 'Awaiting Review'}
-            </span>
-          </div>
-          <div className={styles.statusItem}>
-            <span className={styles.statusLabel}>Clinician Review</span>
-            <span>{summary.case.clinician_review_required ? 'Required' : 'Optional'}</span>
-          </div>
+
+          {/* Why This Pathway? */}
+          {summary.draft_disposition && summary.draft_disposition.rules_fired.length > 0 && (
+            <div className={styles.whyPathway}>
+              <button
+                className={styles.whyPathwayToggle}
+                onClick={() => setShowWhyPathway(!showWhyPathway)}
+              >
+                {showWhyPathway ? '▼' : '▶'} Why this pathway?
+              </button>
+              {showWhyPathway && (
+                <div className={styles.rulesSummary}>
+                  {summary.draft_disposition.rules_fired.map((rule, idx) => (
+                    <div key={rule} className={styles.ruleSummaryItem}>
+                      <code>{rule}</code>
+                      {summary.draft_disposition!.explanations[idx] && (
+                        <span>{summary.draft_disposition!.explanations[idx]}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Risk Flags Banner */}
+          {summary.risk_flags.length > 0 && (
+            <div className={styles.riskFlagsBanner}>
+              {summary.risk_flags.map((flag) => (
+                <span key={flag.id} className={`${styles.riskFlag} ${getSeverityClass(flag.severity)}`}>
+                  {flag.flag_type}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
+
+        {/* PRIMARY ACTION BAR */}
+        {!isFinalized && (
+          <div className={styles.actionBar}>
+            {primaryAction && (
+              <button className={primaryAction.className} onClick={primaryAction.action}>
+                {primaryAction.label}
+                <kbd>{primaryAction.shortcut}</kbd>
+              </button>
+            )}
+            <button
+              className={styles.confirmButton}
+              onClick={handleConfirmDisposition}
+              disabled={isDisposing || !summary.draft_disposition}
+              title="Confirm disposition (Enter)"
+            >
+              {isDisposing ? 'Confirming...' : '✓ Confirm Disposition'}
+              <kbd>Enter</kbd>
+            </button>
+            <button onClick={handleDownloadPdf} className={styles.downloadButton}>
+              PDF
+            </button>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className={styles.tabs}>
-          {(['overview', 'scores', 'rules', 'answers', 'disposition'] as TabType[]).map((tab) => (
+          {(['overview', 'scores', 'answers', 'disposition'] as TabType[]).map((tab) => (
             <button
               key={tab}
               className={activeTab === tab ? styles.tabActive : styles.tab}
@@ -371,34 +646,42 @@ export default function CaseDetailPage() {
                 {summary.patient ? (
                   <dl className={styles.dl}>
                     <dt>Name</dt>
-                    <dd>{summary.patient.first_name} {summary.patient.last_name}</dd>
+                    <dd>
+                      {summary.patient.first_name} {summary.patient.last_name}
+                    </dd>
                     <dt>Date of Birth</dt>
                     <dd>{summary.patient.date_of_birth || 'Not recorded'}</dd>
+                    {summary.patient.phone && (
+                      <>
+                        <dt>Phone</dt>
+                        <dd>
+                          <a href={`tel:${summary.patient.phone}`}>{summary.patient.phone}</a>
+                        </dd>
+                      </>
+                    )}
                   </dl>
                 ) : (
                   <p className={styles.muted}>Patient data unavailable</p>
                 )}
               </section>
 
-              {/* Risk Flags */}
+              {/* Clinical Scores Summary */}
               <section className={styles.section}>
-                <h3>Risk Flags</h3>
-                {summary.risk_flags.length === 0 ? (
-                  <p className={styles.muted}>No risk flags</p>
+                <h3>Clinical Scores</h3>
+                {summary.scores.length === 0 ? (
+                  <p className={styles.muted}>No scores calculated</p>
                 ) : (
-                  <ul className={styles.flagList}>
-                    {summary.risk_flags.map((flag) => (
-                      <li key={flag.id} className={styles.flagItem}>
-                        <span className={getSeverityClass(flag.severity)}>
-                          {flag.severity}
+                  <div className={styles.scoresGrid}>
+                    {summary.scores.map((score) => (
+                      <div key={score.id} className={styles.scoreCard}>
+                        <span className={styles.scoreType}>{score.score_type}</span>
+                        <span className={styles.scoreValue}>
+                          {score.total_score}/{score.max_score}
                         </span>
-                        <span className={styles.flagType}>{flag.flag_type}</span>
-                        {flag.explanation && (
-                          <span className={styles.flagExplanation}>{flag.explanation}</span>
-                        )}
-                      </li>
+                        <span className={styles.scoreBand}>{score.severity_band}</span>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 )}
               </section>
 
@@ -415,7 +698,8 @@ export default function CaseDetailPage() {
                       <>
                         <dt>Override</dt>
                         <dd className={styles.override}>
-                          Changed from {summary.final_disposition.original_tier} → {summary.final_disposition.tier}
+                          Changed from {summary.final_disposition.original_tier} →{' '}
+                          {summary.final_disposition.tier}
                         </dd>
                         <dt>Rationale</dt>
                         <dd>{summary.final_disposition.rationale}</dd>
@@ -447,43 +731,14 @@ export default function CaseDetailPage() {
                     {summary.scores.map((score) => (
                       <tr key={score.id}>
                         <td>{score.score_type}</td>
-                        <td>{score.total_score} / {score.max_score}</td>
+                        <td>
+                          {score.total_score} / {score.max_score}
+                        </td>
                         <td>{score.severity_band}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              )}
-            </section>
-          )}
-
-          {activeTab === 'rules' && (
-            <section className={styles.section}>
-              <h3>Rules Fired</h3>
-              {summary.draft_disposition ? (
-                <>
-                  <p className={styles.rulesetInfo}>
-                    Ruleset Version: {summary.draft_disposition.ruleset_version}
-                  </p>
-                  {summary.draft_disposition.rules_fired.length === 0 ? (
-                    <p className={styles.muted}>No rules matched (default tier applied)</p>
-                  ) : (
-                    <ul className={styles.ruleList}>
-                      {summary.draft_disposition.rules_fired.map((rule, idx) => (
-                        <li key={rule} className={styles.ruleItem}>
-                          <code>{rule}</code>
-                          {summary.draft_disposition!.explanations[idx] && (
-                            <span className={styles.ruleExplanation}>
-                              {summary.draft_disposition!.explanations[idx]}
-                            </span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </>
-              ) : (
-                <p className={styles.muted}>No disposition draft available</p>
               )}
             </section>
           )}
@@ -499,9 +754,7 @@ export default function CaseDetailPage() {
                     <p className={styles.responseTime}>
                       Submitted: {resp.submitted_at ? new Date(resp.submitted_at).toLocaleString() : 'Draft'}
                     </p>
-                    <pre className={styles.answersJson}>
-                      {JSON.stringify(resp.answers, null, 2)}
-                    </pre>
+                    <pre className={styles.answersJson}>{JSON.stringify(resp.answers, null, 2)}</pre>
                   </div>
                 ))
               )}
@@ -539,9 +792,7 @@ export default function CaseDetailPage() {
                         </button>
                       </div>
 
-                      {dispositionError && (
-                        <div className={styles.dispositionError}>{dispositionError}</div>
-                      )}
+                      {dispositionError && <div className={styles.dispositionError}>{dispositionError}</div>}
 
                       {dispositionMode === 'confirm' ? (
                         <div className={styles.confirmSection}>
@@ -554,7 +805,9 @@ export default function CaseDetailPage() {
                             <label>Clinical Notes (optional)</label>
                             <textarea
                               value={overrideForm.clinical_notes}
-                              onChange={(e) => setOverrideForm((prev) => ({ ...prev, clinical_notes: e.target.value }))}
+                              onChange={(e) =>
+                                setOverrideForm((prev) => ({ ...prev, clinical_notes: e.target.value }))
+                              }
                               rows={3}
                               placeholder="Add any additional notes..."
                             />
@@ -562,7 +815,7 @@ export default function CaseDetailPage() {
                           <button
                             onClick={handleConfirmDisposition}
                             disabled={isDisposing}
-                            className={styles.confirmButton}
+                            className={styles.confirmButtonLarge}
                           >
                             {isDisposing ? 'Confirming...' : 'Confirm Disposition'}
                           </button>
@@ -577,7 +830,9 @@ export default function CaseDetailPage() {
                             <label>New Tier *</label>
                             <select
                               value={overrideForm.tier}
-                              onChange={(e) => setOverrideForm((prev) => ({ ...prev, tier: e.target.value }))}
+                              onChange={(e) =>
+                                setOverrideForm((prev) => ({ ...prev, tier: e.target.value }))
+                              }
                             >
                               <option value="RED">RED - Crisis</option>
                               <option value="AMBER">AMBER - Elevated Risk</option>
@@ -590,7 +845,9 @@ export default function CaseDetailPage() {
                             <label>New Pathway *</label>
                             <select
                               value={overrideForm.pathway}
-                              onChange={(e) => setOverrideForm((prev) => ({ ...prev, pathway: e.target.value }))}
+                              onChange={(e) =>
+                                setOverrideForm((prev) => ({ ...prev, pathway: e.target.value }))
+                              }
                             >
                               <option value="CRISIS_ESCALATION">Crisis Escalation</option>
                               <option value="PSYCHIATRY_ASSESSMENT">Psychiatry Assessment</option>
@@ -606,7 +863,9 @@ export default function CaseDetailPage() {
                             <label>Rationale * (min 10 characters)</label>
                             <textarea
                               value={overrideForm.rationale}
-                              onChange={(e) => setOverrideForm((prev) => ({ ...prev, rationale: e.target.value }))}
+                              onChange={(e) =>
+                                setOverrideForm((prev) => ({ ...prev, rationale: e.target.value }))
+                              }
                               rows={4}
                               placeholder="Explain why you are overriding the rules engine decision..."
                               required
@@ -620,7 +879,9 @@ export default function CaseDetailPage() {
                             <label>Clinical Notes (optional)</label>
                             <textarea
                               value={overrideForm.clinical_notes}
-                              onChange={(e) => setOverrideForm((prev) => ({ ...prev, clinical_notes: e.target.value }))}
+                              onChange={(e) =>
+                                setOverrideForm((prev) => ({ ...prev, clinical_notes: e.target.value }))
+                              }
                               rows={3}
                               placeholder="Add any additional notes..."
                             />
@@ -629,7 +890,7 @@ export default function CaseDetailPage() {
                           <button
                             onClick={handleOverrideDisposition}
                             disabled={isDisposing || overrideForm.rationale.length < 10}
-                            className={styles.overrideButton}
+                            className={styles.overrideButtonLarge}
                           >
                             {isDisposing ? 'Overriding...' : 'Override Disposition'}
                           </button>

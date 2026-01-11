@@ -50,136 +50,459 @@
 .main {
   flex: 1;
   background: #f8fafc;
-  padding: 2rem;
+  padding: 1.5rem 2rem;
 }
 
-.header {
+/* ========================================
+   NAVIGATION BAR
+   ======================================== */
+
+.navBar {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .backLink {
   color: #64748b;
   text-decoration: none;
   font-size: 0.875rem;
-  display: block;
-  margin-bottom: 0.5rem;
 }
 
 .backLink:hover {
   color: #3b82f6;
 }
 
-.header h1 {
-  margin: 0;
+.caseNavigation {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.navButton {
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #475569;
+  transition: all 0.2s;
+}
+
+.navButton:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.navButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.casePosition {
+  font-size: 0.875rem;
+  color: #64748b;
+  min-width: 60px;
+  text-align: center;
+}
+
+.keyboardHelpButton {
+  padding: 0.5rem 0.75rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.keyboardHelpButton:hover {
+  background: #e2e8f0;
+}
+
+/* ========================================
+   KEYBOARD HELP MODAL
+   ======================================== */
+
+.keyboardHelp {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  z-index: 100;
+  min-width: 320px;
+}
+
+.keyboardHelp h4 {
+  margin: 0 0 1rem 0;
   color: #1e293b;
 }
 
-.headerActions {
+.shortcutGrid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.shortcutGrid kbd {
+  background: #f1f5f9;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-family: monospace;
+  font-size: 0.875rem;
+  border: 1px solid #e2e8f0;
+}
+
+.shortcutGrid span {
+  color: #475569;
+  font-size: 0.875rem;
+}
+
+.keyboardHelp button {
+  width: 100%;
+  padding: 0.5rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+/* ========================================
+   ONE-GLANCE CASE HEADER
+   ======================================== */
+
+.caseHeader {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+}
+
+.caseHeaderMain {
   display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.tierBadgeLarge {
+  font-size: 1.25rem;
+  font-weight: 700;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.5rem;
+  min-width: 100px;
+  text-align: center;
+}
+
+.caseInfo {
+  flex: 1;
+}
+
+.patientName {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.25rem;
+  color: #1e293b;
+}
+
+.caseMetaRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.caseId {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.pathwayBadge {
+  background: #e0e7ff;
+  color: #4338ca;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.finalizedBadge {
+  background: #dcfce7;
+  color: #16a34a;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* SLA Box */
+.slaBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.5rem;
+  min-width: 100px;
+}
+
+.slaLabel {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.slaValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.slaNormal {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.slaWarning {
+  background: #fef9c3;
+  color: #a16207;
+}
+
+.slaCritical {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.slaBreach {
+  background: #fef2f2;
+  color: #dc2626;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Why This Pathway */
+.whyPathway {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.whyPathwayToggle {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
+}
+
+.whyPathwayToggle:hover {
+  color: #2563eb;
+}
+
+.rulesSummary {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: 0.375rem;
+}
+
+.ruleSummaryItem {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.ruleSummaryItem:last-child {
+  border-bottom: none;
+}
+
+.ruleSummaryItem code {
+  background: #e0e7ff;
+  color: #4338ca;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.ruleSummaryItem span {
+  display: block;
+  margin-top: 0.25rem;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+/* Risk Flags Banner */
+.riskFlagsBanner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.riskFlag {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* ========================================
+   PRIMARY ACTION BAR
+   ======================================== */
+
+.actionBar {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.actionBar button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.actionBar kbd {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-family: monospace;
+}
+
+.primaryActionBook {
+  background: #16a34a;
+  color: white;
+}
+
+.primaryActionBook:hover {
+  background: #15803d;
+}
+
+.primaryActionCall {
+  background: #f59e0b;
+  color: white;
+}
+
+.primaryActionCall:hover {
+  background: #d97706;
+}
+
+.primaryActionEscalate {
+  background: #dc2626;
+  color: white;
+}
+
+.primaryActionEscalate:hover {
+  background: #b91c1c;
+}
+
+.confirmButton {
+  background: #3b82f6;
+  color: white;
+  flex: 1;
+}
+
+.confirmButton:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.confirmButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .downloadButton {
   background: #64748b;
   color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  cursor: pointer;
 }
 
 .downloadButton:hover {
   background: #475569;
 }
 
-.error {
-  background: #fef2f2;
-  border: 1px solid #dc2626;
-  color: #dc2626;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.statusBanner {
-  display: flex;
-  gap: 2rem;
-  background: white;
-  padding: 1rem 1.5rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1.5rem;
-}
-
-.statusItem {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.statusLabel {
-  font-size: 0.75rem;
-  color: #64748b;
-  text-transform: uppercase;
-}
-
-.statusFinalized {
-  color: #16a34a;
-  font-weight: 500;
-}
-
-.statusPending {
-  color: #f59e0b;
-  font-weight: 500;
-}
+/* ========================================
+   TIER BADGES
+   ======================================== */
 
 .tierRed {
   background: #dc2626;
   color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-weight: 500;
-  font-size: 0.875rem;
 }
 
 .tierAmber {
   background: #f59e0b;
   color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-weight: 500;
-  font-size: 0.875rem;
 }
 
 .tierGreen {
   background: #16a34a;
   color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-weight: 500;
-  font-size: 0.875rem;
 }
 
 .tierBlue {
   background: #3b82f6;
   color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-weight: 500;
-  font-size: 0.875rem;
 }
 
 .tierPending {
   background: #64748b;
   color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-weight: 500;
-  font-size: 0.875rem;
 }
+
+/* ========================================
+   SEVERITY BADGES
+   ======================================== */
+
+.severityCritical {
+  background: #dc2626;
+  color: white;
+}
+
+.severityHigh {
+  background: #f97316;
+  color: white;
+}
+
+.severityMedium {
+  background: #f59e0b;
+  color: white;
+}
+
+.severityLow {
+  background: #64748b;
+  color: white;
+}
+
+/* ========================================
+   TABS
+   ======================================== */
 
 .tabs {
   display: flex;
@@ -217,6 +540,10 @@
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
+
+/* ========================================
+   OVERVIEW GRID
+   ======================================== */
 
 .overviewGrid {
   display: grid;
@@ -257,71 +584,63 @@
   color: #1e293b;
 }
 
+.dl dd a {
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.dl dd a:hover {
+  text-decoration: underline;
+}
+
 .override {
   color: #f59e0b;
   font-weight: 500;
 }
 
-.flagList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+/* ========================================
+   SCORES GRID
+   ======================================== */
+
+.scoresGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
 }
 
-.flagItem {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #f1f5f9;
+.scoreCard {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  text-align: center;
 }
 
-.severityCritical {
-  background: #dc2626;
-  color: white;
-  padding: 0.125rem 0.5rem;
-  border-radius: 0.25rem;
+.scoreType {
+  display: block;
   font-size: 0.75rem;
-  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
 }
 
-.severityHigh {
-  background: #f97316;
-  color: white;
-  padding: 0.125rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.severityMedium {
-  background: #f59e0b;
-  color: white;
-  padding: 0.125rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.severityLow {
-  background: #64748b;
-  color: white;
-  padding: 0.125rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.flagType {
-  font-weight: 500;
+.scoreValue {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
   color: #1e293b;
 }
 
-.flagExplanation {
-  flex-basis: 100%;
-  color: #64748b;
-  font-size: 0.875rem;
+.scoreBand {
+  display: block;
+  font-size: 0.75rem;
+  color: #475569;
+  margin-top: 0.25rem;
 }
+
+/* ========================================
+   TABLE
+   ======================================== */
 
 .table {
   width: 100%;
@@ -341,37 +660,9 @@
   background: #f8fafc;
 }
 
-.rulesetInfo {
-  color: #64748b;
-  font-size: 0.875rem;
-  margin-bottom: 1rem;
-}
-
-.ruleList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.ruleItem {
-  padding: 0.75rem;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.ruleItem code {
-  background: #f1f5f9;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
-  color: #1e293b;
-}
-
-.ruleExplanation {
-  display: block;
-  margin-top: 0.5rem;
-  color: #64748b;
-  font-size: 0.875rem;
-}
+/* ========================================
+   RESPONSES
+   ======================================== */
 
 .responseBlock {
   margin-bottom: 1.5rem;
@@ -392,6 +683,10 @@
   max-height: 400px;
   overflow-y: auto;
 }
+
+/* ========================================
+   DISPOSITION
+   ======================================== */
 
 .finalizedMessage {
   background: #f0fdf4;
@@ -495,7 +790,7 @@
   color: #64748b;
 }
 
-.confirmButton {
+.confirmButtonLarge {
   background: #16a34a;
   color: white;
   border: none;
@@ -506,16 +801,16 @@
   cursor: pointer;
 }
 
-.confirmButton:hover:not(:disabled) {
+.confirmButtonLarge:hover:not(:disabled) {
   background: #15803d;
 }
 
-.confirmButton:disabled {
+.confirmButtonLarge:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.overrideButton {
+.overrideButtonLarge {
   background: #f59e0b;
   color: white;
   border: none;
@@ -526,11 +821,70 @@
   cursor: pointer;
 }
 
-.overrideButton:hover:not(:disabled) {
+.overrideButtonLarge:hover:not(:disabled) {
   background: #d97706;
 }
 
-.overrideButton:disabled {
+.overrideButtonLarge:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.error {
+  background: #fef2f2;
+  border: 1px solid #dc2626;
+  color: #dc2626;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+
+  .main {
+    padding: 1rem;
+  }
+
+  .caseHeaderMain {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .slaBox {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .actionBar {
+    flex-wrap: wrap;
+  }
+
+  .actionBar button {
+    flex: 1 1 auto;
+    min-width: 120px;
+  }
+
+  .overviewGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .navBar {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .caseNavigation {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
 }

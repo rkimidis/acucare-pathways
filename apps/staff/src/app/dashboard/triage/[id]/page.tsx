@@ -107,6 +107,8 @@ export default function CaseDetailPage() {
   const [showWhyPathway, setShowWhyPathway] = useState(false);
   const [queueCases, setQueueCases] = useState<QueueItem[]>([]);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [showOverrideConfirm, setShowOverrideConfirm] = useState(false);
+  const [showIncidentPrompt, setShowIncidentPrompt] = useState(false);
 
   // Load queue for navigation
   useEffect(() => {
@@ -530,6 +532,23 @@ export default function CaseDetailPage() {
           </div>
         )}
 
+        {/* Clinical Review Banner - RED/AMBER cases */}
+        {summary && !isFinalized && (summary.case.tier?.toLowerCase() === 'red' || summary.case.tier?.toLowerCase() === 'amber') && (
+          <div className={`${styles.clinicalReviewBanner} ${summary.case.tier?.toLowerCase() === 'red' ? styles.bannerRed : styles.bannerAmber}`}>
+            <div className={styles.bannerIcon}>
+              {summary.case.tier?.toLowerCase() === 'red' ? '⚠️' : '🔒'}
+            </div>
+            <div className={styles.bannerContent}>
+              <strong>Clinical review required — booking restricted</strong>
+              <p>
+                {summary.case.tier?.toLowerCase() === 'red'
+                  ? 'This patient may be at immediate risk. Review the assessment and take appropriate action before proceeding.'
+                  : 'A clinician must review this assessment before the patient can book an appointment.'}
+              </p>
+            </div>
+          </div>
+        )}
+
         {error && <div className={styles.error}>{error}</div>}
 
         {/* ONE-GLANCE CASE HEADER */}
@@ -617,6 +636,15 @@ export default function CaseDetailPage() {
               {isDisposing ? 'Confirming...' : '✓ Confirm Disposition'}
               <kbd>Enter</kbd>
             </button>
+            {(summary.case.tier?.toLowerCase() === 'red' || summary.case.tier?.toLowerCase() === 'amber') && (
+              <button
+                onClick={() => setShowIncidentPrompt(true)}
+                className={styles.incidentButton}
+                title="Create clinical incident record"
+              >
+                📋 Incident
+              </button>
+            )}
             <button onClick={handleDownloadPdf} className={styles.downloadButton}>
               PDF
             </button>
@@ -822,8 +850,11 @@ export default function CaseDetailPage() {
                         </div>
                       ) : (
                         <div className={styles.overrideSection}>
-                          <div className={styles.overrideWarning}>
-                            You are overriding the rules engine decision. A rationale is REQUIRED.
+                          <div className={styles.overrideInfo}>
+                            <h4>Confirm clinical override</h4>
+                            <p className={styles.overrideExplainer}>
+                              Please record your clinical rationale. This will be saved as part of the patient&apos;s record.
+                            </p>
                           </div>
 
                           <div className={styles.formGroup}>
@@ -860,39 +891,39 @@ export default function CaseDetailPage() {
                           </div>
 
                           <div className={styles.formGroup}>
-                            <label>Rationale * (min 10 characters)</label>
+                            <label>Clinical Rationale *</label>
                             <textarea
                               value={overrideForm.rationale}
                               onChange={(e) =>
                                 setOverrideForm((prev) => ({ ...prev, rationale: e.target.value }))
                               }
                               rows={4}
-                              placeholder="Explain why you are overriding the rules engine decision..."
+                              placeholder="Record your clinical rationale for this override..."
                               required
                             />
-                            <span className={styles.charCount}>
-                              {overrideForm.rationale.length} / 10 minimum
+                            <span className={styles.formHint}>
+                              This rationale is part of the clinical record. Minimum 10 characters.
                             </span>
                           </div>
 
                           <div className={styles.formGroup}>
-                            <label>Clinical Notes (optional)</label>
+                            <label>Additional Clinical Notes (optional)</label>
                             <textarea
                               value={overrideForm.clinical_notes}
                               onChange={(e) =>
                                 setOverrideForm((prev) => ({ ...prev, clinical_notes: e.target.value }))
                               }
                               rows={3}
-                              placeholder="Add any additional notes..."
+                              placeholder="Any additional context or notes..."
                             />
                           </div>
 
                           <button
-                            onClick={handleOverrideDisposition}
+                            onClick={() => setShowOverrideConfirm(true)}
                             disabled={isDisposing || overrideForm.rationale.length < 10}
                             className={styles.overrideButtonLarge}
                           >
-                            {isDisposing ? 'Overriding...' : 'Override Disposition'}
+                            Override Disposition
                           </button>
                         </div>
                       )}
@@ -903,6 +934,83 @@ export default function CaseDetailPage() {
             </section>
           )}
         </div>
+
+        {/* Override Confirmation Modal */}
+        {showOverrideConfirm && (
+          <div className={styles.modalBackdrop} onClick={() => setShowOverrideConfirm(false)}>
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h3>Confirm clinical override</h3>
+              </div>
+              <div className={styles.modalBody}>
+                <p className={styles.modalWarning}>
+                  You are changing this disposition from <strong>{summary?.draft_disposition?.tier}</strong> to <strong>{overrideForm.tier}</strong>.
+                </p>
+                <p className={styles.modalInfo}>
+                  Your rationale will be saved as part of the patient&apos;s clinical record and may be audited.
+                </p>
+                <div className={styles.modalRationale}>
+                  <strong>Your rationale:</strong>
+                  <p>{overrideForm.rationale}</p>
+                </div>
+              </div>
+              <div className={styles.modalActions}>
+                <button
+                  className={styles.modalCancel}
+                  onClick={() => setShowOverrideConfirm(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className={styles.modalConfirm}
+                  onClick={() => {
+                    setShowOverrideConfirm(false);
+                    handleOverrideDisposition();
+                  }}
+                  disabled={isDisposing}
+                >
+                  {isDisposing ? 'Processing...' : 'Confirm Override'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Incident Creation Prompt */}
+        {showIncidentPrompt && (
+          <div className={styles.modalBackdrop} onClick={() => setShowIncidentPrompt(false)}>
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h3>Create clinical incident record?</h3>
+              </div>
+              <div className={styles.modalBody}>
+                <p className={styles.modalInfo}>
+                  Use this to document safety concerns, escalation actions, and learning points.
+                </p>
+                <p className={styles.modalDetails}>
+                  This creates a formal incident record that will be linked to this case for audit and governance purposes.
+                </p>
+              </div>
+              <div className={styles.modalActions}>
+                <button
+                  className={styles.modalCancel}
+                  onClick={() => setShowIncidentPrompt(false)}
+                >
+                  Not now
+                </button>
+                <button
+                  className={styles.modalConfirm}
+                  onClick={() => {
+                    setShowIncidentPrompt(false);
+                    router.push(`/dashboard/incidents/new?case_id=${caseId}`);
+                  }}
+                >
+                  Create Incident Record
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

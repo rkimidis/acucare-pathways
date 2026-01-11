@@ -278,6 +278,110 @@ The AcuCare Team""",
             "cancel_url": "URL to cancel",
         },
     },
+    # =========================================================================
+    # Waiting List Check-In Request (Email)
+    # =========================================================================
+    {
+        "code": "checkin_request_email",
+        "template_type": MessageTemplateType.CHECKIN_REQUEST,
+        "channel": MessageChannel.EMAIL,
+        "subject": "Checking in — how are you feeling?",
+        "body": """Hi {{patient_name}},
+
+We're checking in while you're waiting for your appointment.
+
+This short check-in helps us notice if things have changed and whether additional support is needed.
+
+Please take a moment to complete your check-in:
+
+[Complete check-in]
+
+If you're in immediate danger, please contact 999 or attend A&E.
+
+The AcuCare Team""",
+        "html_body": None,
+        "variables": {
+            "patient_name": "Patient's first name",
+            "checkin_url": "URL to complete check-in",
+        },
+    },
+    # =========================================================================
+    # Waiting List Check-In Request (SMS)
+    # =========================================================================
+    {
+        "code": "checkin_request_sms",
+        "template_type": MessageTemplateType.CHECKIN_REQUEST,
+        "channel": MessageChannel.SMS,
+        "subject": None,
+        "body": "Hi {{patient_name}}, we're checking in while you wait. Complete your brief check-in: {{checkin_url}}. If in danger, call 999.",
+        "html_body": None,
+        "variables": {
+            "patient_name": "Patient's first name",
+            "checkin_url": "URL to complete check-in",
+        },
+    },
+    # =========================================================================
+    # Deterioration Escalation (Email)
+    # =========================================================================
+    {
+        "code": "checkin_escalation_email",
+        "template_type": MessageTemplateType.CHECKIN_ESCALATION,
+        "channel": MessageChannel.EMAIL,
+        "subject": "We'd like to review your care plan",
+        "body": """Hi {{patient_name}},
+
+We'd like to review your care plan.
+
+Your recent check-in suggests things may have become more difficult.
+
+A clinician will review this and may contact you to discuss next steps.
+
+If you feel unsafe, please contact 999 or attend A&E immediately.
+
+The AcuCare Team""",
+        "html_body": None,
+        "variables": {
+            "patient_name": "Patient's first name",
+        },
+    },
+    # =========================================================================
+    # Deterioration Escalation (SMS)
+    # =========================================================================
+    {
+        "code": "checkin_escalation_sms",
+        "template_type": MessageTemplateType.CHECKIN_ESCALATION,
+        "channel": MessageChannel.SMS,
+        "subject": None,
+        "body": "Hi {{patient_name}}, based on your check-in, a clinician will review your care. If you feel unsafe, contact 999 immediately.",
+        "html_body": None,
+        "variables": {
+            "patient_name": "Patient's first name",
+        },
+    },
+    # =========================================================================
+    # AMBER Escalation - Triage (Email)
+    # =========================================================================
+    {
+        "code": "triage_escalation_amber_email",
+        "template_type": MessageTemplateType.TRIAGE_ESCALATION,
+        "channel": MessageChannel.EMAIL,
+        "subject": "We want to make sure you're supported appropriately",
+        "body": """Hi {{patient_name}},
+
+We want to make sure you're supported appropriately.
+
+Some of your responses indicate that a clinician should review your assessment before booking.
+
+A member of our clinical team will contact you within 24–72 hours.
+
+If you feel unsafe at any point, please contact 999 or attend A&E.
+
+The AcuCare Team""",
+        "html_body": None,
+        "variables": {
+            "patient_name": "Patient's first name",
+        },
+    },
 ]
 
 

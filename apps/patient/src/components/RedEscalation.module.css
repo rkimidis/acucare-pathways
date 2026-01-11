@@ -1,0 +1,209 @@
+/* RED Escalation - Critical Safety Component
+   These styles are intentionally stark and attention-grabbing.
+   Do not soften or add decorative elements. */
+
+.container {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 9999;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 100%;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.header {
+  margin-bottom: 1.5rem;
+}
+
+.warningIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background: #fef2f2;
+  border-radius: 50%;
+  margin-bottom: 1rem;
+  color: #dc2626;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.primaryInstruction {
+  font-size: 1.1rem;
+  color: #374151;
+  line-height: 1.6;
+  margin: 0 0 1.5rem 0;
+}
+
+/* Action box - most prominent element */
+.actionBox {
+  background: #dc2626;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.actionText {
+  color: white;
+  font-size: 1.1rem;
+  line-height: 1.5;
+  margin: 0 0 1rem 0;
+}
+
+.actionText strong {
+  font-weight: 700;
+}
+
+.emergencyButton {
+  display: inline-block;
+  background: white;
+  color: #dc2626;
+  font-size: 1.25rem;
+  font-weight: 700;
+  padding: 1rem 2.5rem;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.emergencyButton:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.emergencyButton:active {
+  transform: scale(0.98);
+}
+
+/* Firm statement - clear boundary */
+.firmStatement {
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin: 0 0 1rem 0;
+  font-weight: 500;
+}
+
+/* Optional message - softer */
+.optionalMessage {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0 0 1.5rem 0;
+  padding: 0.75rem 1rem;
+  background: #f9fafb;
+  border-radius: 6px;
+  font-style: italic;
+}
+
+/* Additional resources - secondary */
+.additionalResources {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+.resourcesLabel {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  margin: 0 0 0.75rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.resourceLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.resourceLink {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #f9fafb;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.resourceLink:hover {
+  background: #f3f4f6;
+}
+
+.resourceName {
+  font-size: 0.9rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.resourceNumber {
+  font-size: 0.9rem;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+/* Acknowledge button - if used */
+.acknowledgeButton {
+  margin-top: 1.5rem;
+  padding: 0.75rem 2rem;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.acknowledgeButton:hover {
+  background: #e5e7eb;
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  .card {
+    padding: 1.5rem;
+  }
+
+  .title {
+    font-size: 1.25rem;
+  }
+
+  .primaryInstruction {
+    font-size: 1rem;
+  }
+
+  .actionBox {
+    padding: 1.25rem;
+  }
+
+  .actionText {
+    font-size: 1rem;
+  }
+
+  .emergencyButton {
+    font-size: 1.1rem;
+    padding: 0.875rem 2rem;
+    width: 100%;
+  }
+}

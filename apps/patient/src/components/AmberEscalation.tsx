@@ -7,6 +7,9 @@
  * The copy is supportive but maintains clear safety messaging.
  */
 
+import { useEffect } from 'react';
+import { copy, renderTemplate } from '@/copy';
+import { trackEvent, EVENTS } from '@/lib/analytics';
 import styles from './AmberEscalation.module.css';
 
 interface AmberEscalationProps {
@@ -20,8 +23,18 @@ export default function AmberEscalation({
   contactTimeframe = '24–72 hours',
   onDismiss,
 }: AmberEscalationProps) {
+  // Track AMBER escalation shown
+  useEffect(() => {
+    trackEvent(EVENTS.ESCALATION_AMBER_SHOWN);
+  }, []);
+
+  const handleDismiss = () => {
+    trackEvent(EVENTS.ESCALATION_ACKNOWLEDGED, { tier: 'AMBER' });
+    onDismiss?.();
+  };
+
   return (
-    <div className={styles.container}>
+    <div id="emergency-banner-amber" className={styles.container}>
       <div className={styles.card}>
         {/* Header */}
         <div className={styles.header}>
@@ -42,38 +55,35 @@ export default function AmberEscalation({
               <path d="M12 8h.01" />
             </svg>
           </div>
-          <h2 className={styles.title}>
-            We want to make sure you&apos;re supported appropriately
+          <h2 id="escalation-amber-title" className={styles.title}>
+            {copy.patient.escalation.amber.title}
           </h2>
         </div>
 
         {/* Main message */}
-        <p className={styles.mainMessage}>
-          Some of your responses indicate that a clinician should review your
-          assessment before booking.
+        <p id="escalation-amber-body" className={styles.mainMessage}>
+          {copy.patient.escalation.amber.body}
         </p>
 
         {/* Contact timeframe */}
         <div className={styles.timeframeBox}>
           <p>
-            A member of our clinical team will contact you within{' '}
-            <strong>{contactTimeframe}</strong>.
+            {renderTemplate(copy.patient.escalation.amber.contactTimeframe, {
+              timeframe: contactTimeframe,
+            })}
           </p>
         </div>
 
-        {/* Safety line - always present */}
+        {/* [CLINICAL] Safety line - always present - DO NOT MODIFY */}
         <div className={styles.safetyLine}>
           <span className={styles.safetyIcon}>⚠️</span>
-          <p>
-            If you feel unsafe at any point, please contact <strong>999</strong>{' '}
-            or attend <strong>A&amp;E</strong>.
-          </p>
+          <p>{copy.shared.emergencyBanner.amber.body}</p>
         </div>
 
         {/* Dismiss button */}
         {onDismiss && (
-          <button onClick={onDismiss} className={styles.dismissButton}>
-            I understand
+          <button onClick={handleDismiss} className={styles.dismissButton}>
+            {copy.patient.escalation.amber.acknowledgeCta}
           </button>
         )}
       </div>

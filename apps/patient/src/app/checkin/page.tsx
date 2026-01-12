@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import EmergencyBanner from '@/components/EmergencyBanner';
+import CheckInEscalated from '@/components/CheckInEscalated';
+import { copy } from '@/copy';
+import { trackEvent, EVENTS } from '@/lib/analytics';
 import styles from './checkin.module.css';
 
 interface CheckIn {
@@ -47,6 +50,7 @@ export default function CheckInPage() {
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [escalated, setEscalated] = useState(false);
 
   const [formData, setFormData] = useState<CheckInFormData>({
     phq2_q1: -1,
@@ -70,6 +74,20 @@ export default function CheckInPage() {
     }
     loadPendingCheckin();
   }, [router]);
+
+  // Track check-in viewed when checkin is loaded
+  useEffect(() => {
+    if (checkin && !loading) {
+      trackEvent(EVENTS.CHECKIN_VIEWED);
+    }
+  }, [checkin, loading]);
+
+  // Track when user starts filling out the check-in (moves past step 1)
+  useEffect(() => {
+    if (step === 2 && checkin) {
+      trackEvent(EVENTS.CHECKIN_STARTED);
+    }
+  }, [step, checkin]);
 
   const loadPendingCheckin = async () => {
     try {
@@ -120,7 +138,15 @@ export default function CheckInPage() {
         throw new Error(data.detail || 'Failed to submit check-in');
       }
 
-      setSuccess(true);
+      const data = await res.json();
+
+      // Check if backend indicates escalation
+      if (data.result === 'escalated') {
+        setEscalated(true);
+        trackEvent(EVENTS.CHECKIN_ESCALATED_VIEWED);
+      } else {
+        setSuccess(true);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit check-in');
     } finally {
@@ -151,12 +177,12 @@ export default function CheckInPage() {
       <main className={styles.main}>
         <EmergencyBanner />
         <header className={styles.header}>
-          <h1>Weekly Check-In</h1>
+          <h1 id="checkin-title">{copy.patient.checkIn.title}</h1>
         </header>
         <div className={styles.content}>
           <div className={styles.card}>
-            <h2>No Check-In Due</h2>
-            <p>You don't have a pending check-in at this time.</p>
+            <h2>{copy.patient.checkIn.noCheckInDue}</h2>
+            <p>You don&apos;t have a pending check-in at this time.</p>
             <button
               onClick={() => router.push('/dashboard')}
               className={styles.primaryButton}
@@ -167,6 +193,11 @@ export default function CheckInPage() {
         </div>
       </main>
     );
+  }
+
+  // Escalation routing: show CheckInEscalated with amber banner when backend returns escalated
+  if (escalated) {
+    return <CheckInEscalated onAcknowledge={() => router.push('/dashboard')} />;
   }
 
   if (success) {
@@ -208,7 +239,7 @@ export default function CheckInPage() {
       <EmergencyBanner />
 
       <header className={styles.header}>
-        <h1>Weekly Check-In</h1>
+        <h1 id="checkin-title">{copy.patient.checkIn.title}</h1>
         <span className={styles.progress}>Step {step} of 4</span>
       </header>
 

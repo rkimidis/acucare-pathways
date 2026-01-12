@@ -1,6 +1,15 @@
 'use client';
 
+/**
+ * Emergency Banner Component
+ *
+ * Displays safety information based on context/variant.
+ * [CLINICAL] [LEGAL] - Safety copy should not be modified without clinical review.
+ */
+
 import { useEffect, useState } from 'react';
+import { copy } from '@/copy';
+import { trackEvent, EVENTS } from '@/lib/analytics';
 import styles from './EmergencyBanner.module.css';
 
 interface SafetyBanner {
@@ -9,32 +18,75 @@ interface SafetyBanner {
   consent_version: string;
 }
 
-export default function EmergencyBanner() {
+interface EmergencyBannerProps {
+  /** Banner variant: 'default' | 'amber' | 'red' */
+  variant?: 'default' | 'amber' | 'red';
+  /** Whether the banner can be dismissed */
+  dismissible?: boolean;
+}
+
+export default function EmergencyBanner({
+  variant = 'default',
+  dismissible = true,
+}: EmergencyBannerProps) {
   const [banner, setBanner] = useState<SafetyBanner | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    // Fetch safety banner from API
-    fetch('/api/v1/intake/safety-banner')
-      .then((res) => res.json())
-      .then((data) => setBanner(data))
-      .catch((err) => {
-        console.error('Failed to fetch safety banner:', err);
-        // Show fallback banner if API fails
-        setBanner({
-          enabled: true,
-          text: 'If you are experiencing a mental health emergency or have thoughts of harming yourself or others, please call 999 or go to your nearest A&E.',
-          consent_version: '1.0',
+    // Track banner shown
+    trackEvent(EVENTS.EMERGENCY_BANNER_SHOWN, { variant });
+
+    // Fetch safety banner from API for default variant
+    if (variant === 'default') {
+      fetch('/api/v1/intake/safety-banner')
+        .then((res) => res.json())
+        .then((data) => setBanner(data))
+        .catch((err) => {
+          console.error('Failed to fetch safety banner:', err);
+          // Show fallback banner if API fails
+          setBanner({
+            enabled: true,
+            text: copy.shared.emergencyBanner.default.body,
+            consent_version: '1.0',
+          });
         });
+    } else {
+      // For amber/red variants, use copy directly
+      setBanner({
+        enabled: true,
+        text: copy.shared.emergencyBanner[variant].body,
+        consent_version: '1.0',
       });
-  }, []);
+    }
+  }, [variant]);
+
+  const handleDismiss = () => {
+    trackEvent(EVENTS.EMERGENCY_BANNER_DISMISSED, { variant });
+    setDismissed(true);
+  };
+
+  const handle999Click = () => {
+    trackEvent(EVENTS.EMERGENCY_BANNER_999_CLICKED, { variant });
+  };
 
   if (!banner?.enabled || dismissed) {
     return null;
   }
 
+  // Get variant-specific copy
+  const bannerCopy = copy.shared.emergencyBanner[variant];
+
+  // Determine banner styling based on variant
+  const variantClass = variant === 'red'
+    ? styles.bannerRed
+    : variant === 'amber'
+    ? styles.bannerAmber
+    : styles.banner;
+
+  const bannerId = `emergency-banner-${variant}`;
+
   return (
-    <div className={styles.banner} role="alert" aria-live="polite">
+    <div id={bannerId} className={variantClass} role="alert" aria-live="polite">
       <div className={styles.icon}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -53,10 +105,11 @@ export default function EmergencyBanner() {
         </svg>
       </div>
       <div className={styles.content}>
-        <strong>Emergency Help</strong>
+        {/* [CLINICAL] [LEGAL] - DO NOT MODIFY */}
+        <strong>{bannerCopy.title}</strong>
         <p>{banner.text}</p>
         <div className={styles.contacts}>
-          <a href="tel:999" className={styles.emergencyLink}>
+          <a href="tel:999" className={styles.emergencyLink} onClick={handle999Click}>
             Call 999
           </a>
           <a href="tel:116123" className={styles.helplineLink}>
@@ -64,26 +117,28 @@ export default function EmergencyBanner() {
           </a>
         </div>
       </div>
-      <button
-        className={styles.dismissButton}
-        onClick={() => setDismissed(true)}
-        aria-label="Dismiss emergency banner"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+      {dismissible && (
+        <button
+          className={styles.dismissButton}
+          onClick={handleDismiss}
+          aria-label="Dismiss emergency banner"
         >
-          <line x1="18" y1="6" x2="6" y2="18" />
-          <line x1="6" y1="6" x2="18" y2="18" />
-        </svg>
-      </button>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

@@ -3,6 +3,10 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import EmergencyBanner from '@/components/EmergencyBanner';
+import ImmediateSafetyAction from '@/components/ImmediateSafetyAction';
+import BookingRestrictedReview from '@/components/BookingRestrictedReview';
+import { copy, renderTemplate } from '@/copy';
+import { trackEvent, EVENTS } from '@/lib/analytics';
 import styles from './booking.module.css';
 
 interface Clinician {
@@ -73,6 +77,8 @@ export default function BookingPage() {
       return;
     }
     loadInitialData();
+    // Track booking page viewed
+    trackEvent(EVENTS.BOOKING_PAGE_VIEWED);
   }, [router]);
 
   const loadInitialData = async () => {
@@ -303,33 +309,98 @@ export default function BookingPage() {
   }
 
   if (success) {
+    // Track both events for backwards compatibility
+    trackEvent(EVENTS.BOOKING_CONFIRMED, {
+      tier: triageCaseInfo?.tier,
+      pathway: triageCaseInfo?.pathway,
+    });
+    trackEvent(EVENTS.APPOINTMENT_CONFIRMED_VIEWED);
+
+    // Get appointment details for display
+    const confirmedClinician = clinicians.find((c) => c.id === selectedClinician);
+    const confirmedType = appointmentTypes.find((t) => t.id === selectedType);
+    const confirmedDate = selectedSlot ? new Date(selectedSlot.start) : null;
+
     return (
       <main className={styles.main}>
         <EmergencyBanner />
         <div className={styles.content}>
           <div className={styles.successCard}>
             <div className={styles.successIcon}>✓</div>
-            <h2>Appointment Booked!</h2>
-            <p>
-              Your appointment has been successfully scheduled. You will receive a
-              confirmation email with the details.
-            </p>
-            <div className={styles.successDetails}>
-              <p>
-                <strong>What happens next:</strong>
-              </p>
+            <h1 id="appt-confirm-title">{copy.patient.appointmentConfirmed.title}</h1>
+
+            {/* Appointment details */}
+            <div id="appt-confirm-details" className={styles.appointmentDetails}>
+              {confirmedDate && confirmedClinician && (
+                <p className={styles.detailsSummary}>
+                  {renderTemplate(copy.patient.appointmentConfirmed.detailsTemplate, {
+                    date: confirmedDate.toLocaleDateString('en-GB', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                    }),
+                    time: confirmedDate.toLocaleTimeString('en-GB', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    }),
+                    clinician: confirmedClinician.title,
+                  })}
+                </p>
+              )}
+              {confirmedType && (
+                <p className={styles.detailsType}>{confirmedType.name}</p>
+              )}
+              {isRemote && (
+                <p className={styles.detailsFormat}>
+                  <strong>{copy.patient.appointmentConfirmed.formatLabel}:</strong> Video consultation
+                </p>
+              )}
+              {selectedSlot?.location && !isRemote && (
+                <p className={styles.detailsLocation}>
+                  <strong>{copy.patient.appointmentConfirmed.locationLabel}:</strong> {selectedSlot.location}
+                </p>
+              )}
+            </div>
+
+            {/* What to expect */}
+            <div className={styles.whatToExpect}>
+              <h3>{copy.patient.appointmentConfirmed.whatToExpect.title}</h3>
               <ul>
-                <li>Check your email for confirmation and calendar invite</li>
-                <li>You can view and manage your appointment on your dashboard</li>
-                <li>We&apos;ll send you a reminder 24 hours before</li>
+                {copy.patient.appointmentConfirmed.whatToExpect.items.map((item, i) => (
+                  <li key={i}>{item}</li>
+                ))}
               </ul>
             </div>
-            <button
-              onClick={() => router.push('/dashboard')}
-              className={styles.primaryButton}
-            >
-              Return to Dashboard
-            </button>
+
+            {/* Preparation tips */}
+            <div className={styles.preparation}>
+              <h3>{copy.patient.appointmentConfirmed.preparation.title}</h3>
+              <ul>
+                {copy.patient.appointmentConfirmed.preparation.items.map((item, i) => (
+                  <li key={i}>{item}</li>
+                ))}
+              </ul>
+            </div>
+
+            <p className={styles.cancellationNote}>
+              {copy.patient.appointmentConfirmed.cancellationNotice}
+            </p>
+
+            <div className={styles.confirmActions}>
+              <a
+                id="appt-confirm-manage-link"
+                href="/dashboard/appointments"
+                className={styles.manageLink}
+              >
+                {copy.patient.appointmentConfirmed.manageLink}
+              </a>
+              <button
+                onClick={() => router.push('/dashboard')}
+                className={styles.primaryButton}
+              >
+                Go to dashboard
+              </button>
+            </div>
           </div>
         </div>
       </main>
@@ -338,11 +409,13 @@ export default function BookingPage() {
 
   // AMBER tier - Booking restricted, clinician review required
   if (selfBookCheck && !selfBookCheck.allowed) {
+    trackEvent(EVENTS.REVIEW_REQUIRED_VIEWED, { tier: 'AMBER' });
+
     return (
       <main className={styles.main}>
-        <EmergencyBanner />
+        <EmergencyBanner variant="amber" />
         <header className={styles.header}>
-          <h1>We&apos;re reviewing your assessment</h1>
+          <h1 id="review-required-title">{copy.patient.reviewRequired.title}</h1>
           <button onClick={() => router.push('/dashboard')} className={styles.backButton}>
             Back to Dashboard
           </button>
@@ -351,32 +424,31 @@ export default function BookingPage() {
           <div className={styles.reviewCard}>
             <div className={styles.reviewIcon}>🔍</div>
             <p className={styles.reviewMainCopy}>
-              Some aspects of your assessment mean a clinician needs to review it
-              before booking an appointment.
+              {copy.patient.reviewRequired.body}
             </p>
 
             <div className={styles.reassuranceBox}>
-              <p>
-                <strong>This doesn&apos;t mean something is &quot;wrong&quot;</strong> — it helps
-                ensure your care is safe and appropriate.
-              </p>
+              <p>{copy.patient.reviewRequired.reassurance}</p>
             </div>
 
-            <div className={styles.whatHappensNext}>
-              <h3>What happens next:</h3>
+            <div id="review-required-next-steps" className={styles.whatHappensNext}>
+              <h3>{copy.patient.reviewRequired.nextStepsTitle}</h3>
               <ul>
-                <li>A clinician will review your information</li>
-                <li>We&apos;ll contact you to arrange the next step</li>
-                <li>This usually happens within 24–72 hours</li>
+                {copy.patient.reviewRequired.nextStepsList.map((item, i) => (
+                  <li key={i}>{renderTemplate(item, { timeframe: '24–72 hours' })}</li>
+                ))}
               </ul>
+              <p className={styles.timeline}>{copy.patient.reviewRequired.timeline}</p>
             </div>
 
+            <div className={styles.contactPreferences}>
+              <p>{copy.patient.reviewRequired.contactPreferences}</p>
+            </div>
+
+            {/* [CLINICAL] Safety reminder - DO NOT MODIFY */}
             <div className={styles.safetyReminder}>
               <span className={styles.warningIcon}>⚠️</span>
-              <p>
-                If your situation worsens or you feel unsafe, please contact 999
-                or attend A&amp;E.
-              </p>
+              <p>{copy.shared.emergencyBanner.amber.body}</p>
             </div>
 
             <button
@@ -393,27 +465,73 @@ export default function BookingPage() {
 
   const slotsByDate = groupSlotsByDate(availableSlots);
 
-  // Get clinician type description based on selected type
-  const getClinicianTypeDescription = () => {
-    const selectedTypeObj = appointmentTypes.find((t) => t.id === selectedType);
-    const typeName = selectedTypeObj?.name?.toLowerCase() || 'clinician';
+  // Get clinician type description based on pathway
+  const getClinicianTypeDescription = (): string => {
+    const pathwayExplanations = copy.patient.booking.clinicianTypeByPathway;
+    const defaultExplanation = copy.patient.booking.clinicianTypeExplanation;
 
-    if (typeName.includes('therapy') || typeName.includes('counselling')) {
-      return "You'll meet with a qualified therapist who specialises in concerns like yours.";
-    } else if (typeName.includes('psychiatr')) {
-      return "You'll meet with a psychiatrist who can provide specialist assessment and support.";
-    } else if (typeName.includes('assessment')) {
-      return "You'll have an initial assessment with one of our qualified clinicians.";
+    // Use pathway from triage case info if available
+    const pathway = triageCaseInfo?.pathway;
+    if (pathway && pathwayExplanations[pathway as keyof typeof pathwayExplanations]) {
+      return pathwayExplanations[pathway as keyof typeof pathwayExplanations];
     }
-    return "You'll meet with a qualified clinician who can provide the support you need.";
+
+    // Fallback to appointment type name matching
+    const selectedTypeObj = appointmentTypes.find((t) => t.id === selectedType);
+    const typeCode = selectedTypeObj?.code?.toUpperCase() || '';
+    if (typeCode && pathwayExplanations[typeCode as keyof typeof pathwayExplanations]) {
+      return pathwayExplanations[typeCode as keyof typeof pathwayExplanations];
+    }
+
+    return defaultExplanation;
   };
+
+  // Get availability framing text
+  const getAvailabilityFraming = (): string => {
+    if (!availabilityInsights) return '';
+    const { daysUntilEarliest } = availabilityInsights;
+    if (daysUntilEarliest === 0) return renderTemplate(copy.patient.booking.availabilityEarliest, { when: 'Today' });
+    if (daysUntilEarliest === 1) return renderTemplate(copy.patient.booking.availabilityEarliest, { when: 'Tomorrow' });
+    if (daysUntilEarliest <= 7) return copy.patient.booking.availabilityFraming;
+    return renderTemplate(copy.patient.booking.availabilityEarliest, { when: `In ${daysUntilEarliest} days` });
+  };
+
+  // Handle slot selection with tracking
+  const handleSlotSelect = (slot: AvailableSlot) => {
+    setSelectedSlot(slot);
+    trackEvent(EVENTS.BOOKING_SLOT_SELECTED, {
+      date: slot.start,
+      isRemote: slot.is_remote,
+    });
+  };
+
+  // Get current tier from triage case info
+  const currentTier = triageCaseInfo?.tier?.toUpperCase() || null;
+
+  // =========================================================================
+  // TIER-BASED ROUTING
+  // =========================================================================
+
+  // RED tier - Immediate safety concern, no booking allowed
+  if (currentTier === 'RED') {
+    return <ImmediateSafetyAction />;
+  }
+
+  // AMBER tier - Clinical review required, booking restricted
+  if (currentTier === 'AMBER') {
+    return <BookingRestrictedReview />;
+  }
+
+  // GREEN/BLUE or no tier - Normal booking flow
+  // Determine EmergencyBanner variant based on tier
+  const bannerVariant = currentTier === 'AMBER' ? 'amber' : currentTier === 'RED' ? 'red' : 'default';
 
   return (
     <main className={styles.main}>
-      <EmergencyBanner />
+      <EmergencyBanner variant={bannerVariant} />
 
       <header className={styles.header}>
-        <h1>Book your appointment</h1>
+        <h1 id="booking-title">{copy.patient.booking.title}</h1>
         <button onClick={() => router.push('/dashboard')} className={styles.backButton}>
           Back to Dashboard
         </button>
@@ -421,9 +539,9 @@ export default function BookingPage() {
 
       <div className={styles.content}>
         {/* Pathway explanation for trust */}
-        <div className={styles.pathwayExplanation}>
+        <div id="booking-pathway-explanation" className={styles.pathwayExplanation}>
           <p className={styles.pathwayMain}>
-            Based on your assessment, this is the most appropriate starting point for your care.
+            {copy.patient.booking.pathwayExplanation}
           </p>
           {selectedType && (
             <p className={styles.clinicianTypeExplanation}>
@@ -438,9 +556,9 @@ export default function BookingPage() {
 
         {/* Availability framing */}
         {availabilityInsights && availabilityInsights.slotsThisWeek > 0 && (
-          <div className={styles.availabilityFraming}>
+          <div id="booking-availability-framing" className={styles.availabilityFraming}>
             <span className={styles.availabilityIcon}>📅</span>
-            <span>Appointments available as soon as this week.</span>
+            <span>{getAvailabilityFraming()}</span>
           </div>
         )}
 
@@ -500,8 +618,8 @@ export default function BookingPage() {
 
         {/* Step 3: Select Time Slot */}
         {selectedClinician && selectedType && (
-          <section className={styles.card}>
-            <h2>3. Select Date and Time</h2>
+          <section id="booking-slot-picker" className={styles.card}>
+            <h2>3. {copy.patient.booking.selectTimeCta}</h2>
 
             {/* Availability insights nudge */}
             {availabilityInsights && (
@@ -522,14 +640,13 @@ export default function BookingPage() {
                 )}
                 {availabilityInsights.daysUntilEarliest <= 2 && (
                   <div className={styles.earliestNudge}>
-                    Earliest available:{' '}
-                    <strong>
-                      {availabilityInsights.daysUntilEarliest === 0
+                    {renderTemplate(copy.patient.booking.availabilityEarliest, {
+                      when: availabilityInsights.daysUntilEarliest === 0
                         ? 'Today'
                         : availabilityInsights.daysUntilEarliest === 1
                         ? 'Tomorrow'
-                        : `In ${availabilityInsights.daysUntilEarliest} days`}
-                    </strong>
+                        : `In ${availabilityInsights.daysUntilEarliest} days`,
+                    })}
                   </div>
                 )}
               </div>
@@ -567,7 +684,7 @@ export default function BookingPage() {
                               className={`${styles.slotButton} ${
                                 selectedSlot?.start === slot.start ? styles.slotButtonSelected : ''
                               } ${isEarly ? styles.slotButtonEarly : ''}`}
-                              onClick={() => setSelectedSlot(slot)}
+                              onClick={() => handleSlotSelect(slot)}
                             >
                               {time}
                               {slot.is_remote && <span className={styles.remoteIcon}>📹</span>}
@@ -635,21 +752,17 @@ export default function BookingPage() {
             </div>
 
             {/* Payment copy */}
-            <div className={styles.paymentNotice}>
-              <p>
-                <strong>Payment is required to confirm your appointment.</strong>
-              </p>
-              <p className={styles.paymentReason}>
-                This helps us reduce missed appointments and keep waiting times short.
-              </p>
+            <div id="booking-payment-panel" className={styles.paymentNotice}>
+              <p>{copy.patient.booking.paymentRequired}</p>
             </div>
 
             <button
+              id="booking-confirm-button"
               onClick={handleBookAppointment}
               disabled={submitting}
               className={styles.bookButton}
             >
-              {submitting ? 'Booking...' : 'Confirm Booking'}
+              {submitting ? 'Booking...' : copy.patient.booking.confirmCta}
             </button>
           </section>
         )}

@@ -88,8 +88,70 @@
   opacity: 1;
 }
 
+/* AMBER variant */
+.bannerAmber {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+  border: 2px solid #f59e0b;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+}
+
+.bannerAmber .icon {
+  color: #92400e;
+}
+
+.bannerAmber .content strong {
+  color: #92400e;
+}
+
+.bannerAmber .content p {
+  color: #78350f;
+}
+
+.bannerAmber .dismissButton {
+  color: #92400e;
+}
+
+/* RED variant */
+.bannerRed {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border: 2px solid #dc2626;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+}
+
+.bannerRed .icon {
+  color: #991b1b;
+}
+
+.bannerRed .content strong {
+  color: #991b1b;
+}
+
+.bannerRed .content p {
+  color: #7f1d1d;
+}
+
+.bannerRed .dismissButton {
+  color: #991b1b;
+}
+
 @media (max-width: 600px) {
-  .banner {
+  .banner,
+  .bannerAmber,
+  .bannerRed {
     flex-direction: column;
     padding: 1rem;
   }

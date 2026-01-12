@@ -24,6 +24,7 @@ interface Incident {
   closure_reason: string | null;
   lessons_learned: string | null;
   preventive_actions: string | null;
+  immediate_actions_taken: string | null;
   reportable_to_cqc: boolean;
   cqc_reported_at: string | null;
 }

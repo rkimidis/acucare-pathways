@@ -5,7 +5,21 @@ import { useRouter } from 'next/navigation';
 import EmergencyBanner from '@/components/EmergencyBanner';
 import QuestionnaireRenderer from '@/components/QuestionnaireRenderer';
 import ConsentStep from '@/components/ConsentStep';
+import { copy, renderTemplate } from '@/copy';
+import { trackEvent, EVENTS } from '@/lib/analytics';
 import styles from './intake.module.css';
+
+type FieldType = 'text' | 'textarea' | 'number' | 'boolean' | 'select' | 'multiselect' | 'date';
+
+interface QuestionnaireField {
+  id: string;
+  type: FieldType;
+  label: string;
+  description?: string;
+  required?: boolean;
+  options?: { value: string; label: string }[];
+  section?: string;
+}
 
 interface QuestionnaireDefinition {
   id: string;
@@ -15,15 +29,7 @@ interface QuestionnaireDefinition {
     title?: string;
     description?: string;
     sections?: { id: string; title: string; description?: string }[];
-    fields: Array<{
-      id: string;
-      type: string;
-      label: string;
-      description?: string;
-      required?: boolean;
-      options?: { value: string; label: string }[];
-      section?: string;
-    }>;
+    fields: QuestionnaireField[];
   };
 }
 
@@ -367,6 +373,21 @@ export default function IntakePage() {
     });
   };
 
+  // Track page views and step changes
+  useEffect(() => {
+    if (step === 'landing') {
+      trackEvent(EVENTS.INTAKE_LANDING_VIEWED);
+    } else if (step === 'safety') {
+      trackEvent(EVENTS.INTAKE_SAFETY_BLOCK_SHOWN);
+      trackEvent(EVENTS.INTAKE_STEP_VIEWED, { step: 'safety', label: STEP_LABELS.safety });
+    } else if (step === 'complete') {
+      trackEvent(EVENTS.INTAKE_SUBMITTED);
+    } else {
+      // Remaining steps: consent, background, symptoms, review
+      trackEvent(EVENTS.INTAKE_STEP_VIEWED, { step, label: STEP_LABELS[step] });
+    }
+  }, [step]);
+
   if (loading) {
     return (
       <main className={styles.main}>
@@ -377,45 +398,44 @@ export default function IntakePage() {
 
   return (
     <main className={styles.main}>
-      {step !== 'landing' && <EmergencyBanner />}
+      <EmergencyBanner />
 
       <div className={styles.container}>
         {/* Landing Page */}
         {step === 'landing' && (
           <div className={styles.landing}>
             <div className={styles.landingContent}>
-              <h1 className={styles.landingHeader}>
-                Get matched to the right mental health professional
+              <h1 id="intake-landing-title" className={styles.landingHeader}>
+                {copy.patient.intake.landing.title}
               </h1>
-              <p className={styles.landingSubheader}>
-                This short assessment helps us understand what you&apos;re experiencing
-                so we can safely recommend the most appropriate care.
+              <p id="intake-landing-subtitle" className={styles.landingSubheader}>
+                {copy.patient.intake.landing.subtitle}
               </p>
 
-              <div className={styles.timeIndicator}>
+              <div id="intake-landing-time" className={styles.timeIndicator}>
                 <span className={styles.timeIcon}>⏱</span>
-                Takes about 8–10 minutes
+                {renderTemplate(copy.patient.intake.landing.timeEstimate, { minutes: '8–10' })}
               </div>
 
               <div className={styles.reassuranceBox}>
-                <p>Your answers are reviewed by qualified clinicians.</p>
-                <p>We do not use automated diagnosis.</p>
+                <p>{copy.patient.intake.landing.reassurance}</p>
+                <p>{copy.patient.intake.landing.privacyNote}</p>
               </div>
 
-              <div className={styles.emergencyNotice}>
+              {/* [CLINICAL] [LEGAL] Emergency notice - DO NOT MODIFY */}
+              <div id="emergency-banner-default" className={styles.emergencyNotice}>
                 <span className={styles.warningIcon}>⚠️</span>
                 <div>
-                  <strong>This service is not for emergencies.</strong>
-                  <p>
-                    If you are in immediate danger or at risk of harming yourself
-                    or others, please call 999 or attend A&amp;E.
-                  </p>
+                  <strong>{copy.shared.emergencyBanner.default.title}</strong>
+                  <p>{copy.shared.emergencyBanner.default.body}</p>
                 </div>
               </div>
 
               <button
+                id="intake-start-button"
                 className={styles.startButton}
                 onClick={() => {
+                  trackEvent(EVENTS.INTAKE_STARTED_CLICKED);
                   if (
                     consentStatus?.has_consented &&
                     !consentStatus?.needs_reconsent
@@ -426,7 +446,7 @@ export default function IntakePage() {
                   }
                 }}
               >
-                Start assessment
+                {copy.patient.intake.landing.cta}
               </button>
             </div>
           </div>
@@ -437,19 +457,23 @@ export default function IntakePage() {
           <div className={styles.progressContainer}>
             <div className={styles.progressHeader}>
               <div className={styles.progressHeaderMain}>
-                <span className={styles.stepIndicator}>
-                  Step {getCurrentStepNumber()} of {progressSteps.length}
-                </span>
-                <span className={styles.stepLabel}>
-                  — {STEP_LABELS[step]}
+                <span id="intake-progress-label" className={styles.stepIndicator}>
+                  {renderTemplate(copy.patient.intake.progress.stepLabel, {
+                    current: getCurrentStepNumber(),
+                    total: progressSteps.length,
+                    label: STEP_LABELS[step],
+                  })}
                 </span>
               </div>
               <div className={styles.progressTooltipWrapper}>
-                <span className={styles.infoIcon} title="Most people complete this in one sitting. You can save and return at any time.">
+                <span
+                  className={styles.infoIcon}
+                  title={copy.patient.intake.progress.tooltip}
+                >
                   ⓘ
                 </span>
-                <div className={styles.progressTooltip}>
-                  Most people complete this in one sitting. You can save and return at any time.
+                <div id="intake-progress-tooltip" className={styles.progressTooltip}>
+                  {copy.patient.intake.progress.tooltip}
                 </div>
               </div>
             </div>
@@ -564,23 +588,20 @@ export default function IntakePage() {
 
               {/* Safety section framing - critical for reducing drop-off */}
               <div className={styles.safetyFraming}>
-                <h2 className={styles.safetyFramingHeader}>Your safety matters</h2>
-                <p className={styles.safetyFramingText}>
-                  The next questions ask about safety and risk. We ask everyone
-                  these questions — answering honestly helps us make sure you
-                  receive the right level of support.
+                <h2 id="intake-safety-title" className={styles.safetyFramingHeader}>
+                  {copy.patient.intake.safety.title}
+                </h2>
+                <p id="intake-safety-body" className={styles.safetyFramingText}>
+                  {copy.patient.intake.safety.body}
                 </p>
                 <div className={styles.microReassurance}>
-                  Your answers do not automatically mean emergency action. They
-                  help us plan care safely.
+                  {copy.patient.intake.safety.microReassurance}
                 </div>
               </div>
 
               {/* Inline reassurance for SI questions */}
-              <div className={styles.siReassurance}>
-                Many people experience thoughts like these during periods of
-                distress. Sharing this information helps us respond appropriately
-                and safely.
+              <div id="intake-si-support-text" className={styles.siReassurance}>
+                {copy.patient.intake.si.inlineSupport}
               </div>
 
               <QuestionnaireRenderer
@@ -654,36 +675,32 @@ export default function IntakePage() {
           {step === 'complete' && (
             <div className={styles.complete}>
               <div className={styles.completeIcon}>✓</div>
-              <h1 className={styles.completeHeader}>
-                Thank you — your information has been received
+              <h1 id="intake-submitted-title" className={styles.completeHeader}>
+                {copy.patient.intake.submitted.title}
               </h1>
               <p className={styles.completePrimary}>
-                A clinician will review your responses to determine the most
-                appropriate next step in your care.
+                {copy.patient.intake.submitted.primary}
               </p>
 
-              <div className={styles.whatHappensNext}>
-                <h2>What happens next:</h2>
+              <div id="intake-submitted-next-steps" className={styles.whatHappensNext}>
+                <h2>{copy.patient.intake.submitted.nextStepsTitle}</h2>
                 <ul>
-                  <li>We review your assessment carefully</li>
-                  <li>We match you to the most suitable professional</li>
-                  <li>
-                    You&apos;ll be able to book an appointment or we&apos;ll contact you
-                    if a review is needed
-                  </li>
+                  {copy.patient.intake.submitted.nextStepsList.map((item, i) => (
+                    <li key={i}>
+                      {renderTemplate(item, { timeframe: '1–2 working days' })}
+                    </li>
+                  ))}
                 </ul>
               </div>
 
-              <div className={styles.timeExpectation}>
-                <strong>Most patients hear from us within 1–2 working days.</strong>
+              <div id="intake-submitted-timeline" className={styles.timeExpectation}>
+                <strong>{copy.patient.intake.submitted.timeline}</strong>
               </div>
 
+              {/* [CLINICAL] Safety reminder - DO NOT MODIFY */}
               <div className={styles.safetyReminder}>
                 <span className={styles.warningIcon}>⚠️</span>
-                <p>
-                  If things worsen while you&apos;re waiting and you feel unsafe,
-                  please contact 999 or attend A&amp;E.
-                </p>
+                <p>{copy.shared.safetyFooter.default}</p>
               </div>
 
               <button

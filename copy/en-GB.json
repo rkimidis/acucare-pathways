@@ -1,0 +1,112 @@
+{
+  "copy": {
+    "shared": {
+      "emergencyBanner": {
+        "default": {
+          "title": "This service is not for emergencies.",
+          "body": "If you are in immediate danger or at risk of harming yourself or others, please call 999 or attend A&E."
+        },
+        "amber": {
+          "title": "If you feel unsafe at any point, please call 999 or attend A&E.",
+          "body": "We will contact you within 24–72 hours to arrange the next step."
+        },
+        "red": {
+          "title": "We're concerned about your safety.",
+          "body": "Please contact 999 now or attend your nearest A&E department. We cannot provide emergency support through this service."
+        }
+      }
+    },
+    "patient": {
+      "intake": {
+        "landing": {
+          "title": "Get matched to the right mental health professional",
+          "subtitle": "This short assessment helps us understand what you're experiencing so we can safely recommend the most appropriate care.",
+          "timeEstimate": "Takes about 8–10 minutes",
+          "reassurance": "Your answers are reviewed by qualified clinicians. We do not use automated diagnosis.",
+          "cta": "Start assessment"
+        },
+        "progress": {
+          "stepLabel": "Step {{current}} of {{total}} — {{label}}",
+          "tooltip": "Most people complete this in one sitting. You can save and return at any time."
+        },
+        "safety": {
+          "title": "Your safety matters",
+          "body": "The next questions ask about safety and risk. We ask everyone these questions — answering honestly helps us make sure you receive the right level of support.",
+          "microReassurance": "Your answers do not automatically mean emergency action. They help us plan care safely."
+        },
+        "si": {
+          "inlineSupport": "Many people experience thoughts like these during periods of distress. Sharing this information helps us respond appropriately and safely."
+        },
+        "submitted": {
+          "title": "Thank you — your information has been received",
+          "primary": "A clinician will review your responses to determine the most appropriate next step in your care.",
+          "nextStepsTitle": "What happens next:",
+          "nextStepsList": [
+            "We review your assessment carefully",
+            "We match you to the most suitable professional",
+            "You'll be able to book an appointment or we'll contact you if a review is needed"
+          ],
+          "timeline": "Most patients hear from us within 1–2 working days."
+        }
+      },
+      "booking": {
+        "title": "Book your appointment",
+        "pathwayExplanation": "Based on your assessment, this is the most appropriate starting point for your care.",
+        "clinicianTypeExplanation": "You'll meet with a qualified clinician who specialises in concerns like yours. If at any point a different level of care is needed, we'll guide you through that.",
+        "availabilityFraming": "Appointments available as soon as this week.",
+        "paymentRequired": "Payment is required to confirm your appointment. This helps us reduce missed appointments and keep waiting times short."
+      },
+      "reviewRequired": {
+        "title": "We're reviewing your assessment",
+        "body": "Some aspects of your assessment mean a clinician needs to review it before booking an appointment.",
+        "reassurance": "This doesn't mean something is "wrong" — it helps ensure your care is safe and appropriate.",
+        "nextStepsList": [
+          "A clinician will review your information",
+          "We'll contact you to arrange the next step",
+          "This usually happens within 24–72 hours"
+        ],
+        "timeline": "If your situation worsens or you feel unsafe, please call 999 or attend A&E."
+      },
+      "red": {
+        "title": "We're concerned about your safety",
+        "primaryInstruction": "Based on your responses, you may be at immediate risk. Please contact 999 now or attend your nearest A&E department.",
+        "boundary": "We cannot provide emergency support through this service.",
+        "optionalSupport": "If you're able to do so safely, consider contacting a trusted person to be with you."
+      },
+      "checkIn": {
+        "title": "Checking in — how are you feeling?",
+        "body": "We're checking in while you're waiting for your appointment. This short check-in helps us notice if things have changed and whether additional support is needed.",
+        "escalated": {
+          "title": "We'd like to review your care plan",
+          "body": "Your recent check-in suggests things may have become more difficult.",
+          "nextSteps": "A clinician will review this and may contact you to discuss next steps."
+        }
+      },
+      "appointmentConfirmed": {
+        "title": "Your appointment is confirmed",
+        "detailsTemplate": "Date: {{date}}\nTime: {{time}}\nClinician: {{clinician_name}}\nFormat: {{format}}",
+        "manageLink": "Manage or reschedule in your patient portal."
+      }
+    },
+    "staff": {
+      "triageQueue": {
+        "banner": "Clinical review required — booking restricted"
+      },
+      "case": {
+        "reviewRequired": "Clinical review required",
+        "rulesFiredLabel": "Rules fired"
+      },
+      "override": {
+        "title": "Confirm clinical override",
+        "body": "Please record your clinical rationale. This will be saved as part of the patient's record.",
+        "rationaleLabel": "Clinical rationale",
+        "confirmButton": "Confirm override"
+      },
+      "incidentPrompt": {
+        "title": "Create clinical incident record?",
+        "body": "Use this to document safety concerns, escalation actions, and learning points.",
+        "createButton": "Create incident"
+      }
+    }
+  }
+}

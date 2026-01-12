@@ -1,0 +1,186 @@
+/* Booking Restricted Review Component - AMBER Tier */
+
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+}
+
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 560px;
+  width: 100%;
+  margin-top: 1rem;
+  box-shadow: 0 8px 32px rgba(217, 119, 6, 0.12);
+  border: 2px solid #f59e0b;
+  text-align: center;
+}
+
+.header {
+  margin-bottom: 1.5rem;
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 50%;
+  margin-bottom: 1rem;
+  color: #d97706;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #92400e;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.body {
+  font-size: 1.05rem;
+  color: #78350f;
+  line-height: 1.6;
+  margin: 0 0 1.5rem 0;
+}
+
+.reassurance {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.reassurance p {
+  margin: 0;
+  color: #166534;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.nextSteps {
+  text-align: left;
+  margin-bottom: 1.5rem;
+}
+
+.nextStepsTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 0.75rem 0;
+}
+
+.nextStepsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nextStepsList li {
+  position: relative;
+  padding-left: 1.75rem;
+  margin-bottom: 0.625rem;
+  color: #475569;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.nextStepsList li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.5rem;
+  width: 8px;
+  height: 8px;
+  background: #f59e0b;
+  border-radius: 50%;
+}
+
+.timeline {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.timelineIcon {
+  color: #dc2626;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.timeline p {
+  margin: 0;
+  color: #991b1b;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.contactPreferences {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin: 0 0 1.5rem 0;
+}
+
+.acknowledgeButton {
+  padding: 0.875rem 2rem;
+  background: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  width: 100%;
+  max-width: 280px;
+}
+
+.acknowledgeButton:hover {
+  background: #d97706;
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  .container {
+    padding: 0.5rem;
+  }
+
+  .card {
+    padding: 1.5rem;
+    border-radius: 12px;
+  }
+
+  .icon {
+    width: 64px;
+    height: 64px;
+  }
+
+  .icon svg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .title {
+    font-size: 1.25rem;
+  }
+
+  .body {
+    font-size: 1rem;
+  }
+}

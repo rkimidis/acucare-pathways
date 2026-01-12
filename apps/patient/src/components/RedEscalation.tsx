@@ -6,8 +6,13 @@
  * CRITICAL: This component displays when immediate risk is detected.
  * The copy is intentionally clear, calm, and non-reassuring.
  * Do not personalise or soften beyond this language.
+ *
+ * [CLINICAL] [LEGAL] - DO NOT MODIFY WITHOUT CLINICAL REVIEW
  */
 
+import { useEffect } from 'react';
+import { copy } from '@/copy';
+import { trackEvent, EVENTS } from '@/lib/analytics';
 import styles from './RedEscalation.module.css';
 
 interface RedEscalationProps {
@@ -21,8 +26,22 @@ export default function RedEscalation({
   showTrustedPersonOption = false,
   onAcknowledge,
 }: RedEscalationProps) {
+  // Track RED escalation shown
+  useEffect(() => {
+    trackEvent(EVENTS.ESCALATION_RED_SHOWN);
+  }, []);
+
+  const handle999Click = () => {
+    trackEvent(EVENTS.ESCALATION_RED_999_CLICKED);
+  };
+
+  const handleAcknowledge = () => {
+    trackEvent(EVENTS.ESCALATION_ACKNOWLEDGED, { tier: 'RED' });
+    onAcknowledge?.();
+  };
+
   return (
-    <div className={styles.container} role="alert" aria-live="assertive">
+    <div id="emergency-banner-red" className={styles.container} role="alert" aria-live="assertive">
       <div className={styles.card}>
         {/* Header - Clear and direct */}
         <div className={styles.header}>
@@ -43,57 +62,62 @@ export default function RedEscalation({
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
           </div>
-          <h1 className={styles.title}>We&apos;re concerned about your safety</h1>
+          {/* [CLINICAL] [LEGAL] - DO NOT MODIFY */}
+          <h1 id="escalation-red-title" className={styles.title}>
+            {copy.patient.escalation.red.title}
+          </h1>
         </div>
 
-        {/* Primary instruction - Do not hedge */}
-        <p className={styles.primaryInstruction}>
-          Based on your responses, you may be at immediate risk.
+        {/* [CLINICAL] [LEGAL] Primary instruction - DO NOT MODIFY */}
+        <p id="escalation-red-body" className={styles.primaryInstruction}>
+          {copy.patient.escalation.red.body}
         </p>
 
-        {/* Clear action - Direct and prominent */}
+        {/* [CLINICAL] [LEGAL] Clear action - DO NOT MODIFY */}
         <div className={styles.actionBox}>
           <p className={styles.actionText}>
-            Please contact <strong>999</strong> now or attend your nearest{' '}
-            <strong>A&amp;E department</strong>.
+            {copy.patient.escalation.red.primaryAction}
           </p>
-          <a href="tel:999" className={styles.emergencyButton}>
-            Call 999 Now
+          <a
+            href="tel:999"
+            className={styles.emergencyButton}
+            onClick={handle999Click}
+          >
+            {copy.patient.escalation.red.callCta}
           </a>
         </div>
 
-        {/* Supportive but firm */}
+        {/* [CLINICAL] [LEGAL] Supportive but firm - DO NOT MODIFY */}
         <p className={styles.firmStatement}>
-          We cannot provide emergency support through this service.
+          {copy.patient.escalation.red.firmStatement}
         </p>
 
         {/* Optional trusted person message */}
         {showTrustedPersonOption && (
           <p className={styles.optionalMessage}>
-            If you&apos;re able to do so safely, consider contacting a trusted person
-            to be with you.
+            {copy.patient.escalation.red.trustedPerson}
           </p>
         )}
 
         {/* Additional resources - secondary */}
         <div className={styles.additionalResources}>
-          <p className={styles.resourcesLabel}>Other crisis lines:</p>
+          <p className={styles.resourcesLabel}>{copy.patient.triage.red.crisisResources.title}</p>
           <div className={styles.resourceLinks}>
             <a href="tel:116123" className={styles.resourceLink}>
-              <span className={styles.resourceName}>Samaritans</span>
-              <span className={styles.resourceNumber}>116 123</span>
+              <span className={styles.resourceName}>{copy.patient.triage.red.crisisResources.samaritans.name}</span>
+              <span className={styles.resourceNumber}>{copy.patient.triage.red.crisisResources.samaritans.number}</span>
             </a>
-            <a href="tel:0800689999" className={styles.resourceLink}>
-              <span className={styles.resourceName}>Crisis Text Line</span>
-              <span className={styles.resourceNumber}>Text SHOUT to 85258</span>
+            <a href="sms:85258?body=SHOUT" className={styles.resourceLink}>
+              <span className={styles.resourceName}>{copy.patient.triage.red.crisisResources.shout.name}</span>
+              <span className={styles.resourceNumber}>{copy.patient.triage.red.crisisResources.shout.action}</span>
             </a>
           </div>
         </div>
 
         {/* Acknowledge button - only if appropriate */}
         {onAcknowledge && (
-          <button onClick={onAcknowledge} className={styles.acknowledgeButton}>
-            I understand
+          <button onClick={handleAcknowledge} className={styles.acknowledgeButton}>
+            {copy.patient.escalation.red.acknowledgeCta}
           </button>
         )}
       </div>

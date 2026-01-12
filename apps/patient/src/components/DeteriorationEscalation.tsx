@@ -7,6 +7,9 @@
  * while they're waiting for their appointment.
  */
 
+import { useEffect } from 'react';
+import { copy } from '@/copy';
+import { trackEvent, EVENTS } from '@/lib/analytics';
 import styles from './DeteriorationEscalation.module.css';
 
 interface DeteriorationEscalationProps {
@@ -17,8 +20,18 @@ interface DeteriorationEscalationProps {
 export default function DeteriorationEscalation({
   onAcknowledge,
 }: DeteriorationEscalationProps) {
+  // Track escalation shown
+  useEffect(() => {
+    trackEvent(EVENTS.CHECKIN_ESCALATION_SHOWN);
+  }, []);
+
+  const handleAcknowledge = () => {
+    trackEvent(EVENTS.ESCALATION_ACKNOWLEDGED, { type: 'deterioration' });
+    onAcknowledge?.();
+  };
+
   return (
-    <div className={styles.container}>
+    <div id="deterioration-escalation" className={styles.container}>
       <div className={styles.card}>
         {/* Header */}
         <div className={styles.header}>
@@ -37,35 +50,31 @@ export default function DeteriorationEscalation({
               <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
             </svg>
           </div>
-          <h2 className={styles.title}>We&apos;d like to review your care plan</h2>
+          <h2 id="deterioration-title" className={styles.title}>
+            {copy.patient.waitingList.deterioration.title}
+          </h2>
         </div>
 
         {/* Main message */}
-        <p className={styles.mainMessage}>
-          Your recent check-in suggests things may have become more difficult.
+        <p id="deterioration-body" className={styles.mainMessage}>
+          {copy.patient.waitingList.deterioration.body}
         </p>
 
         {/* What happens next */}
         <div className={styles.nextSteps}>
-          <p>
-            A clinician will review this and may contact you to discuss next
-            steps.
-          </p>
+          <p>{copy.patient.waitingList.deterioration.nextSteps}</p>
         </div>
 
-        {/* Safety line - always present */}
+        {/* [CLINICAL] Safety line - always present - DO NOT MODIFY */}
         <div className={styles.safetyLine}>
           <span className={styles.safetyIcon}>⚠️</span>
-          <p>
-            If you feel unsafe, please contact <strong>999</strong> or attend{' '}
-            <strong>A&amp;E</strong> immediately.
-          </p>
+          <p>{copy.shared.safetyFooter.default}</p>
         </div>
 
         {/* Acknowledge button */}
         {onAcknowledge && (
-          <button onClick={onAcknowledge} className={styles.acknowledgeButton}>
-            I understand
+          <button onClick={handleAcknowledge} className={styles.acknowledgeButton}>
+            {copy.patient.waitingList.deterioration.acknowledgeCta}
           </button>
         )}
       </div>

@@ -7,7 +7,9 @@
  * Helps detect deterioration and provide appropriate support.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { copy } from '@/copy';
+import { trackEvent, EVENTS } from '@/lib/analytics';
 import styles from './WaitingListCheckIn.module.css';
 
 interface CheckInQuestion {
@@ -58,33 +60,42 @@ export default function WaitingListCheckIn({
   submitting = false,
 }: WaitingListCheckInProps) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [hasStarted, setHasStarted] = useState(false);
+
+  // Track check-in viewed on mount
+  useEffect(() => {
+    trackEvent(EVENTS.CHECKIN_VIEWED);
+  }, []);
 
   const handleOptionChange = (questionId: string, value: string) => {
+    // Track checkin_started on first interaction
+    if (!hasStarted) {
+      setHasStarted(true);
+      trackEvent(EVENTS.CHECKIN_STARTED);
+    }
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
   };
 
   const handleSubmit = () => {
+    trackEvent(EVENTS.CHECKIN_SUBMITTED, { answers });
     onSubmit(answers);
   };
 
   const allAnswered = questions.every((q) => answers[q.id]);
 
   return (
-    <div className={styles.container}>
+    <div id="checkin-container" className={styles.container}>
       {/* Header */}
       <div className={styles.header}>
-        <h1 className={styles.title}>Checking in — how are you feeling?</h1>
+        <h1 id="checkin-title" className={styles.title}>
+          {copy.patient.checkIn.title}
+        </h1>
       </div>
 
-      {/* Introduction */}
-      <div className={styles.intro}>
+      {/* Body */}
+      <div id="checkin-body" className={styles.intro}>
         <p>
-          {patientName ? `Hi ${patientName}, we're` : "We're"} checking in while
-          you&apos;re waiting for your appointment.
-        </p>
-        <p className={styles.purpose}>
-          This short check-in helps us notice if things have changed and whether
-          additional support is needed.
+          {patientName ? `Hi ${patientName}, ` : ''}{copy.patient.checkIn.body}
         </p>
       </div>
 
@@ -121,20 +132,18 @@ export default function WaitingListCheckIn({
 
       {/* Submit */}
       <button
+        id="checkin-submit"
         onClick={handleSubmit}
         disabled={!allAnswered || submitting}
         className={styles.submitButton}
       >
-        {submitting ? 'Submitting...' : 'Submit check-in'}
+        {submitting ? copy.patient.checkIn.submitting : copy.patient.checkIn.submitCta}
       </button>
 
-      {/* Safety footer - always present */}
+      {/* [CLINICAL] Safety footer - always present - DO NOT MODIFY */}
       <div className={styles.safetyFooter}>
         <span className={styles.warningIcon}>⚠️</span>
-        <p>
-          If you&apos;re in immediate danger, please contact <strong>999</strong> or
-          attend <strong>A&amp;E</strong>.
-        </p>
+        <p>{copy.shared.safetyFooter.default}</p>
       </div>
     </div>
   );

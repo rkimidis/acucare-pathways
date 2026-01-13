@@ -17,6 +17,7 @@ from app.api.v1 import (
     messaging,
     mfa,
     monitoring,
+    pilot,
     reporting,
     scheduling,
     triage_cases,
@@ -134,4 +135,11 @@ api_router.include_router(
     admin_friction.router,
     prefix="/admin",
     tags=["admin-friction"],
+)
+
+# Pilot Monitoring
+api_router.include_router(
+    pilot.router,
+    prefix="/pilot",
+    tags=["pilot"],
 )

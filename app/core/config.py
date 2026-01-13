@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     )
 
     # Application environment
-    env: Literal["dev", "staging", "prod"] = "dev"
+    env: Literal["dev", "test", "staging", "prod"] = "dev"
 
     # Database
     database_url: str = "postgresql+asyncpg://acucare:acucare@localhost:5432/acucare"
@@ -29,6 +29,10 @@ class Settings(BaseSettings):
 
     # Patient magic links
     patient_magic_link_ttl_minutes: int = 30
+
+    # Rate limiting
+    rate_limit_enabled: bool = True
+    rate_limit_storage_url: str | None = None  # Redis URL for multi-worker deployments
 
     # Logging
     log_level: str = "INFO"
@@ -63,6 +67,11 @@ class Settings(BaseSettings):
     def is_prod(self) -> bool:
         """Check if running in production mode."""
         return self.env == "prod"
+
+    @property
+    def is_test(self) -> bool:
+        """Check if running in test mode."""
+        return self.env == "test"
 
 
 @lru_cache

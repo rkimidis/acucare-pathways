@@ -66,7 +66,7 @@ class AuthService:
         return create_access_token(
             subject=user.id,
             additional_claims={
-                "role": user.role.value,
+                "role": user.role.value if hasattr(user.role, 'value') else user.role,
                 "actor_type": "staff",
                 "email": user.email,
             },

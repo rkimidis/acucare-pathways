@@ -76,7 +76,7 @@ async def staff_login(
         action_category="auth",
         entity_type="user",
         entity_id=user.id,
-        metadata={"role": user.role.value},
+        metadata={"role": user.role.value if hasattr(user.role, 'value') else user.role},
         ip_address=get_client_ip(request),
         user_agent=request.headers.get("user-agent"),
     )

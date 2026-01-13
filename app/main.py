@@ -14,6 +14,7 @@ from app.core.logging import setup_logging
 from app.db.init_db import init_db
 from app.db.session import AsyncSessionLocal
 from app.middleware.rbac import RBACMiddleware
+from app.middleware.rate_limit import RateLimitMiddleware
 
 # Setup logging
 setup_logging()
@@ -50,6 +51,9 @@ app = FastAPI(
 
 # Add RBAC middleware
 app.add_middleware(RBACMiddleware)
+
+# Add rate limiting middleware
+app.add_middleware(RateLimitMiddleware, enabled=settings.rate_limit_enabled)
 
 # CORS middleware (configure appropriately for production)
 if settings.is_dev:

@@ -1,0 +1,37 @@
+{
+  "family": "acucare-seed-data",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::326246079459:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "seed",
+      "image": "326246079459.dkr.ecr.eu-west-2.amazonaws.com/acucare/api-backend:seed",
+      "essential": true,
+      "command": ["python", "-c", "import asyncio; from scripts.create_test_accounts import main; asyncio.run(main())"],
+      "environment": [
+        {"name": "ENV", "value": "test"}
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:326246079459:secret:acucare/test/db-credentials-98f8mr:DATABASE_URL::"
+        },
+        {
+          "name": "SECRET_KEY",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:326246079459:secret:acucare/test/secret-key-ujR66K:SECRET_KEY::"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/acucare-seed-data",
+          "awslogs-region": "eu-west-2",
+          "awslogs-stream-prefix": "seed"
+        }
+      }
+    }
+  ]
+}

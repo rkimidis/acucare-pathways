@@ -1,0 +1,45 @@
+{
+  "family": "acucare-api-test",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::326246079459:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "api",
+      "image": "326246079459.dkr.ecr.eu-west-2.amazonaws.com/acucare/api-backend:20260113233612",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {"name": "ENV", "value": "test"},
+        {"name": "LOG_LEVEL", "value": "INFO"},
+        {"name": "CORS_ORIGINS", "value": "*"},
+        {"name": "PILOT_MODE", "value": "false"}
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:326246079459:secret:acucare/test/db-credentials-98f8mr:DATABASE_URL::"
+        },
+        {
+          "name": "SECRET_KEY",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:326246079459:secret:acucare/test/secret-key-ujR66K:SECRET_KEY::"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/acucare-api-test",
+          "awslogs-region": "eu-west-2",
+          "awslogs-stream-prefix": "api"
+        }
+      }
+    }
+  ]
+}

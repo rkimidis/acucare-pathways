@@ -25,6 +25,10 @@ AsyncSessionLocal = async_sessionmaker(
 )
 
 
+# Alias for backward compatibility with scripts
+async_session_maker = AsyncSessionLocal
+
+
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Dependency that provides an async database session.
 

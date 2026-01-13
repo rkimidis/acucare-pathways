@@ -94,13 +94,13 @@ async def request_magic_link(
         user_agent=request.headers.get("user-agent"),
     )
 
-    # In dev mode, return the token directly
+    # In dev/test mode, return the token directly
     # In prod, this would trigger an email send
-    if settings.is_dev:
+    if settings.is_dev or settings.is_test:
         return MagicLinkResponse(
             token=magic_link.token,
             expires_in_minutes=settings.patient_magic_link_ttl_minutes,
-            message="Magic link token (dev mode only)",
+            message="Magic link token (dev/test mode only)",
         )
 
     return MagicLinkResponse(

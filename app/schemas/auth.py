@@ -1,12 +1,29 @@
 """Authentication schemas."""
 
-from pydantic import BaseModel, EmailStr, Field
+import re
+from typing import Annotated
+
+from pydantic import AfterValidator, BaseModel, Field
+
+
+def validate_email_lenient(v: str) -> str:
+    """Validate email with lenient rules that allow .local domains for testing."""
+    if not v or "@" not in v:
+        raise ValueError("Invalid email address")
+    # Basic email pattern that allows .local and other test domains
+    pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+    if not re.match(pattern, v):
+        raise ValueError("Invalid email address format")
+    return v.lower()
+
+
+LenientEmail = Annotated[str, AfterValidator(validate_email_lenient)]
 
 
 class StaffLoginRequest(BaseModel):
     """Staff login request with email and password."""
 
-    email: EmailStr
+    email: LenientEmail
     password: str = Field(min_length=8, max_length=128)
 
 
@@ -19,7 +36,7 @@ class PatientLoginRequest(BaseModel):
 class MagicLinkRequest(BaseModel):
     """Request to generate a magic link for patient authentication."""
 
-    email: EmailStr
+    email: LenientEmail
 
 
 class MagicLinkResponse(BaseModel):

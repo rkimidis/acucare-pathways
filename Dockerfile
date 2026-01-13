@@ -21,16 +21,16 @@ RUN groupadd --gid 1000 appgroup && \
     useradd --uid 1000 --gid appgroup --shell /bin/bash --create-home appuser
 
 # Install Python dependencies
-COPY pyproject.toml ./
+COPY requirements.txt ./
 RUN pip install --upgrade pip && \
-    pip install . && \
-    pip install uvicorn[standard]
+    pip install -r requirements.txt
 
 # Copy application code
 COPY alembic.ini ./
 COPY alembic/ ./alembic/
 COPY app/ ./app/
 COPY rulesets/ ./rulesets/
+COPY scripts/ ./scripts/
 
 # Change ownership to non-root user
 RUN chown -R appuser:appgroup /app

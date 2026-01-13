@@ -1,0 +1,34 @@
+{
+  "family": "acucare-patient-test",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::326246079459:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "patient-portal",
+      "image": "326246079459.dkr.ecr.eu-west-2.amazonaws.com/acucare/patient-portal:test",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {"name": "NODE_ENV", "value": "production"},
+        {"name": "NEXT_PUBLIC_API_URL", "value": "http://acucare-test-alb-1438060142.eu-west-2.elb.amazonaws.com"},
+        {"name": "NEXT_PUBLIC_ENV", "value": "test"}
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/acucare-patient-test",
+          "awslogs-region": "eu-west-2",
+          "awslogs-stream-prefix": "patient"
+        }
+      }
+    }
+  ]
+}

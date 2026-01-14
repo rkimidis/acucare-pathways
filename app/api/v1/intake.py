@@ -9,6 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from app.api.deps import CurrentPatient, DbSession, get_client_ip
 from app.core.config import settings
+from app.models.audit_event import ActorType
 from app.models.consent import Consent
 from app.models.questionnaire import QuestionnaireDefinition, QuestionnaireResponse
 from app.models.triage_case import TriageCase
@@ -19,7 +20,7 @@ from app.schemas.questionnaire import (
     QuestionnaireResponseRead,
     SafetyBannerResponse,
 )
-from app.services.audit import AuditService
+from app.services.audit import write_audit_event
 
 router = APIRouter(prefix="/intake", tags=["intake"])
 
@@ -166,9 +167,9 @@ async def save_intake_draft(
     await session.refresh(response)
 
     # Audit event
-    audit_service = AuditService(session)
-    await audit_service.log_event(
-        actor_type="patient",
+    await write_audit_event(
+        session=session,
+        actor_type=ActorType.PATIENT,
         actor_id=patient.id,
         actor_email=patient.email,
         action="intake_draft_saved",
@@ -252,9 +253,9 @@ async def submit_intake_response(
     await session.refresh(response)
 
     # Audit event
-    audit_service = AuditService(session)
-    await audit_service.log_event(
-        actor_type="patient",
+    await write_audit_event(
+        session=session,
+        actor_type=ActorType.PATIENT,
         actor_id=patient.id,
         actor_email=patient.email,
         action="intake_submitted",

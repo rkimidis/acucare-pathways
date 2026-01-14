@@ -19,7 +19,7 @@ class QuestionnaireDefinitionRead(BaseModel):
     display_order: int
     previous_version_id: str | None = None
     created_at: datetime
-    updated_at: datetime
+    updated_at: datetime | None = None
 
     model_config = {"from_attributes": True, "populate_by_name": True}
 
@@ -45,7 +45,7 @@ class QuestionnaireResponseRead(BaseModel):
     submitted_at: datetime | None = None
     completion_time_seconds: int | None = None
     created_at: datetime
-    updated_at: datetime
+    updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 

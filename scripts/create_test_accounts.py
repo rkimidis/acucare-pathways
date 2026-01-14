@@ -221,6 +221,120 @@ def print_accounts(created: list, skipped: list):
     print()
 
 
+async def create_intake_questionnaire():
+    """Create the intake questionnaire definition."""
+    try:
+        import hashlib
+        import json
+        from app.db.session import async_session_maker
+        from app.models.questionnaire import QuestionnaireDefinition
+        from sqlalchemy import select
+
+        schema = {
+            "title": "Initial Assessment",
+            "description": "Please answer the following questions to help us understand your needs.",
+            "fields": [
+                {
+                    "id": "phq9_1",
+                    "type": "select",
+                    "label": "Over the last 2 weeks, how often have you had little interest or pleasure in doing things?",
+                    "required": True,
+                    "options": [
+                        {"value": 0, "label": "Not at all"},
+                        {"value": 1, "label": "Several days"},
+                        {"value": 2, "label": "More than half the days"},
+                        {"value": 3, "label": "Nearly every day"},
+                    ],
+                },
+                {
+                    "id": "phq9_2",
+                    "type": "select",
+                    "label": "Over the last 2 weeks, how often have you felt down, depressed, or hopeless?",
+                    "required": True,
+                    "options": [
+                        {"value": 0, "label": "Not at all"},
+                        {"value": 1, "label": "Several days"},
+                        {"value": 2, "label": "More than half the days"},
+                        {"value": 3, "label": "Nearly every day"},
+                    ],
+                },
+                {
+                    "id": "gad7_1",
+                    "type": "select",
+                    "label": "Over the last 2 weeks, how often have you felt nervous, anxious, or on edge?",
+                    "required": True,
+                    "options": [
+                        {"value": 0, "label": "Not at all"},
+                        {"value": 1, "label": "Several days"},
+                        {"value": 2, "label": "More than half the days"},
+                        {"value": 3, "label": "Nearly every day"},
+                    ],
+                },
+                {
+                    "id": "gad7_2",
+                    "type": "select",
+                    "label": "Over the last 2 weeks, how often have you not been able to stop or control worrying?",
+                    "required": True,
+                    "options": [
+                        {"value": 0, "label": "Not at all"},
+                        {"value": 1, "label": "Several days"},
+                        {"value": 2, "label": "More than half the days"},
+                        {"value": 3, "label": "Nearly every day"},
+                    ],
+                },
+                {
+                    "id": "safety_thoughts",
+                    "type": "select",
+                    "label": "Have you had any thoughts of harming yourself or others?",
+                    "required": True,
+                    "options": [
+                        {"value": "no", "label": "No"},
+                        {"value": "past", "label": "In the past, but not currently"},
+                        {"value": "sometimes", "label": "Sometimes"},
+                        {"value": "often", "label": "Often"},
+                    ],
+                },
+                {
+                    "id": "additional_concerns",
+                    "type": "text",
+                    "label": "Is there anything else you would like us to know?",
+                    "required": False,
+                },
+            ],
+        }
+
+        schema_json = json.dumps(schema, sort_keys=True)
+        schema_hash = hashlib.sha256(schema_json.encode()).hexdigest()
+
+        async with async_session_maker() as session:
+            # Check if already exists
+            result = await session.execute(
+                select(QuestionnaireDefinition)
+                .where(QuestionnaireDefinition.name == "intake")
+                .where(QuestionnaireDefinition.is_active == True)
+            )
+            existing = result.scalar_one_or_none()
+
+            if existing:
+                return False, "Intake questionnaire already exists"
+
+            definition = QuestionnaireDefinition(
+                name="intake",
+                version="1.0",
+                description="Initial patient intake questionnaire",
+                schema=schema,
+                schema_hash=schema_hash,
+                is_active=True,
+                display_order=1,
+            )
+            session.add(definition)
+            await session.commit()
+            return True, "Created intake questionnaire v1.0"
+
+    except Exception as e:
+        return None, str(e)
+
+
 async def main():
     """Main entry point."""
     print("Creating test staff accounts...")
@@ -258,6 +372,14 @@ async def main():
             print()
         print("Patients use magic link authentication (no password).")
         print("Request a magic link via the patient portal.")
+
+    # Create intake questionnaire
+    print()
+    print("Creating intake questionnaire...")
+    print()
+
+    questionnaire_created, questionnaire_msg = await create_intake_questionnaire()
+    print(f"Questionnaire: {questionnaire_msg}")
 
 
 if __name__ == "__main__":

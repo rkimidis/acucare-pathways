@@ -17,6 +17,7 @@ class Permission(str, Enum):
     # Patient management
     PATIENTS_READ = "patients:read"
     PATIENTS_WRITE = "patients:write"
+    IDENTIFIERS_WRITE = "identifiers:write"  # Admin-only: add/modify patient identifiers
 
     # Triage management
     TRIAGE_READ = "triage:read"
@@ -53,6 +54,7 @@ ROLE_PERMISSIONS: dict[UserRole, set[Permission]] = {
     UserRole.ADMIN: {
         Permission.PATIENTS_READ,
         Permission.PATIENTS_WRITE,
+        Permission.IDENTIFIERS_WRITE,  # Admin-only: manage patient identifiers
         Permission.TRIAGE_READ,
         Permission.TRIAGE_WRITE,
         Permission.TRIAGE_ASSIGN,
@@ -88,6 +90,7 @@ ROLE_PERMISSIONS: dict[UserRole, set[Permission]] = {
     },
     UserRole.CLINICIAN: {
         Permission.PATIENTS_READ,
+        Permission.PATIENTS_WRITE,  # Clinicians can edit patient details during pilot
         Permission.TRIAGE_READ,
         Permission.TRIAGE_WRITE,
         Permission.DISPOSITION_CONFIRM,

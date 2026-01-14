@@ -46,7 +46,21 @@ interface FinalDisposition {
 interface QuestionnaireResponse {
   id: string;
   answers: Record<string, unknown>;
+  answers_human?: AnswerItem[];
   submitted_at: string | null;
+}
+
+interface AnswerItem {
+  field_id: string;
+  question: string;
+  answer: string;
+}
+
+interface TimelineEntry {
+  label: string;
+  timestamp: string;
+  actor_type: string;
+  actor_name: string | null;
 }
 
 interface CaseSummary {
@@ -64,6 +78,8 @@ interface CaseSummary {
     tier_explanation: Record<string, unknown> | null;
     triaged_at: string | null;
     reviewed_at: string | null;
+    assigned_to_user_id?: string | null;
+    assigned_to_user_name?: string | null;
   };
   patient: {
     id: string;
@@ -77,6 +93,7 @@ interface CaseSummary {
   draft_disposition: DraftDisposition | null;
   final_disposition: FinalDisposition | null;
   questionnaire_responses: QuestionnaireResponse[];
+  timeline: TimelineEntry[];
 }
 
 interface QueueItem {
@@ -84,7 +101,96 @@ interface QueueItem {
   tier: string | null;
 }
 
-type TabType = 'overview' | 'scores' | 'answers' | 'disposition';
+type TabType = 'overview' | 'patient-details' | 'scores' | 'answers' | 'disposition';
+
+interface PatientAddress {
+  id: string;
+  type: string;
+  line1: string | null;
+  line2: string | null;
+  city: string | null;
+  county: string | null;
+  postcode: string | null;
+  country: string;
+  is_primary: boolean;
+  created_at: string;
+}
+
+interface PatientContact {
+  id: string;
+  contact_type: string;
+  name: string | null;
+  relationship_to_patient: string | null;
+  phone_e164: string | null;
+  email: string | null;
+  organisation: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+interface PatientPreferences {
+  communication_channel_preference: string | null;
+  appointment_format_preference: string | null;
+  requires_accessibility_support: boolean;
+  accessibility_notes: string | null;
+  reasonable_adjustments_notes: string | null;
+}
+
+interface PatientClinicalProfile {
+  presenting_problem: string | null;
+  previous_mental_health_treatment: string | null;
+  current_psych_medication: boolean | null;
+  current_medication_list: Array<{ name: string; dose: string; frequency: string }> | null;
+  physical_health_conditions: boolean | null;
+  physical_health_notes: string | null;
+  substance_use_level: string | null;
+  neurodevelopmental_needs: boolean | null;
+  risk_notes_staff_only: string | null;
+}
+
+interface PatientIdentifier {
+  id: string;
+  id_type: string;
+  id_value: string;
+  is_verified: boolean;
+  verified_at: string | null;
+  created_at: string;
+}
+
+interface PatientDetail {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  preferred_name: string | null;
+  date_of_birth: string | null;
+  sex_at_birth: string | null;
+  gender_identity: string | null;
+  ethnicity: string | null;
+  preferred_language: string | null;
+  interpreter_required: boolean;
+  phone_e164: string | null;
+  preferred_contact_method: string | null;
+  can_leave_voicemail: boolean;
+  consent_to_sms: boolean;
+  consent_to_email: boolean;
+  postcode: string | null;
+  country: string | null;
+  has_dependents: boolean | null;
+  is_pregnant_or_postnatal: boolean | null;
+  reasonable_adjustments_required: boolean;
+  is_active: boolean;
+  nhs_number: string | null;
+  created_at: string;
+  updated_at: string | null;
+  addresses: PatientAddress[];
+  contacts: PatientContact[];
+  preferences: PatientPreferences | null;
+  clinical_profile: PatientClinicalProfile | null;
+  identifiers: PatientIdentifier[];
+  primary_gp_contact: PatientContact | null;
+  emergency_contact: PatientContact | null;
+}
 
 export default function CaseDetailPage() {
   const router = useRouter();
@@ -108,7 +214,48 @@ export default function CaseDetailPage() {
   const [queueCases, setQueueCases] = useState<QueueItem[]>([]);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [showOverrideConfirm, setShowOverrideConfirm] = useState(false);
+  const [showConfirmPrompt, setShowConfirmPrompt] = useState(false);
   const [showIncidentPrompt, setShowIncidentPrompt] = useState(false);
+  const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(true);
+  const [showRawAnswers, setShowRawAnswers] = useState<Record<string, boolean>>({});
+  const [showTimeline, setShowTimeline] = useState(false);
+  const [whyPathwayStorageKey, setWhyPathwayStorageKey] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [patientDetails, setPatientDetails] = useState<PatientDetail | null>(null);
+  const [patientDetailsLoading, setPatientDetailsLoading] = useState(false);
+  const [patientDetailsError, setPatientDetailsError] = useState<string | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const [confirmNotes, setConfirmNotes] = useState('');
+  const [showConfirmBanner, setShowConfirmBanner] = useState(false);
+
+  // Edit mode state
+  type EditSection = 'identity' | 'contact' | 'address' | 'safeguarding' | 'clinical' | 'preferences' | null;
+  const [editingSection, setEditingSection] = useState<EditSection>(null);
+  const [editForm, setEditForm] = useState<Record<string, unknown>>({});
+  const [editReason, setEditReason] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  // Fields that require a reason when changed
+  const REASON_REQUIRED_FIELDS = ['first_name', 'last_name', 'date_of_birth'];
+
+  // Check if user can edit patient details
+  const canEditPatient = currentUserRole && ['admin', 'clinical_lead', 'clinician', 'receptionist'].includes(currentUserRole);
+  const canAddIdentifiers = currentUserRole === 'admin';
+
+  const decodeTokenPayload = (token: string) => {
+    try {
+      const payload = token.split('.')[1];
+      if (!payload) return null;
+      const decoded = JSON.parse(atob(payload));
+      return {
+        userId: decoded.sub as string | undefined,
+        role: decoded.role as string | undefined,
+      };
+    } catch {
+      return null;
+    }
+  };
 
   // Load queue for navigation
   useEffect(() => {
@@ -130,8 +277,30 @@ export default function CaseDetailPage() {
       return;
     }
 
+    const payload = decodeTokenPayload(token);
+    setCurrentUserId(payload?.userId ?? null);
+    setCurrentUserRole(payload?.role ?? null);
+
     fetchCaseSummary(token);
   }, [caseId, router]);
+
+  useEffect(() => {
+    setShowConfirmBanner(false);
+    setConfirmNotes('');
+  }, [caseId]);
+
+  useEffect(() => {
+    if (!caseId) return;
+    const storageKey = `whyPathwayExpanded:${caseId}`;
+    setWhyPathwayStorageKey(storageKey);
+    const stored = localStorage.getItem(storageKey);
+    if (stored === null) {
+      setShowWhyPathway(true);
+      localStorage.setItem(storageKey, 'true');
+    } else {
+      setShowWhyPathway(stored === 'true');
+    }
+  }, [caseId]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -187,7 +356,7 @@ export default function CaseDetailPage() {
           // Confirm disposition
           if (summary?.draft_disposition && !summary.final_disposition && !isDisposing) {
             e.preventDefault();
-            handleConfirmDisposition();
+            setShowConfirmPrompt(true);
           }
           break;
         case 'escape':
@@ -240,6 +409,234 @@ export default function CaseDetailPage() {
     }
   };
 
+  const fetchPatientDetails = async (patientId: string) => {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    try {
+      setPatientDetailsLoading(true);
+      setPatientDetailsError(null);
+      const response = await fetch(`/api/v1/patients/${patientId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPatientDetails(data);
+      } else if (response.status === 404) {
+        setPatientDetailsError('Patient record not found');
+      } else if (response.status === 403) {
+        setPatientDetailsError('You do not have permission to view this patient');
+      } else {
+        setPatientDetailsError('Unable to load patient details');
+      }
+    } catch (err) {
+      console.error('Failed to fetch patient details:', err);
+      setPatientDetailsError('Unable to load patient details. Please try again.');
+    } finally {
+      setPatientDetailsLoading(false);
+    }
+  };
+
+  const retryPatientDetails = () => {
+    if (summary?.patient?.id) {
+      setPatientDetails(null);
+      fetchPatientDetails(summary.patient.id);
+    }
+  };
+
+  // Start editing a section
+  const startEditSection = (section: EditSection) => {
+    if (!patientDetails || !canEditPatient) return;
+
+    // Pre-fill form based on section
+    let formData: Record<string, unknown> = {};
+
+    switch (section) {
+      case 'identity':
+        formData = {
+          first_name: patientDetails.first_name,
+          last_name: patientDetails.last_name,
+          preferred_name: patientDetails.preferred_name || '',
+          date_of_birth: patientDetails.date_of_birth || '',
+          sex_at_birth: patientDetails.sex_at_birth || '',
+          gender_identity: patientDetails.gender_identity || '',
+          ethnicity: patientDetails.ethnicity || '',
+          preferred_language: patientDetails.preferred_language || '',
+          interpreter_required: patientDetails.interpreter_required,
+        };
+        break;
+      case 'contact':
+        formData = {
+          email: patientDetails.email,
+          phone_e164: patientDetails.phone_e164 || '',
+          preferred_contact_method: patientDetails.preferred_contact_method || '',
+          can_leave_voicemail: patientDetails.can_leave_voicemail,
+          consent_to_sms: patientDetails.consent_to_sms,
+          consent_to_email: patientDetails.consent_to_email,
+        };
+        break;
+      case 'safeguarding':
+        formData = {
+          has_dependents: patientDetails.has_dependents,
+          is_pregnant_or_postnatal: patientDetails.is_pregnant_or_postnatal,
+          reasonable_adjustments_required: patientDetails.reasonable_adjustments_required,
+        };
+        break;
+      case 'preferences':
+        formData = {
+          communication_channel_preference: patientDetails.preferences?.communication_channel_preference || '',
+          appointment_format_preference: patientDetails.preferences?.appointment_format_preference || '',
+          requires_accessibility_support: patientDetails.preferences?.requires_accessibility_support || false,
+          accessibility_notes: patientDetails.preferences?.accessibility_notes || '',
+          reasonable_adjustments_notes: patientDetails.preferences?.reasonable_adjustments_notes || '',
+        };
+        break;
+      case 'clinical':
+        formData = {
+          presenting_problem: patientDetails.clinical_profile?.presenting_problem || '',
+          previous_mental_health_treatment: patientDetails.clinical_profile?.previous_mental_health_treatment || '',
+          current_psych_medication: patientDetails.clinical_profile?.current_psych_medication,
+          substance_use_level: patientDetails.clinical_profile?.substance_use_level || '',
+          physical_health_conditions: patientDetails.clinical_profile?.physical_health_conditions,
+          physical_health_notes: patientDetails.clinical_profile?.physical_health_notes || '',
+          neurodevelopmental_needs: patientDetails.clinical_profile?.neurodevelopmental_needs,
+          risk_notes_staff_only: patientDetails.clinical_profile?.risk_notes_staff_only || '',
+        };
+        break;
+    }
+
+    setEditForm(formData);
+    setEditReason('');
+    setEditError(null);
+    setEditingSection(section);
+  };
+
+  const cancelEdit = () => {
+    setEditingSection(null);
+    setEditForm({});
+    setEditReason('');
+    setEditError(null);
+  };
+
+  const saveEdit = async () => {
+    if (!patientDetails || !editingSection) return;
+
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    // Check if reason is required for any changed fields
+    const changedFields = Object.keys(editForm).filter((key) => {
+      const original = (patientDetails as unknown as Record<string, unknown>)[key];
+      return editForm[key] !== original;
+    });
+
+    const needsReason = changedFields.some((f) => REASON_REQUIRED_FIELDS.includes(f));
+    if (needsReason && !editReason.trim()) {
+      setEditError('Reason required when changing name or date of birth');
+      return;
+    }
+
+    setEditSaving(true);
+    setEditError(null);
+
+    try {
+      let endpoint = '';
+      let method = 'PATCH';
+      let body: Record<string, unknown> = {};
+
+      if (editingSection === 'identity' || editingSection === 'contact' || editingSection === 'safeguarding') {
+        // These fields go to PATCH /patients/{id}
+        endpoint = `/api/v1/patients/${patientDetails.id}`;
+        body = {
+          updates: editForm,
+          reason: editReason || null,
+        };
+      } else if (editingSection === 'preferences') {
+        // PUT /patients/{id}/preferences
+        endpoint = `/api/v1/patients/${patientDetails.id}/preferences`;
+        method = 'PUT';
+        body = editForm;
+      } else if (editingSection === 'clinical') {
+        // PUT /patients/{id}/clinical-profile
+        endpoint = `/api/v1/patients/${patientDetails.id}/clinical-profile`;
+        method = 'PUT';
+        body = editForm;
+      }
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.detail || 'Failed to save changes');
+      }
+
+      // Refresh patient details
+      await fetchPatientDetails(patientDetails.id);
+      cancelEdit();
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Failed to save');
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  // Fetch patient details when patient ID is available (for summary header)
+  useEffect(() => {
+    if (summary?.patient?.id && !patientDetails && !patientDetailsLoading) {
+      fetchPatientDetails(summary.patient.id);
+    }
+  }, [summary?.patient?.id, patientDetails, patientDetailsLoading]);
+
+  const handleClaimCase = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        router.push('/auth/login');
+        return;
+      }
+
+      const response = await fetch(`/api/v1/triage-cases/${caseId}/claim`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) throw new Error('Failed to claim case');
+
+      await fetchCaseSummary(token);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to claim case');
+    }
+  };
+
+  const handleUnassignCase = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        router.push('/auth/login');
+        return;
+      }
+
+      const response = await fetch(`/api/v1/triage-cases/${caseId}/unassign`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) throw new Error('Failed to unassign case');
+
+      await fetchCaseSummary(token);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to unassign case');
+    }
+  };
+
   const handleConfirmDisposition = async () => {
     const token = localStorage.getItem('access_token');
     if (!token) return;
@@ -254,13 +651,17 @@ export default function CaseDetailPage() {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ clinical_notes: overrideForm.clinical_notes || null }),
+        body: JSON.stringify({ clinical_notes: confirmNotes || null }),
       });
 
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.detail || 'Failed to confirm disposition');
       }
+
+      setShowConfirmPrompt(false);
+      setShowConfirmBanner(true);
+      setConfirmNotes('');
 
       // Refresh case data
       await fetchCaseSummary(token);
@@ -400,6 +801,122 @@ export default function CaseDetailPage() {
     }
   };
 
+  const humanizeKey = (key: string): string =>
+    key.replace(/[_-]+/g, ' ').trim().replace(/\b\w/g, (c) => c.toUpperCase());
+
+  const formatAnswerValue = (value: unknown): string => {
+    if (value === null || value === undefined || value === '') return '—';
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    if (Array.isArray(value)) {
+      return value.length ? value.map((v) => String(v)).join(', ') : '—';
+    }
+    if (typeof value === 'object') {
+      try {
+        return JSON.stringify(value);
+      } catch {
+        return String(value);
+      }
+    }
+    return String(value);
+  };
+
+  const buildFallbackAnswers = (answers: Record<string, unknown>): AnswerItem[] =>
+    Object.entries(answers).map(([fieldId, value]) => ({
+      field_id: fieldId,
+      question: humanizeKey(fieldId),
+      answer: formatAnswerValue(value),
+    }));
+
+  const findPrimaryComplaint = (): string | null => {
+    if (!summary) return null;
+    const questionMatches = [
+      'primary complaint',
+      'primary concern',
+      'main concern',
+      'presenting problem',
+      'presenting issue',
+      'reason for referral',
+      'what brings',
+      'main problem',
+    ];
+    const keyMatches = [
+      'primary_complaint',
+      'primary_concern',
+      'main_concern',
+      'presenting_problem',
+      'presenting_issue',
+      'reason_for_referral',
+      'complaint',
+    ];
+
+    const responses = [...summary.questionnaire_responses].sort((a, b) => {
+      const aTime = a.submitted_at ? new Date(a.submitted_at).getTime() : 0;
+      const bTime = b.submitted_at ? new Date(b.submitted_at).getTime() : 0;
+      return bTime - aTime;
+    });
+
+    for (const resp of responses) {
+      if (resp.answers_human && resp.answers_human.length > 0) {
+        const match = resp.answers_human.find((item) =>
+          questionMatches.some((q) => item.question.toLowerCase().includes(q))
+        );
+        if (match && match.answer) return match.answer;
+      }
+
+      for (const [key, value] of Object.entries(resp.answers)) {
+        if (keyMatches.some((matchKey) => key.toLowerCase().includes(matchKey))) {
+          return formatAnswerValue(value);
+        }
+      }
+    }
+
+    return null;
+  };
+
+  const findPhq9Score = (): string | null => {
+    if (!summary) return null;
+    const score = summary.scores.find((item) => item.score_type.toLowerCase().includes('phq'));
+    if (!score) return null;
+    const band = score.severity_band ? score.severity_band.toLowerCase() : null;
+    return `${score.total_score}${band ? ` (${band})` : ''}`;
+  };
+
+  const hasSafetyConcerns = (): boolean => {
+    if (!summary) return false;
+    const keywordMatch = (text: string) =>
+      ['suicide', 'self-harm', 'self harm', 'safety', 'harm'].some((keyword) =>
+        text.toLowerCase().includes(keyword)
+      );
+
+    if (summary.risk_flags.some((flag) => flag.severity === 'CRITICAL' || flag.severity === 'HIGH')) {
+      return true;
+    }
+
+    if (summary.risk_flags.some((flag) => keywordMatch(flag.flag_type))) {
+      return true;
+    }
+
+    if (summary.draft_disposition?.explanations?.some((exp) => keywordMatch(exp || ''))) {
+      return true;
+    }
+
+    return false;
+  };
+
+  const formatTimelineActor = (entry: TimelineEntry): string => {
+    if (entry.actor_type === 'system') return 'System';
+    if (entry.actor_name) return entry.actor_name;
+    return 'Clinician';
+  };
+
+  const formatPathwayLabel = (pathway: string | null): string => {
+    if (!pathway) return 'Unknown pathway';
+    return pathway
+      .replace(/_/g, ' ')
+      .toLowerCase()
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
   // Determine primary action based on tier
   const getPrimaryAction = () => {
     if (!summary || summary.final_disposition) return null;
@@ -431,6 +948,14 @@ export default function CaseDetailPage() {
     return null;
   };
 
+  const assignedUserId = summary?.case.assigned_to_user_id ?? null;
+  const assignedUserName = summary?.case.assigned_to_user_name || '-';
+  const isAssignedToMe = !!assignedUserId && assignedUserId === currentUserId;
+  const canClaimCase =
+    currentUserRole === 'clinician' ||
+    currentUserRole === 'clinical_lead' ||
+    currentUserRole === 'admin';
+
   const currentIndex = queueCases.findIndex((c) => c.id === caseId);
   const hasPrevious = currentIndex > 0;
   const hasNext = currentIndex < queueCases.length - 1;
@@ -458,6 +983,24 @@ export default function CaseDetailPage() {
 
   const isFinalized = !!summary.final_disposition;
   const primaryAction = getPrimaryAction();
+  const isRedAmberFinalized = isFinalized
+    && (summary.case.tier?.toLowerCase() === 'red' || summary.case.tier?.toLowerCase() === 'amber');
+  const tier = summary.case.tier?.toLowerCase() || null;
+  const isBookableTier = tier === 'green' || tier === 'blue';
+  const isBookingRestricted = tier === 'amber' || tier === 'red';
+  const confirmBannerText = isBookableTier
+    ? 'Next step: Patient can now book an appointment.'
+    : 'Next step: Clinician review required before booking.';
+  const confirmPathwayLabel = formatPathwayLabel(
+    summary.draft_disposition?.pathway || summary.case.pathway || null
+  );
+  const timelineEntries = (summary.timeline || [])
+    .filter((entry) => entry.timestamp)
+    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  const primaryComplaint = findPrimaryComplaint();
+  const phq9Score = findPhq9Score();
+  const safetyLine = hasSafetyConcerns() ? 'Safety concerns flagged' : 'No current safety concerns';
+  const rulesetVersion = summary.draft_disposition?.ruleset_version || summary.case.ruleset_version || 'Unknown';
 
   return (
     <div className={styles.layout}>
@@ -471,6 +1014,9 @@ export default function CaseDetailPage() {
           </Link>
           <Link href="/dashboard/triage" className={styles.navItemActive}>
             Triage Queue
+          </Link>
+          <Link href="/governance/pilot-feedback" className={styles.navItem}>
+            Pilot Feedback
           </Link>
         </nav>
       </aside>
@@ -549,6 +1095,14 @@ export default function CaseDetailPage() {
           </div>
         )}
 
+        {summary.final_disposition && !summary.final_disposition.is_override && showConfirmBanner && (
+          <div className={styles.confirmBanner}>
+            <strong>Disposition confirmed</strong>
+            <span>{confirmBannerText}</span>
+          </div>
+        )}
+
+
         {error && <div className={styles.error}>{error}</div>}
 
         {/* ONE-GLANCE CASE HEADER */}
@@ -582,25 +1136,128 @@ export default function CaseDetailPage() {
             </div>
           </div>
 
+          <div className={styles.ownershipStrip}>
+            <span className={styles.ownershipLabel}>Assigned to:</span>
+            <span className={styles.ownershipValue}>
+              {assignedUserId ? assignedUserName : '—'}
+            </span>
+            {!assignedUserId && canClaimCase && (
+              <button
+                type="button"
+                className={styles.ownershipAction}
+                onClick={handleClaimCase}
+              >
+                Claim case
+              </button>
+            )}
+            {assignedUserId && isAssignedToMe && canClaimCase && (
+              <button
+                type="button"
+                className={styles.ownershipAction}
+                onClick={handleUnassignCase}
+              >
+                Unassign
+              </button>
+            )}
+          </div>
+
+          {/* Patient Summary Header */}
+          {patientDetails && (
+            <div className={styles.patientSummaryHeader}>
+              <div className={styles.patientSummaryItem}>
+                <span className={styles.patientSummaryLabel}>Age:</span>
+                <span className={styles.patientSummaryValue}>
+                  {patientDetails.date_of_birth
+                    ? Math.floor((Date.now() - new Date(patientDetails.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+                    : '—'}
+                </span>
+              </div>
+              <div className={styles.patientSummaryItem}>
+                <span className={styles.patientSummaryLabel}>Postcode:</span>
+                <span className={styles.patientSummaryValue}>
+                  {patientDetails.postcode || '—'}
+                </span>
+              </div>
+              <div className={styles.patientSummaryItem}>
+                <span className={styles.patientSummaryLabel}>Language:</span>
+                <span className={styles.patientSummaryValue}>
+                  {patientDetails.preferred_language || 'English'}
+                </span>
+              </div>
+              <div className={styles.patientSummaryItem}>
+                <span className={styles.patientSummaryLabel}>Contact:</span>
+                <span className={styles.patientSummaryValue}>
+                  {patientDetails.preferred_contact_method || 'email'}
+                </span>
+              </div>
+              {patientDetails.interpreter_required && (
+                <span className={`${styles.patientFlagIcon} ${styles.interpreter}`} title="Interpreter Required">
+                  🌐
+                </span>
+              )}
+              {patientDetails.reasonable_adjustments_required && (
+                <span className={`${styles.patientFlagIcon} ${styles.adjustments}`} title="Reasonable Adjustments Required">
+                  ♿
+                </span>
+              )}
+              {patientDetails.preferences?.requires_accessibility_support && (
+                <span className={`${styles.patientFlagIcon} ${styles.adjustments}`} title="Accessibility Support Needed">
+                  👁
+                </span>
+              )}
+              <div className={styles.patientSummaryMeta}>
+                {patientDetails.updated_at && (
+                  <span className={styles.lastUpdated}>
+                    Updated {new Date(patientDetails.updated_at).toLocaleDateString()}
+                  </span>
+                )}
+                <button
+                  onClick={() => setActiveTab('patient-details')}
+                  className={styles.viewHistoryLink}
+                >
+                  View details →
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Why This Pathway? */}
-          {summary.draft_disposition && summary.draft_disposition.rules_fired.length > 0 && (
+          {summary.draft_disposition && (
             <div className={styles.whyPathway}>
               <button
                 className={styles.whyPathwayToggle}
-                onClick={() => setShowWhyPathway(!showWhyPathway)}
+                onClick={() => {
+                  if (!whyPathwayStorageKey) return;
+                  setShowWhyPathway((prev) => {
+                    const next = !prev;
+                    localStorage.setItem(whyPathwayStorageKey, String(next));
+                    return next;
+                  });
+                }}
               >
-                {showWhyPathway ? '▼' : '▶'} Why this pathway?
+                {showWhyPathway ? 'v' : '>'} Why this pathway?
               </button>
               {showWhyPathway && (
                 <div className={styles.rulesSummary}>
-                  {summary.draft_disposition.rules_fired.map((rule, idx) => (
-                    <div key={rule} className={styles.ruleSummaryItem}>
-                      <code>{rule}</code>
-                      {summary.draft_disposition!.explanations[idx] && (
-                        <span>{summary.draft_disposition!.explanations[idx]}</span>
-                      )}
+                  <div className={styles.rulesIntro}>Why this pathway was selected</div>
+                  <ul className={styles.rulesList}>
+                    <li>PHQ-9 score: {phq9Score || 'Not recorded'}</li>
+                    <li>{safetyLine}</li>
+                    <li>Primary complaint: {primaryComplaint || 'Not recorded'}</li>
+                    <li>Ruleset: {rulesetVersion}</li>
+                  </ul>
+                  {summary.draft_disposition.rules_fired.length > 0 && (
+                    <div className={styles.ruleTriggers}>
+                      {summary.draft_disposition.rules_fired.map((rule, idx) => (
+                        <div key={rule} className={styles.ruleSummaryItem}>
+                          <code>{rule}</code>
+                          {summary.draft_disposition!.explanations[idx] && (
+                            <span>{summary.draft_disposition!.explanations[idx]}</span>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
             </div>
@@ -627,15 +1284,29 @@ export default function CaseDetailPage() {
                 <kbd>{primaryAction.shortcut}</kbd>
               </button>
             )}
-            <button
-              className={styles.confirmButton}
-              onClick={handleConfirmDisposition}
-              disabled={isDisposing || !summary.draft_disposition}
-              title="Confirm disposition (Enter)"
-            >
-              {isDisposing ? 'Confirming...' : '✓ Confirm Disposition'}
-              <kbd>Enter</kbd>
-            </button>
+            {isBookingRestricted && (
+              <button
+                className={styles.restrictedButton}
+                disabled
+                title="Booking restricted - clinician review required"
+              >
+                Book Appointment
+              </button>
+            )}
+            <div className={styles.confirmBlock}>
+              <button
+                className={styles.confirmButton}
+                onClick={() => setShowConfirmPrompt(true)}
+                disabled={isDisposing || !summary.draft_disposition}
+                title="Confirm disposition (Enter)"
+              >
+                {isDisposing ? 'Confirming...' : 'Confirm Disposition'}
+                <kbd>Enter</kbd>
+              </button>
+              <div className={styles.confirmHint}>
+                Confirms the recommended pathway. You can override this with a rationale if needed.
+              </div>
+            </div>
             {(summary.case.tier?.toLowerCase() === 'red' || summary.case.tier?.toLowerCase() === 'amber') && (
               <button
                 onClick={() => setShowIncidentPrompt(true)}
@@ -653,13 +1324,13 @@ export default function CaseDetailPage() {
 
         {/* Tabs */}
         <div className={styles.tabs}>
-          {(['overview', 'scores', 'answers', 'disposition'] as TabType[]).map((tab) => (
+          {(['overview', 'patient-details', 'scores', 'answers', 'disposition'] as TabType[]).map((tab) => (
             <button
               key={tab}
               className={activeTab === tab ? styles.tabActive : styles.tab}
               onClick={() => setActiveTab(tab)}
             >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab === 'patient-details' ? 'Patient Details' : tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
         </div>
@@ -713,6 +1384,39 @@ export default function CaseDetailPage() {
                 )}
               </section>
 
+              <section className={styles.section}>
+                <div className={styles.sectionHeader}>
+                  <h3>Case Timeline</h3>
+                  <button
+                    type="button"
+                    className={styles.timelineToggle}
+                    onClick={() => setShowTimeline((prev) => !prev)}
+                  >
+                    {showTimeline ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+                {!showTimeline && (
+                  <p className={styles.muted}>Timeline collapsed</p>
+                )}
+                {showTimeline && (
+                  <div className={styles.timelineList}>
+                    {timelineEntries.length === 0 ? (
+                      <p className={styles.muted}>No timeline events recorded</p>
+                    ) : (
+                      timelineEntries.map((entry, index) => (
+                        <div key={`${entry.label}-${entry.timestamp}-${index}`} className={styles.timelineItem}>
+                          <div className={styles.timelineLabel}>{entry.label}</div>
+                          <div className={styles.timelineMeta}>
+                            <span>{new Date(entry.timestamp).toLocaleString()}</span>
+                            <span className={styles.timelineActor}>{formatTimelineActor(entry)}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </section>
+
               {/* Final Disposition Info */}
               {summary.final_disposition && (
                 <section className={styles.section}>
@@ -737,6 +1441,906 @@ export default function CaseDetailPage() {
                     <dd>{new Date(summary.final_disposition.finalized_at).toLocaleString()}</dd>
                   </dl>
                 </section>
+              )}
+
+              {isRedAmberFinalized && showFeedbackPrompt && (
+                <section className={styles.section}>
+                  <div className={styles.feedbackPrompt}>
+                    <div>
+                      <h3>Quick feedback on this case</h3>
+                      <p className={styles.feedbackPromptText}>
+                        Did anything worry you during this RED/AMBER case?
+                      </p>
+                    </div>
+                    <div className={styles.feedbackActions}>
+                      <Link
+                        href={`/governance/pilot-feedback?window=POST_CASE&case_id=${caseId}`}
+                        className={styles.feedbackLink}
+                      >
+                        Give feedback (2-3 min)
+                      </Link>
+                      <button
+                        type="button"
+                        className={styles.feedbackDismiss}
+                        onClick={() => setShowFeedbackPrompt(false)}
+                      >
+                        Not now
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'patient-details' && (
+            <div className={styles.patientDetailsGrid}>
+              {patientDetailsLoading ? (
+                /* Loading Skeletons */
+                <>
+                  {[1, 2, 3, 4].map((i) => (
+                    <section key={i} className={styles.patientSection}>
+                      <div className={styles.skeletonTitle} />
+                      <div className={styles.skeletonLine} />
+                      <div className={styles.skeletonLine} />
+                      <div className={styles.skeletonLineShort} />
+                      <div className={styles.skeletonLine} />
+                    </section>
+                  ))}
+                </>
+              ) : patientDetailsError ? (
+                /* Error State */
+                <div className={styles.patientDetailsError}>
+                  <div className={styles.errorIcon}>⚠️</div>
+                  <p>{patientDetailsError}</p>
+                  <button onClick={retryPatientDetails} className={styles.retryButton}>
+                    Retry
+                  </button>
+                </div>
+              ) : !patientDetails ? (
+                <p className={styles.muted}>Patient details unavailable</p>
+              ) : (
+                <>
+                  {/* Section 1: Identity & Demographics */}
+                  <section className={styles.patientSection}>
+                    <div className={styles.sectionHeaderEditable}>
+                      <h3>Identity & Demographics</h3>
+                      {canEditPatient && editingSection !== 'identity' && (
+                        <button
+                          className={styles.editButton}
+                          onClick={() => startEditSection('identity')}
+                        >
+                          Edit
+                        </button>
+                      )}
+                    </div>
+
+                    {editingSection === 'identity' ? (
+                      <div className={styles.editForm}>
+                        {editError && <div className={styles.editError}>{editError}</div>}
+                        <div className={styles.editFormGrid}>
+                          <div className={styles.editField}>
+                            <label>First Name *</label>
+                            <input
+                              type="text"
+                              value={editForm.first_name as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, first_name: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Last Name *</label>
+                            <input
+                              type="text"
+                              value={editForm.last_name as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Preferred Name</label>
+                            <input
+                              type="text"
+                              value={editForm.preferred_name as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, preferred_name: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Date of Birth *</label>
+                            <input
+                              type="date"
+                              value={editForm.date_of_birth as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, date_of_birth: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Sex at Birth</label>
+                            <select
+                              value={editForm.sex_at_birth as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, sex_at_birth: e.target.value })}
+                            >
+                              <option value="">Select...</option>
+                              <option value="male">Male</option>
+                              <option value="female">Female</option>
+                              <option value="intersex">Intersex</option>
+                              <option value="prefer_not_to_say">Prefer not to say</option>
+                            </select>
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Gender Identity</label>
+                            <input
+                              type="text"
+                              value={editForm.gender_identity as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, gender_identity: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Ethnicity</label>
+                            <input
+                              type="text"
+                              value={editForm.ethnicity as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, ethnicity: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Preferred Language</label>
+                            <input
+                              type="text"
+                              value={editForm.preferred_language as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, preferred_language: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editFieldCheckbox}>
+                            <label>
+                              <input
+                                type="checkbox"
+                                checked={editForm.interpreter_required as boolean || false}
+                                onChange={(e) => setEditForm({ ...editForm, interpreter_required: e.target.checked })}
+                              />
+                              Interpreter Required
+                            </label>
+                          </div>
+                        </div>
+                        <div className={styles.editReasonBox}>
+                          <label>Reason for changes (required for name/DOB changes)</label>
+                          <textarea
+                            value={editReason}
+                            onChange={(e) => setEditReason(e.target.value)}
+                            placeholder="Why are you making this change?"
+                            rows={2}
+                          />
+                        </div>
+                        <div className={styles.editActions}>
+                          <button onClick={cancelEdit} className={styles.cancelButton} disabled={editSaving}>
+                            Cancel
+                          </button>
+                          <button onClick={saveEdit} className={styles.saveButton} disabled={editSaving}>
+                            {editSaving ? 'Saving...' : 'Save Changes'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <dl className={styles.dl}>
+                        <dt>Full Name</dt>
+                        <dd>{patientDetails.first_name} {patientDetails.last_name}</dd>
+                        <dt>Preferred Name</dt>
+                        <dd>{patientDetails.preferred_name || <span className={styles.notRecorded}>Not recorded</span>}</dd>
+                        <dt>Date of Birth</dt>
+                        <dd>
+                          {patientDetails.date_of_birth ? (
+                            <>
+                              {patientDetails.date_of_birth}
+                              <span className={styles.ageBadge}>
+                                {Math.floor((Date.now() - new Date(patientDetails.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))} years
+                              </span>
+                            </>
+                          ) : <span className={styles.notRecorded}>Not recorded</span>}
+                        </dd>
+                        <dt>Sex at Birth</dt>
+                        <dd>{patientDetails.sex_at_birth ? patientDetails.sex_at_birth.replace(/_/g, ' ') : <span className={styles.notRecorded}>Not recorded</span>}</dd>
+                        <dt>Gender Identity</dt>
+                        <dd>{patientDetails.gender_identity || <span className={styles.notRecorded}>Not recorded</span>}</dd>
+                        <dt>Ethnicity</dt>
+                        <dd>{patientDetails.ethnicity || <span className={styles.notRecorded}>Not recorded</span>}</dd>
+                        <dt>Preferred Language</dt>
+                        <dd>
+                          {patientDetails.preferred_language || <span className={styles.notRecorded}>Not recorded</span>}
+                          {patientDetails.interpreter_required && (
+                            <span className={styles.flagBadge}>Interpreter Required</span>
+                          )}
+                        </dd>
+                      </dl>
+                    )}
+                  </section>
+
+                  {/* Section 2: Contact */}
+                  <section className={styles.patientSection}>
+                    <div className={styles.sectionHeaderEditable}>
+                      <h3>Contact</h3>
+                      {canEditPatient && editingSection !== 'contact' && (
+                        <button
+                          className={styles.editButton}
+                          onClick={() => startEditSection('contact')}
+                        >
+                          Edit
+                        </button>
+                      )}
+                    </div>
+
+                    {editingSection === 'contact' ? (
+                      <div className={styles.editForm}>
+                        {editError && <div className={styles.editError}>{editError}</div>}
+                        <div className={styles.editFormGrid}>
+                          <div className={styles.editField}>
+                            <label>Email</label>
+                            <input
+                              type="email"
+                              value={editForm.email as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Phone (E.164 format)</label>
+                            <input
+                              type="tel"
+                              value={editForm.phone_e164 as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, phone_e164: e.target.value })}
+                              placeholder="+447..."
+                            />
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Preferred Contact Method</label>
+                            <select
+                              value={editForm.preferred_contact_method as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, preferred_contact_method: e.target.value })}
+                            >
+                              <option value="">Select...</option>
+                              <option value="email">Email</option>
+                              <option value="sms">SMS</option>
+                              <option value="phone">Phone</option>
+                            </select>
+                          </div>
+                          <div className={styles.editFieldCheckbox}>
+                            <label>
+                              <input
+                                type="checkbox"
+                                checked={editForm.can_leave_voicemail as boolean || false}
+                                onChange={(e) => setEditForm({ ...editForm, can_leave_voicemail: e.target.checked })}
+                              />
+                              Can Leave Voicemail
+                            </label>
+                          </div>
+                          <div className={styles.editFieldCheckbox}>
+                            <label>
+                              <input
+                                type="checkbox"
+                                checked={editForm.consent_to_sms as boolean || false}
+                                onChange={(e) => setEditForm({ ...editForm, consent_to_sms: e.target.checked })}
+                              />
+                              SMS Consent
+                            </label>
+                          </div>
+                          <div className={styles.editFieldCheckbox}>
+                            <label>
+                              <input
+                                type="checkbox"
+                                checked={editForm.consent_to_email as boolean || false}
+                                onChange={(e) => setEditForm({ ...editForm, consent_to_email: e.target.checked })}
+                              />
+                              Email Consent
+                            </label>
+                          </div>
+                        </div>
+                        <div className={styles.editActions}>
+                          <button onClick={cancelEdit} className={styles.cancelButton} disabled={editSaving}>
+                            Cancel
+                          </button>
+                          <button onClick={saveEdit} className={styles.saveButton} disabled={editSaving}>
+                            {editSaving ? 'Saving...' : 'Save Changes'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <dl className={styles.dl}>
+                        <dt>Email</dt>
+                        <dd className={styles.copyableField}>
+                          <a href={`mailto:${patientDetails.email}`}>{patientDetails.email}</a>
+                          <button
+                            className={styles.copyButton}
+                            onClick={() => navigator.clipboard.writeText(patientDetails.email)}
+                            title="Copy email"
+                          >
+                            📋
+                          </button>
+                        </dd>
+                        <dt>Phone</dt>
+                        <dd className={styles.copyableField}>
+                          {patientDetails.phone_e164 ? (
+                            <>
+                              <a href={`tel:${patientDetails.phone_e164}`}>{patientDetails.phone_e164}</a>
+                              <button
+                                className={styles.copyButton}
+                                onClick={() => navigator.clipboard.writeText(patientDetails.phone_e164!)}
+                                title="Copy phone"
+                              >
+                                📋
+                              </button>
+                            </>
+                          ) : (
+                            <span className={styles.notRecorded}>Not recorded</span>
+                          )}
+                        </dd>
+                        <dt>Preferred Contact</dt>
+                        <dd>{patientDetails.preferred_contact_method || <span className={styles.notRecorded}>Not recorded</span>}</dd>
+                        <dt>Voicemail Permission</dt>
+                        <dd>{patientDetails.can_leave_voicemail ? 'Yes' : 'No'}</dd>
+                        <dt>SMS Consent</dt>
+                        <dd>{patientDetails.consent_to_sms ? 'Yes' : 'No'}</dd>
+                        <dt>Email Consent</dt>
+                        <dd>{patientDetails.consent_to_email ? 'Yes' : 'No'}</dd>
+                      </dl>
+                    )}
+
+                    {/* Emergency Contact */}
+                    {patientDetails.emergency_contact && (
+                      <div className={styles.contactCard}>
+                        <h4>Emergency Contact</h4>
+                        <dl className={styles.dl}>
+                          <dt>Name</dt>
+                          <dd>{patientDetails.emergency_contact.name || '—'}</dd>
+                          <dt>Relationship</dt>
+                          <dd>{patientDetails.emergency_contact.relationship_to_patient || '—'}</dd>
+                          <dt>Phone</dt>
+                          <dd>{patientDetails.emergency_contact.phone_e164 || '—'}</dd>
+                        </dl>
+                      </div>
+                    )}
+
+                    {/* GP Contact */}
+                    {patientDetails.primary_gp_contact && (
+                      <div className={styles.contactCard}>
+                        <h4>GP / Primary Care</h4>
+                        <dl className={styles.dl}>
+                          <dt>Practice</dt>
+                          <dd>{patientDetails.primary_gp_contact.organisation || '—'}</dd>
+                          <dt>Name</dt>
+                          <dd>{patientDetails.primary_gp_contact.name || '—'}</dd>
+                          <dt>Phone</dt>
+                          <dd>{patientDetails.primary_gp_contact.phone_e164 || '—'}</dd>
+                        </dl>
+                      </div>
+                    )}
+                  </section>
+
+                  {/* Section 3: Address */}
+                  <section className={styles.patientSection}>
+                    <h3>Address</h3>
+                    <div className={styles.postcodeDisplay}>
+                      <span className={styles.postcodeLabel}>Postcode</span>
+                      <span className={styles.postcodeValue}>{patientDetails.postcode || '—'}</span>
+                    </div>
+                    {patientDetails.addresses.length > 0 ? (
+                      patientDetails.addresses.map((addr) => (
+                        <div key={addr.id} className={styles.addressCard}>
+                          <div className={styles.addressHeader}>
+                            <span className={styles.addressType}>{addr.type}</span>
+                            {addr.is_primary && <span className={styles.primaryBadge}>Primary</span>}
+                          </div>
+                          <div className={styles.addressLines}>
+                            {addr.line1 && <div>{addr.line1}</div>}
+                            {addr.line2 && <div>{addr.line2}</div>}
+                            {addr.city && <div>{addr.city}</div>}
+                            {addr.county && <div>{addr.county}</div>}
+                            {addr.postcode && <div>{addr.postcode}</div>}
+                            <div>{addr.country}</div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className={styles.muted}>No addresses on file</p>
+                    )}
+                  </section>
+
+                  {/* Section 4: Safeguarding & Adjustments */}
+                  <section className={styles.patientSection}>
+                    <div className={styles.sectionHeaderEditable}>
+                      <h3>Safeguarding & Adjustments</h3>
+                      {canEditPatient && editingSection !== 'safeguarding' && (
+                        <button
+                          className={styles.editButton}
+                          onClick={() => startEditSection('safeguarding')}
+                        >
+                          Edit
+                        </button>
+                      )}
+                    </div>
+
+                    {editingSection === 'safeguarding' ? (
+                      <div className={styles.editForm}>
+                        {editError && <div className={styles.editError}>{editError}</div>}
+                        <div className={styles.editFormGrid}>
+                          <div className={styles.editField}>
+                            <label>Dependents / Caring Responsibilities</label>
+                            <select
+                              value={editForm.has_dependents === null ? '' : editForm.has_dependents ? 'yes' : 'no'}
+                              onChange={(e) => setEditForm({
+                                ...editForm,
+                                has_dependents: e.target.value === '' ? null : e.target.value === 'yes'
+                              })}
+                            >
+                              <option value="">Unknown</option>
+                              <option value="yes">Yes</option>
+                              <option value="no">No</option>
+                            </select>
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Pregnant / Postnatal</label>
+                            <select
+                              value={editForm.is_pregnant_or_postnatal === null ? '' : editForm.is_pregnant_or_postnatal ? 'yes' : 'no'}
+                              onChange={(e) => setEditForm({
+                                ...editForm,
+                                is_pregnant_or_postnatal: e.target.value === '' ? null : e.target.value === 'yes'
+                              })}
+                            >
+                              <option value="">Unknown</option>
+                              <option value="yes">Yes</option>
+                              <option value="no">No</option>
+                            </select>
+                          </div>
+                          <div className={styles.editFieldCheckbox}>
+                            <label>
+                              <input
+                                type="checkbox"
+                                checked={editForm.reasonable_adjustments_required as boolean || false}
+                                onChange={(e) => setEditForm({ ...editForm, reasonable_adjustments_required: e.target.checked })}
+                              />
+                              Reasonable Adjustments Required
+                            </label>
+                          </div>
+                        </div>
+                        <div className={styles.editActions}>
+                          <button onClick={cancelEdit} className={styles.cancelButton} disabled={editSaving}>
+                            Cancel
+                          </button>
+                          <button onClick={saveEdit} className={styles.saveButton} disabled={editSaving}>
+                            {editSaving ? 'Saving...' : 'Save Changes'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <dl className={styles.dl}>
+                          <dt>Dependents / Caring Responsibilities</dt>
+                          <dd>
+                            {patientDetails.has_dependents === null
+                              ? <span className={styles.notRecorded}>Unknown</span>
+                              : patientDetails.has_dependents ? 'Yes' : 'No'}
+                          </dd>
+                          <dt>Pregnant / Postnatal</dt>
+                          <dd>
+                            {patientDetails.is_pregnant_or_postnatal === null
+                              ? <span className={styles.notRecorded}>Unknown</span>
+                              : patientDetails.is_pregnant_or_postnatal ? 'Yes' : 'No'}
+                          </dd>
+                          <dt>Reasonable Adjustments Required</dt>
+                          <dd>
+                            {patientDetails.reasonable_adjustments_required ? (
+                              <span className={styles.flagBadge}>Yes</span>
+                            ) : 'No'}
+                          </dd>
+                        </dl>
+                        {patientDetails.preferences && (
+                          <dl className={styles.dl}>
+                            <dt>Accessibility Support</dt>
+                            <dd>
+                              {patientDetails.preferences.requires_accessibility_support ? (
+                                <span className={styles.flagBadge}>Yes</span>
+                              ) : 'No'}
+                            </dd>
+                            {patientDetails.preferences.accessibility_notes && (
+                              <>
+                                <dt>Accessibility Notes</dt>
+                                <dd>{patientDetails.preferences.accessibility_notes}</dd>
+                              </>
+                            )}
+                            {patientDetails.preferences.reasonable_adjustments_notes && (
+                              <>
+                                <dt>Adjustments Notes</dt>
+                                <dd>{patientDetails.preferences.reasonable_adjustments_notes}</dd>
+                              </>
+                            )}
+                          </dl>
+                        )}
+                      </>
+                    )}
+                  </section>
+
+                  {/* Section 5: Clinical Context */}
+                  <section className={styles.patientSection}>
+                    <div className={styles.sectionHeaderEditable}>
+                      <h3>Clinical Context</h3>
+                      {canEditPatient && editingSection !== 'clinical' && (
+                        <button
+                          className={styles.editButton}
+                          onClick={() => startEditSection('clinical')}
+                        >
+                          Edit
+                        </button>
+                      )}
+                    </div>
+
+                    {editingSection === 'clinical' ? (
+                      <div className={styles.editForm}>
+                        {editError && <div className={styles.editError}>{editError}</div>}
+                        <div className={styles.editFormGrid}>
+                          <div className={`${styles.editField} ${styles.editFieldFull}`}>
+                            <label>Presenting Problem</label>
+                            <textarea
+                              value={editForm.presenting_problem as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, presenting_problem: e.target.value })}
+                              rows={3}
+                            />
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Previous MH Treatment</label>
+                            <select
+                              value={editForm.previous_mental_health_treatment as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, previous_mental_health_treatment: e.target.value })}
+                            >
+                              <option value="">Select...</option>
+                              <option value="none">None</option>
+                              <option value="yes_unknown">Yes (unknown type)</option>
+                              <option value="yes_talking_therapy">Yes (talking therapy)</option>
+                              <option value="yes_psychiatry">Yes (psychiatry)</option>
+                              <option value="yes_inpatient">Yes (inpatient)</option>
+                            </select>
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Current Psych Medication</label>
+                            <select
+                              value={editForm.current_psych_medication === null ? '' : editForm.current_psych_medication ? 'yes' : 'no'}
+                              onChange={(e) => setEditForm({
+                                ...editForm,
+                                current_psych_medication: e.target.value === '' ? null : e.target.value === 'yes'
+                              })}
+                            >
+                              <option value="">Unknown</option>
+                              <option value="yes">Yes</option>
+                              <option value="no">No</option>
+                            </select>
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Substance Use Level</label>
+                            <select
+                              value={editForm.substance_use_level as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, substance_use_level: e.target.value })}
+                            >
+                              <option value="">Select...</option>
+                              <option value="none">None</option>
+                              <option value="low">Low</option>
+                              <option value="moderate">Moderate</option>
+                              <option value="high">High</option>
+                              <option value="unknown">Unknown</option>
+                            </select>
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Physical Health Conditions</label>
+                            <select
+                              value={editForm.physical_health_conditions === null ? '' : editForm.physical_health_conditions ? 'yes' : 'no'}
+                              onChange={(e) => setEditForm({
+                                ...editForm,
+                                physical_health_conditions: e.target.value === '' ? null : e.target.value === 'yes'
+                              })}
+                            >
+                              <option value="">Unknown</option>
+                              <option value="yes">Yes</option>
+                              <option value="no">No</option>
+                            </select>
+                          </div>
+                          <div className={`${styles.editField} ${styles.editFieldFull}`}>
+                            <label>Physical Health Notes</label>
+                            <textarea
+                              value={editForm.physical_health_notes as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, physical_health_notes: e.target.value })}
+                              rows={2}
+                            />
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Neurodevelopmental Needs</label>
+                            <select
+                              value={editForm.neurodevelopmental_needs === null ? '' : editForm.neurodevelopmental_needs ? 'yes' : 'no'}
+                              onChange={(e) => setEditForm({
+                                ...editForm,
+                                neurodevelopmental_needs: e.target.value === '' ? null : e.target.value === 'yes'
+                              })}
+                            >
+                              <option value="">Unknown</option>
+                              <option value="yes">Yes</option>
+                              <option value="no">No</option>
+                            </select>
+                          </div>
+                          <div className={`${styles.editField} ${styles.editFieldFull}`}>
+                            <label>
+                              Risk Notes
+                              <span className={styles.staffOnlyLabel}>Staff-only (not visible to patient)</span>
+                            </label>
+                            <textarea
+                              value={editForm.risk_notes_staff_only as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, risk_notes_staff_only: e.target.value })}
+                              rows={3}
+                              className={styles.riskNotesInput}
+                            />
+                          </div>
+                        </div>
+                        <div className={styles.editActions}>
+                          <button onClick={cancelEdit} className={styles.cancelButton} disabled={editSaving}>
+                            Cancel
+                          </button>
+                          <button onClick={saveEdit} className={styles.saveButton} disabled={editSaving}>
+                            {editSaving ? 'Saving...' : 'Save Changes'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : patientDetails.clinical_profile ? (
+                      <dl className={styles.dl}>
+                        <dt>Presenting Problem</dt>
+                        <dd className={styles.presentingProblem}>
+                          {patientDetails.clinical_profile.presenting_problem || <span className={styles.notRecorded}>Not recorded</span>}
+                        </dd>
+                        <dt>Previous MH Treatment</dt>
+                        <dd>
+                          {patientDetails.clinical_profile.previous_mental_health_treatment
+                            ? patientDetails.clinical_profile.previous_mental_health_treatment.replace(/_/g, ' ')
+                            : <span className={styles.notRecorded}>Not recorded</span>}
+                        </dd>
+                        <dt>Current Psych Medication</dt>
+                        <dd>
+                          {patientDetails.clinical_profile.current_psych_medication === null
+                            ? <span className={styles.notRecorded}>Unknown</span>
+                            : patientDetails.clinical_profile.current_psych_medication
+                            ? 'Yes'
+                            : 'No'}
+                        </dd>
+                        {patientDetails.clinical_profile.current_medication_list && patientDetails.clinical_profile.current_medication_list.length > 0 && (
+                          <>
+                            <dt>Medications</dt>
+                            <dd>
+                              <ul className={styles.medicationList}>
+                                {patientDetails.clinical_profile.current_medication_list.map((med, idx) => (
+                                  <li key={idx}>
+                                    {med.name} - {med.dose} ({med.frequency})
+                                  </li>
+                                ))}
+                              </ul>
+                            </dd>
+                          </>
+                        )}
+                        <dt>Substance Use Level</dt>
+                        <dd>
+                          {patientDetails.clinical_profile.substance_use_level
+                            ? patientDetails.clinical_profile.substance_use_level.replace(/_/g, ' ')
+                            : <span className={styles.notRecorded}>Not recorded</span>}
+                        </dd>
+                        <dt>Physical Health Conditions</dt>
+                        <dd>
+                          {patientDetails.clinical_profile.physical_health_conditions === null
+                            ? <span className={styles.notRecorded}>Unknown</span>
+                            : patientDetails.clinical_profile.physical_health_conditions
+                            ? 'Yes'
+                            : 'No'}
+                        </dd>
+                        {patientDetails.clinical_profile.physical_health_notes && (
+                          <>
+                            <dt>Physical Health Notes</dt>
+                            <dd>{patientDetails.clinical_profile.physical_health_notes}</dd>
+                          </>
+                        )}
+                        <dt>Neurodevelopmental Needs</dt>
+                        <dd>
+                          {patientDetails.clinical_profile.neurodevelopmental_needs === null
+                            ? <span className={styles.notRecorded}>Unknown</span>
+                            : patientDetails.clinical_profile.neurodevelopmental_needs
+                            ? 'Yes'
+                            : 'No'}
+                        </dd>
+                        {patientDetails.clinical_profile.risk_notes_staff_only && (
+                          <>
+                            <dt>
+                              Risk Notes
+                              <span className={styles.staffOnlyLabel}>Staff-only (not visible to patient)</span>
+                            </dt>
+                            <dd className={styles.riskNotes}>
+                              {patientDetails.clinical_profile.risk_notes_staff_only}
+                            </dd>
+                          </>
+                        )}
+                      </dl>
+                    ) : (
+                      <p className={styles.muted}>No clinical profile recorded. Click Edit to add clinical context.</p>
+                    )}
+                  </section>
+
+                  {/* Section 6: Preferences */}
+                  <section className={styles.patientSection}>
+                    <div className={styles.sectionHeaderEditable}>
+                      <h3>Preferences</h3>
+                      {canEditPatient && editingSection !== 'preferences' && (
+                        <button
+                          className={styles.editButton}
+                          onClick={() => startEditSection('preferences')}
+                        >
+                          Edit
+                        </button>
+                      )}
+                    </div>
+
+                    {editingSection === 'preferences' ? (
+                      <div className={styles.editForm}>
+                        {editError && <div className={styles.editError}>{editError}</div>}
+                        <div className={styles.editFormGrid}>
+                          <div className={styles.editField}>
+                            <label>Communication Channel Preference</label>
+                            <select
+                              value={editForm.communication_channel_preference as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, communication_channel_preference: e.target.value })}
+                            >
+                              <option value="">No preference</option>
+                              <option value="email">Email</option>
+                              <option value="sms">SMS</option>
+                              <option value="phone">Phone</option>
+                            </select>
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Appointment Format Preference</label>
+                            <select
+                              value={editForm.appointment_format_preference as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, appointment_format_preference: e.target.value })}
+                            >
+                              <option value="">No preference</option>
+                              <option value="in_person">In person</option>
+                              <option value="video">Video</option>
+                              <option value="phone">Phone</option>
+                            </select>
+                          </div>
+                          <div className={styles.editFieldCheckbox}>
+                            <label>
+                              <input
+                                type="checkbox"
+                                checked={editForm.requires_accessibility_support as boolean || false}
+                                onChange={(e) => setEditForm({ ...editForm, requires_accessibility_support: e.target.checked })}
+                              />
+                              Requires Accessibility Support
+                            </label>
+                          </div>
+                          <div className={`${styles.editField} ${styles.editFieldFull}`}>
+                            <label>Accessibility Notes</label>
+                            <textarea
+                              value={editForm.accessibility_notes as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, accessibility_notes: e.target.value })}
+                              rows={2}
+                              placeholder="e.g., hearing impairment, visual aids needed"
+                            />
+                          </div>
+                          <div className={`${styles.editField} ${styles.editFieldFull}`}>
+                            <label>Reasonable Adjustments Notes</label>
+                            <textarea
+                              value={editForm.reasonable_adjustments_notes as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, reasonable_adjustments_notes: e.target.value })}
+                              rows={2}
+                              placeholder="e.g., extra time needed, quiet room preferred"
+                            />
+                          </div>
+                        </div>
+                        <div className={styles.editActions}>
+                          <button onClick={cancelEdit} className={styles.cancelButton} disabled={editSaving}>
+                            Cancel
+                          </button>
+                          <button onClick={saveEdit} className={styles.saveButton} disabled={editSaving}>
+                            {editSaving ? 'Saving...' : 'Save Changes'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : patientDetails.preferences ? (
+                      <dl className={styles.dl}>
+                        <dt>Communication Channel</dt>
+                        <dd>{patientDetails.preferences.communication_channel_preference || <span className={styles.notRecorded}>No preference</span>}</dd>
+                        <dt>Appointment Format</dt>
+                        <dd>
+                          {patientDetails.preferences.appointment_format_preference
+                            ? patientDetails.preferences.appointment_format_preference.replace(/_/g, ' ')
+                            : <span className={styles.notRecorded}>No preference</span>}
+                        </dd>
+                        <dt>Accessibility Support</dt>
+                        <dd>
+                          {patientDetails.preferences.requires_accessibility_support ? (
+                            <span className={styles.flagBadge}>Yes</span>
+                          ) : 'No'}
+                        </dd>
+                        {patientDetails.preferences.accessibility_notes && (
+                          <>
+                            <dt>Accessibility Notes</dt>
+                            <dd>{patientDetails.preferences.accessibility_notes}</dd>
+                          </>
+                        )}
+                        {patientDetails.preferences.reasonable_adjustments_notes && (
+                          <>
+                            <dt>Adjustments Notes</dt>
+                            <dd>{patientDetails.preferences.reasonable_adjustments_notes}</dd>
+                          </>
+                        )}
+                      </dl>
+                    ) : (
+                      <p className={styles.muted}>No preferences recorded. Click Edit to add preferences.</p>
+                    )}
+                  </section>
+
+                  {/* Section 7: Identifiers */}
+                  <section className={styles.patientSection}>
+                    <h3>Identifiers</h3>
+                    {(() => {
+                      // Check if NHS number exists in identifiers table (preferred)
+                      const nhsFromIdentifiers = patientDetails.identifiers.find(
+                        (id) => id.id_type.toLowerCase() === 'nhs_number'
+                      );
+                      // Only show legacy field if not migrated to identifiers
+                      const showLegacyNhs = patientDetails.nhs_number && !nhsFromIdentifiers;
+
+                      const hasAnyIdentifiers = patientDetails.identifiers.length > 0 || showLegacyNhs;
+
+                      if (!hasAnyIdentifiers) {
+                        return <p className={styles.muted}>No identifiers on file</p>;
+                      }
+
+                      return (
+                        <>
+                          {patientDetails.identifiers.map((ident) => (
+                            <div key={ident.id} className={styles.identifierCard}>
+                              <span className={styles.identifierType}>
+                                {ident.id_type.replace(/_/g, ' ')}
+                              </span>
+                              <span className={styles.identifierValue}>{ident.id_value}</span>
+                              <button
+                                className={styles.copyButton}
+                                onClick={() => navigator.clipboard.writeText(ident.id_value)}
+                                title="Copy to clipboard"
+                              >
+                                📋
+                              </button>
+                              {ident.is_verified ? (
+                                <span className={styles.verifiedBadge}>Verified</span>
+                              ) : (
+                                <span className={styles.unverifiedBadge}>Unverified</span>
+                              )}
+                            </div>
+                          ))}
+                          {showLegacyNhs && (
+                            <div className={styles.identifierCard}>
+                              <span className={styles.identifierType}>NHS Number</span>
+                              <span className={styles.identifierValue}>{patientDetails.nhs_number}</span>
+                              <button
+                                className={styles.copyButton}
+                                onClick={() => navigator.clipboard.writeText(patientDetails.nhs_number!)}
+                                title="Copy to clipboard"
+                              >
+                                📋
+                              </button>
+                              <span className={styles.legacyBadge}>Legacy</span>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </section>
+
+                  {/* Section 7: Update History */}
+                  <section className={styles.patientSection}>
+                    <h3>Update History</h3>
+                    <Link
+                      href={`/dashboard/patients/${patientDetails.id}/history`}
+                      className={styles.historyLink}
+                    >
+                      View change history →
+                    </Link>
+                  </section>
+                </>
               )}
             </div>
           )}
@@ -782,7 +2386,32 @@ export default function CaseDetailPage() {
                     <p className={styles.responseTime}>
                       Submitted: {resp.submitted_at ? new Date(resp.submitted_at).toLocaleString() : 'Draft'}
                     </p>
-                    <pre className={styles.answersJson}>{JSON.stringify(resp.answers, null, 2)}</pre>
+                    <div className={styles.answerList}>
+                      {(resp.answers_human && resp.answers_human.length > 0
+                        ? resp.answers_human
+                        : buildFallbackAnswers(resp.answers)
+                      ).map((item) => (
+                        <div key={`${resp.id}-${item.field_id}`} className={styles.answerItem}>
+                          <div className={styles.answerQuestion}>{item.question}</div>
+                          <div className={styles.answerValue}>{item.answer}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.rawToggle}
+                      onClick={() =>
+                        setShowRawAnswers((prev) => ({
+                          ...prev,
+                          [resp.id]: !prev[resp.id],
+                        }))
+                      }
+                    >
+                      {showRawAnswers[resp.id] ? 'Hide raw data' : 'View raw data'}
+                    </button>
+                    {showRawAnswers[resp.id] && (
+                      <pre className={styles.answersJson}>{JSON.stringify(resp.answers, null, 2)}</pre>
+                    )}
                   </div>
                 ))
               )}
@@ -829,19 +2458,8 @@ export default function CaseDetailPage() {
                             <strong> {summary.draft_disposition.tier}</strong> tier,
                             <strong> {summary.draft_disposition.pathway}</strong> pathway
                           </p>
-                          <div className={styles.formGroup}>
-                            <label>Clinical Notes (optional)</label>
-                            <textarea
-                              value={overrideForm.clinical_notes}
-                              onChange={(e) =>
-                                setOverrideForm((prev) => ({ ...prev, clinical_notes: e.target.value }))
-                              }
-                              rows={3}
-                              placeholder="Add any additional notes..."
-                            />
-                          </div>
                           <button
-                            onClick={handleConfirmDisposition}
+                            onClick={() => setShowConfirmPrompt(true)}
                             disabled={isDisposing}
                             className={styles.confirmButtonLarge}
                           >
@@ -935,6 +2553,46 @@ export default function CaseDetailPage() {
           )}
         </div>
 
+        {/* Confirm Disposition Modal */}
+        {showConfirmPrompt && (
+          <div className={styles.modalBackdrop} onClick={() => setShowConfirmPrompt(false)}>
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h3>Confirm disposition</h3>
+              </div>
+              <div className={styles.modalBody}>
+                <p className={styles.modalInfo}>
+                  You are confirming: <strong>{confirmPathwayLabel}</strong>
+                </p>
+                <div className={styles.formGroup}>
+                  <label>Clinical Notes (optional)</label>
+                  <textarea
+                    value={confirmNotes}
+                    onChange={(e) => setConfirmNotes(e.target.value)}
+                    rows={3}
+                    placeholder="Add any additional notes..."
+                  />
+                </div>
+              </div>
+              <div className={styles.modalActions}>
+                <button
+                  className={styles.modalCancel}
+                  onClick={() => setShowConfirmPrompt(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className={styles.modalConfirm}
+                  onClick={handleConfirmDisposition}
+                  disabled={isDisposing}
+                >
+                  {isDisposing ? 'Confirming...' : 'Confirm Disposition'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Override Confirmation Modal */}
         {showOverrideConfirm && (
           <div className={styles.modalBackdrop} onClick={() => setShowOverrideConfirm(false)}>
@@ -1015,3 +2673,10 @@ export default function CaseDetailPage() {
     </div>
   );
 }
+
+
+
+
+
+
+

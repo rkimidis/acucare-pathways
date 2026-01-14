@@ -4,11 +4,11 @@
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "256",
   "memory": "512",
-  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "executionRoleArn": "arn:aws:iam::326246079459:role/ecsTaskExecutionRole",
   "containerDefinitions": [
     {
       "name": "staff-console",
-      "image": "ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/acucare/staff-console:test",
+      "image": "326246079459.dkr.ecr.eu-west-2.amazonaws.com/acucare/staff-console:test",
       "essential": true,
       "portMappings": [
         {
@@ -28,13 +28,6 @@
           "awslogs-region": "eu-west-2",
           "awslogs-stream-prefix": "staff"
         }
-      },
-      "healthCheck": {
-        "command": ["CMD-SHELL", "curl -f http://localhost:3001/ || exit 1"],
-        "interval": 30,
-        "timeout": 5,
-        "retries": 3,
-        "startPeriod": 60
       }
     }
   ]

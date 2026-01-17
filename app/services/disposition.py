@@ -1,6 +1,7 @@
 """Disposition service for managing clinical disposition decisions."""
 
 from datetime import datetime, timezone
+import json
 from typing import Any
 
 from sqlalchemy import and_, func, or_, select
@@ -9,7 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from app.models.disposition import DispositionDraft, DispositionFinal, RiskFlag
 from app.models.patient import Patient
-from app.models.questionnaire import QuestionnaireResponse
+from app.models.questionnaire import QuestionnaireDefinition, QuestionnaireResponse
 from app.models.score import Score
 from app.models.triage_case import TriageCase, TriageCaseStatus, TriageTier
 from app.models.user import User
@@ -368,9 +369,9 @@ class DashboardService:
             queue.append({
                 "id": case.id,
                 "patient_id": case.patient_id,
-                "tier": case.tier.value if case.tier else None,
+                "tier": case.tier.value if hasattr(case.tier, 'value') else case.tier,
                 "pathway": case.pathway,
-                "status": case.status.value if case.status else None,
+                "status": case.status.value if hasattr(case.status, 'value') else case.status,
                 "created_at": case.created_at.isoformat() if case.created_at else None,
                 "triaged_at": case.triaged_at.isoformat() if case.triaged_at else None,
                 "sla_deadline": case.sla_deadline.isoformat() if case.sla_deadline else None,
@@ -379,7 +380,7 @@ class DashboardService:
                 "sla_status": sla_status,
                 "sla_breached": case.sla_breached,
                 "clinician_review_required": case.clinician_review_required,
-                "assigned_clinician_id": case.assigned_clinician_id,
+                "assigned_to_user_id": case.assigned_to_user_id or case.assigned_clinician_id,
             })
 
         return queue
@@ -411,10 +412,51 @@ class DashboardService:
         for row in result:
             tier, count = row
             if tier:
-                counts[tier.value] = count
+                tier_key = tier.value if hasattr(tier, 'value') else tier
+                counts[tier_key] = count
                 counts["total"] += count
 
         return counts
+
+    async def get_oldest_case_info(
+        self,
+        tier: TriageTier,
+    ) -> dict[str, int | bool | None]:
+        """Get oldest unreviewed case age and SLA status for a tier."""
+        result = await self.session.execute(
+            select(TriageCase)
+            .where(TriageCase.is_deleted == False)
+            .where(TriageCase.tier == tier)
+            .where(TriageCase.reviewed_at.is_(None))
+            .where(
+                TriageCase.status.in_([
+                    TriageCaseStatus.TRIAGED,
+                    TriageCaseStatus.IN_REVIEW,
+                ])
+            )
+            .order_by(
+                func.coalesce(TriageCase.triaged_at, TriageCase.created_at).asc()
+            )
+            .limit(1)
+        )
+        case = result.scalar_one_or_none()
+
+        if not case:
+            return {"age_minutes": None, "sla_breached": False}
+
+        now = datetime.now(timezone.utc)
+        oldest_at = case.triaged_at or case.created_at
+        age_minutes = None
+        if oldest_at:
+            age_minutes = int((now - oldest_at).total_seconds() / 60)
+
+        sla_breached = False
+        if case.sla_deadline:
+            sla_breached = case.sla_deadline < now
+        if case.sla_breached:
+            sla_breached = True
+
+        return {"age_minutes": age_minutes, "sla_breached": sla_breached}
 
     async def get_breached_cases_count(self) -> int:
         """Get count of SLA-breached cases.
@@ -470,6 +512,29 @@ class DashboardService:
         if not case:
             return None
 
+        assigned_user_id = case.assigned_to_user_id or case.assigned_clinician_id
+
+        # Get final disposition early (needed for user lookups)
+        final_result = await self.session.execute(
+            select(DispositionFinal)
+            .where(DispositionFinal.triage_case_id == triage_case_id)
+        )
+        final = final_result.scalar_one_or_none()
+
+        name_map: dict[str, str] = {}
+        user_ids = {uid for uid in [assigned_user_id, case.reviewed_by] if uid}
+        if final and final.clinician_id:
+            user_ids.add(final.clinician_id)
+        if user_ids:
+            user_rows = await self.session.execute(
+                select(User.id, User.first_name, User.last_name).where(User.id.in_(user_ids))
+            )
+            for row in user_rows.all():
+                full_name = f"{row.first_name or ''} {row.last_name or ''}".strip() or row.id
+                name_map[row.id] = full_name
+
+        assigned_user_name = name_map.get(assigned_user_id) if assigned_user_id else None
+
         # Get patient
         patient_result = await self.session.execute(
             select(Patient).where(Patient.id == case.patient_id)
@@ -501,13 +566,6 @@ class DashboardService:
         )
         draft = draft_result.scalar_one_or_none()
 
-        # Get final disposition if exists
-        final_result = await self.session.execute(
-            select(DispositionFinal)
-            .where(DispositionFinal.triage_case_id == triage_case_id)
-        )
-        final = final_result.scalar_one_or_none()
-
         # Get questionnaire responses
         responses_result = await self.session.execute(
             select(QuestionnaireResponse)
@@ -515,6 +573,18 @@ class DashboardService:
             .order_by(QuestionnaireResponse.created_at.desc())
         )
         responses = responses_result.scalars().all()
+
+        definition_map: dict[str, QuestionnaireDefinition] = {}
+        definition_ids = {resp.questionnaire_definition_id for resp in responses}
+        if definition_ids:
+            definitions_result = await self.session.execute(
+                select(QuestionnaireDefinition)
+                .where(QuestionnaireDefinition.id.in_(definition_ids))
+            )
+            definition_map = {
+                definition.id: definition
+                for definition in definitions_result.scalars().all()
+            }
 
         # Calculate SLA info
         now = datetime.now(timezone.utc)
@@ -534,12 +604,21 @@ class DashboardService:
             else:
                 sla_status = "normal"
 
+        timeline = self._build_case_timeline(
+            case=case,
+            responses=responses,
+            scores=scores,
+            draft=draft,
+            final=final,
+            name_map=name_map,
+        )
+
         return {
             "case": {
                 "id": case.id,
                 "patient_id": case.patient_id,
-                "status": case.status.value if case.status else None,
-                "tier": case.tier.value if case.tier else None,
+                "status": case.status.value if hasattr(case.status, 'value') else case.status,
+                "tier": case.tier.value if hasattr(case.tier, 'value') else case.tier,
                 "pathway": case.pathway,
                 "clinician_review_required": case.clinician_review_required,
                 "self_book_allowed": case.self_book_allowed,
@@ -556,6 +635,8 @@ class DashboardService:
                 "sla_status": sla_status,
                 "sla_breached": case.sla_breached,
                 "triage_note_url": case.triage_note_url,
+                "assigned_to_user_id": assigned_user_id,
+                "assigned_to_user_name": assigned_user_name,
             },
             "patient": {
                 "id": patient.id if patient else None,
@@ -616,8 +697,177 @@ class DashboardService:
                     "id": resp.id,
                     "questionnaire_definition_id": resp.questionnaire_definition_id,
                     "answers": resp.answers,
+                    "answers_human": self._build_human_answers(
+                        resp.answers,
+                        definition_map.get(resp.questionnaire_definition_id),
+                    ),
                     "submitted_at": resp.submitted_at.isoformat() if resp.submitted_at else None,
                 }
                 for resp in responses
             ],
+            "timeline": timeline,
         }
+
+    @staticmethod
+    def _build_human_answers(
+        answers: dict[str, Any],
+        definition: QuestionnaireDefinition | None,
+    ) -> list[dict[str, str]]:
+        """Generate human-readable Q&A from questionnaire answers."""
+        if not answers:
+            return []
+
+        schema = definition.schema if definition else {}
+        fields = schema.get("fields", [])
+        field_map = {
+            field.get("id"): field
+            for field in fields
+            if isinstance(field, dict)
+        }
+
+        def humanize_field_id(field_id: str) -> str:
+            return field_id.replace("_", " ").replace("-", " ").strip().title()
+
+        def format_answer(value: Any, field: dict[str, Any] | None) -> str:
+            if value is None or value == "" or value == []:
+                return "—"
+
+            field_type = field.get("type") if field else None
+            options = field.get("options") if field else None
+
+            def option_label(val: Any) -> str:
+                if not isinstance(options, list):
+                    return str(val)
+                for opt in options:
+                    if opt.get("value") == val:
+                        return str(opt.get("label") or opt.get("value"))
+                return str(val)
+
+            if field_type == "boolean":
+                return "Yes" if bool(value) else "No"
+            if field_type == "multiselect":
+                if isinstance(value, list):
+                    return ", ".join(option_label(v) for v in value) or "—"
+                return str(value)
+            if field_type == "select":
+                return option_label(value)
+            if field_type in ("number", "text"):
+                return str(value)
+
+            if isinstance(value, list):
+                return ", ".join(str(v) for v in value)
+            if isinstance(value, dict):
+                return json.dumps(value, ensure_ascii=True)
+            return str(value)
+
+        items: list[dict[str, str]] = []
+
+        for field_id, field in field_map.items():
+            if field_id not in answers:
+                continue
+            question = (
+                field.get("label")
+                or field.get("question")
+                or field.get("title")
+                or field.get("prompt")
+                or humanize_field_id(field_id)
+            )
+            items.append(
+                {
+                    "field_id": field_id,
+                    "question": str(question),
+                    "answer": format_answer(answers.get(field_id), field),
+                }
+            )
+
+        for field_id, value in answers.items():
+            if field_id in field_map:
+                continue
+            items.append(
+                {
+                    "field_id": field_id,
+                    "question": humanize_field_id(field_id),
+                    "answer": format_answer(value, None),
+                }
+            )
+
+        return items
+
+    @staticmethod
+    def _build_case_timeline(
+        case: TriageCase,
+        responses: list[QuestionnaireResponse],
+        scores: list[Score],
+        draft: DispositionDraft | None,
+        final: DispositionFinal | None,
+        name_map: dict[str, str],
+    ) -> list[dict[str, Any]]:
+        """Build a compact case timeline for clinician context."""
+        entries: list[dict[str, Any]] = []
+
+        submitted_times = [
+            r.submitted_at or r.created_at
+            for r in responses
+            if r.submitted_at or r.created_at
+        ]
+        if submitted_times:
+            intake_time = min(submitted_times)
+            entries.append({
+                "label": "Intake submitted",
+                "timestamp": intake_time,
+                "actor_type": "system",
+                "actor_name": "System",
+            })
+
+        score_times = [s.calculated_at for s in scores if s.calculated_at]
+        if score_times:
+            score_time = max(score_times)
+            entries.append({
+                "label": "Scores calculated",
+                "timestamp": score_time,
+                "actor_type": "system",
+                "actor_name": "System",
+            })
+
+        if draft and draft.created_at:
+            rules_label = (
+                f"Rules evaluated (v{draft.ruleset_version})"
+                if draft.ruleset_version
+                else "Rules evaluated"
+            )
+            entries.append({
+                "label": rules_label,
+                "timestamp": draft.created_at,
+                "actor_type": "system",
+                "actor_name": "System",
+            })
+
+        if case.reviewed_at:
+            reviewer = name_map.get(case.reviewed_by) if case.reviewed_by else None
+            entries.append({
+                "label": "Case reviewed",
+                "timestamp": case.reviewed_at,
+                "actor_type": "clinician",
+                "actor_name": reviewer or "Clinician",
+            })
+
+        if final and final.finalized_at:
+            final_label = "Disposition overridden" if final.is_override else "Disposition confirmed"
+            clinician_name = name_map.get(final.clinician_id) if final.clinician_id else None
+            entries.append({
+                "label": final_label,
+                "timestamp": final.finalized_at,
+                "actor_type": "clinician",
+                "actor_name": clinician_name or "Clinician",
+            })
+
+        entries.sort(key=lambda entry: entry["timestamp"])
+        return [
+            {
+                "label": entry["label"],
+                "timestamp": entry["timestamp"].isoformat(),
+                "actor_type": entry["actor_type"],
+                "actor_name": entry["actor_name"],
+            }
+            for entry in entries
+        ]

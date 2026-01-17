@@ -17,7 +17,7 @@
 .title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--neutral-800);
   margin: 0;
 }
 
@@ -27,13 +27,13 @@
 
 .intro p {
   font-size: 1rem;
-  color: #4b5563;
+  color: var(--neutral-600);
   line-height: 1.6;
   margin: 0 0 0.5rem 0;
 }
 
 .purpose {
-  color: #6b7280 !important;
+  color: var(--neutral-500) !important;
   font-size: 0.95rem !important;
 }
 
@@ -47,7 +47,7 @@
 
 .question {
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--neutral-150);
 }
 
 .question:last-child {
@@ -59,7 +59,7 @@
   display: block;
   font-size: 1rem;
   font-weight: 500;
-  color: #1f2937;
+  color: var(--neutral-800);
   margin-bottom: 1rem;
 }
 
@@ -73,28 +73,29 @@
   display: flex;
   align-items: center;
   padding: 0.875rem 1rem;
-  background: #f9fafb;
-  border: 2px solid #e5e7eb;
+  background: var(--neutral-25);
+  border: 2px solid var(--neutral-150);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .option:hover {
-  background: #f3f4f6;
-  border-color: #d1d5db;
+  background: var(--neutral-75);
+  border-color: var(--neutral-125);
 }
 
 .optionSelected {
-  background: #eff6ff;
-  border-color: #3b82f6;
+  background: var(--info-150);
+  border-color: var(--info-500);
 }
 
 .radioInput {
+  composes: ui-input from global;
   appearance: none;
   width: 20px;
   height: 20px;
-  border: 2px solid #d1d5db;
+  border: 2px solid var(--neutral-125);
   border-radius: 50%;
   margin-right: 0.75rem;
   transition: all 0.15s;
@@ -103,8 +104,8 @@
 }
 
 .radioInput:checked {
-  border-color: #3b82f6;
-  background: #3b82f6;
+  border-color: var(--info-500);
+  background: var(--info-500);
 }
 
 .radioInput:checked::after {
@@ -121,14 +122,15 @@
 
 .optionLabel {
   font-size: 0.95rem;
-  color: #374151;
+  color: var(--neutral-700);
 }
 
 /* Submit button */
 .submitButton {
+  composes: ui-button from global;
   width: 100%;
   padding: 1rem;
-  background: #3b82f6;
+  background: var(--brand-600);
   color: white;
   border: none;
   border-radius: 8px;
@@ -140,11 +142,11 @@
 }
 
 .submitButton:hover:not(:disabled) {
-  background: #2563eb;
+  background: var(--brand-700);
 }
 
 .submitButton:disabled {
-  background: #9ca3af;
+  background: var(--neutral-400);
   cursor: not-allowed;
 }
 
@@ -153,8 +155,8 @@
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: var(--danger-100);
+  border: 1px solid var(--danger-300);
   border-radius: 8px;
   padding: 1rem 1.25rem;
 }
@@ -166,7 +168,7 @@
 
 .safetyFooter p {
   margin: 0;
-  color: #991b1b;
+  color: var(--danger-800);
   font-size: 0.9rem;
   line-height: 1.5;
 }

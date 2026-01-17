@@ -5,7 +5,7 @@
 
 .sidebar {
   width: 250px;
-  background: #1e293b;
+  background: var(--neutral-800);
   color: white;
   display: flex;
   flex-direction: column;
@@ -13,13 +13,13 @@
 
 .sidebarHeader {
   padding: 1.5rem;
-  border-bottom: 1px solid #334155;
+  border-bottom: 1px solid var(--neutral-700);
 }
 
 .logo {
   font-size: 1.5rem;
   font-weight: bold;
-  color: #60a5fa;
+  color: var(--info-400);
 }
 
 .nav {
@@ -31,25 +31,25 @@
 .navItemActive {
   display: block;
   padding: 0.75rem 1.5rem;
-  color: #94a3b8;
+  color: var(--neutral-400);
   text-decoration: none;
   transition: all 0.2s;
 }
 
 .navItem:hover {
-  background: #334155;
+  background: var(--neutral-700);
   color: white;
 }
 
 .navItemActive {
-  background: #334155;
+  background: var(--neutral-700);
   color: white;
-  border-left: 3px solid #60a5fa;
+  border-left: 3px solid var(--info-400);
 }
 
 .main {
   flex: 1;
-  background: #f8fafc;
+  background: var(--neutral-50);
   padding: 2rem;
 }
 
@@ -62,11 +62,49 @@
 
 .header h1 {
   margin: 0;
-  color: #1e293b;
+  color: var(--neutral-800);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.assignmentFilters {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filterChip {
+  border: 1px solid var(--neutral-200);
+  background: white;
+  color: var(--neutral-700);
+  padding: 0.4rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.filterChipActive {
+  border-color: var(--info-500);
+  color: var(--info-750);
+  background: var(--info-150);
+}
+
+.dutyIndicator {
+  font-size: 0.75rem;
+  color: var(--neutral-600);
+  background: var(--neutral-100);
+  padding: 0.4rem 0.75rem;
+  border-radius: 9999px;
 }
 
 .breachAlert {
-  background: #dc2626;
+  background: var(--danger-600);
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 0.375rem;
@@ -80,12 +118,22 @@
 }
 
 .error {
-  background: #fef2f2;
-  border: 1px solid #dc2626;
-  color: #dc2626;
+  background: var(--danger-100);
+  border: 1px solid var(--danger-600);
+  color: var(--danger-600);
   padding: 1rem;
   border-radius: 0.5rem;
   margin-bottom: 1rem;
+}
+
+.staleBanner {
+  background: var(--accent-orange-50);
+  border: 1px solid var(--accent-orange-300);
+  color: var(--accent-orange-800);
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
 }
 
 .countsGrid {
@@ -96,8 +144,9 @@
 }
 
 .countCard {
+  composes: ui-card from global;
   background: white;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--neutral-200);
   border-radius: 0.5rem;
   padding: 1.25rem;
   text-align: center;
@@ -106,41 +155,41 @@
 }
 
 .countCard:hover {
-  border-color: #94a3b8;
+  border-color: var(--neutral-400);
 }
 
 .countCardActive {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  border-color: var(--brand-600);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
 }
 
 .countCardRed {
-  border-left: 4px solid #dc2626;
+  border-left: 4px solid var(--danger-600);
 }
 
 .countCardAmber {
-  border-left: 4px solid #f59e0b;
+  border-left: 4px solid var(--warning-500);
 }
 
 .countCardGreen {
-  border-left: 4px solid #16a34a;
+  border-left: 4px solid var(--success-600);
 }
 
 .countCardBlue {
-  border-left: 4px solid #3b82f6;
+  border-left: 4px solid var(--info-500);
 }
 
 .countValue {
   display: block;
   font-size: 2rem;
   font-weight: bold;
-  color: #1e293b;
+  color: var(--neutral-800);
 }
 
 .countLabel {
   display: block;
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--neutral-500);
   margin-top: 0.25rem;
 }
 
@@ -153,9 +202,186 @@
 
 .loading,
 .emptyState {
-  color: #64748b;
+  color: var(--neutral-500);
   text-align: center;
   padding: 2rem;
+}
+
+.emptyState span {
+  display: block;
+}
+
+.caseList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.caseRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 1.25rem;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--neutral-200);
+  background: white;
+}
+
+.caseMain {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.caseHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.patientRef {
+  font-weight: 600;
+  color: var(--neutral-900);
+  text-decoration: none;
+}
+
+.patientRef:hover {
+  text-decoration: underline;
+}
+
+.pathwayLabel {
+  font-size: 0.875rem;
+  color: var(--neutral-600);
+}
+
+.caseReason {
+  font-size: 0.875rem;
+  color: var(--neutral-800);
+}
+
+.caseUpdate {
+  font-size: 0.75rem;
+  color: var(--neutral-500);
+}
+
+.caseIndicators {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+  min-width: 160px;
+}
+
+.caseIndicator {
+  font-size: 0.75rem;
+  color: var(--neutral-600);
+  padding: 0.3rem 0.6rem;
+  border-radius: 9999px;
+  background: var(--neutral-50);
+}
+
+.caseActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.openCaseButton {
+  composes: ui-button from global;
+  background: var(--neutral-900);
+  color: white;
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.375rem;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.openCaseButton:hover {
+  background: var(--neutral-800);
+}
+
+.claimButton {
+  composes: ui-button from global;
+  border: 1px solid var(--neutral-300);
+  background: white;
+  color: var(--neutral-900);
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.unassignButton {
+  composes: ui-button from global;
+  border: 1px solid var(--neutral-300);
+  background: var(--neutral-50);
+  color: var(--neutral-900);
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.reassignButton {
+  composes: ui-button from global;
+  border: 1px solid var(--warning-500);
+  background: var(--warning-25);
+  color: var(--warning-700);
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.claimButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.menu {
+  position: relative;
+}
+
+.menuButton {
+  composes: ui-button from global;
+  border: 1px solid var(--neutral-200);
+  background: white;
+  color: var(--neutral-800);
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.menuList {
+  position: absolute;
+  right: 0;
+  top: 110%;
+  background: white;
+  border: 1px solid var(--neutral-200);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  min-width: 170px;
+  z-index: 10;
+}
+
+.menuItem {
+  padding: 0.65rem 0.9rem;
+  font-size: 0.875rem;
+  color: var(--neutral-800);
+  text-decoration: none;
+  background: white;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menuItem:hover {
+  background: var(--neutral-50);
 }
 
 .table {
@@ -167,21 +393,21 @@
 .table td {
   padding: 0.75rem 1rem;
   text-align: left;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--neutral-200);
 }
 
 .table th {
   font-weight: 600;
-  color: #475569;
-  background: #f8fafc;
+  color: var(--neutral-600);
+  background: var(--neutral-50);
 }
 
 .rowBreach {
-  background: #fef2f2;
+  background: var(--danger-100);
 }
 
 .tierRed {
-  background: #dc2626;
+  background: var(--danger-600);
   color: white;
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
@@ -191,8 +417,8 @@
 }
 
 .tierAmber {
-  background: #f59e0b;
-  color: white;
+  background: var(--warning-500);
+  color: var(--neutral-900);
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-weight: 500;
@@ -201,8 +427,8 @@
 }
 
 .tierGreen {
-  background: #16a34a;
-  color: white;
+  background: var(--neutral-200);
+  color: var(--neutral-600);
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-weight: 500;
@@ -211,8 +437,8 @@
 }
 
 .tierBlue {
-  background: #3b82f6;
-  color: white;
+  background: var(--neutral-200);
+  color: var(--neutral-600);
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-weight: 500;
@@ -221,8 +447,8 @@
 }
 
 .tierPending {
-  background: #64748b;
-  color: white;
+  background: var(--neutral-200);
+  color: var(--neutral-600);
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-weight: 500;
@@ -231,8 +457,8 @@
 }
 
 .statusBadge {
-  background: #e2e8f0;
-  color: #475569;
+  background: var(--neutral-200);
+  color: var(--neutral-600);
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   font-size: 0.75rem;
@@ -240,31 +466,33 @@
 }
 
 .slaNormal {
-  color: #16a34a;
-  font-weight: 500;
+  color: var(--neutral-600);
+  font-weight: 600;
 }
 
 .slaWarning {
-  color: #f59e0b;
+  color: var(--warning-700);
+  background: var(--warning-25);
+  border: 1px solid var(--warning-500);
   font-weight: 600;
 }
 
 .slaCritical {
-  color: #dc2626;
+  color: var(--danger-600);
   font-weight: 700;
   animation: pulse 1s infinite;
 }
 
 .slaBreach {
-  color: #dc2626;
+  color: var(--danger-700);
+  border: 1px solid var(--danger-600);
+  background: var(--danger-100);
   font-weight: 700;
-  background: #fef2f2;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
 }
 
 .reviewButton {
-  background: #3b82f6;
+  composes: ui-button from global;
+  background: var(--info-500);
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 0.375rem;
@@ -275,5 +503,20 @@
 }
 
 .reviewButton:hover {
-  background: #2563eb;
+  background: var(--info-600);
+}
+
+@media (max-width: 1100px) {
+  .caseRow {
+    grid-template-columns: 1fr;
+  }
+
+  .caseIndicators {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .caseActions {
+    justify-content: flex-start;
+  }
 }

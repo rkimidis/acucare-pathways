@@ -14,14 +14,14 @@
 .title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--neutral-900);
   margin-bottom: 0.5rem;
   text-align: center;
 }
 
 .description {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--neutral-500);
   margin-bottom: 2rem;
   text-align: center;
 }
@@ -41,12 +41,12 @@
 .field label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
+  color: var(--neutral-700);
 }
 
 .field input {
   padding: 0.75rem 1rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--neutral-125);
   border-radius: 0.5rem;
   font-size: 1rem;
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -54,14 +54,15 @@
 
 .field input:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: var(--brand-600);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
 }
 
 .submitButton {
+  composes: ui-button from global;
   display: inline-block;
   padding: 0.875rem 1.5rem;
-  background-color: #2563eb;
+  background-color: var(--brand-600);
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -74,52 +75,52 @@
 }
 
 .submitButton:hover {
-  background-color: #1d4ed8;
+  background-color: var(--brand-700);
 }
 
 .submitButton:disabled {
-  background-color: #93c5fd;
+  background-color: var(--brand-300);
   cursor: not-allowed;
 }
 
 .error {
   padding: 0.75rem 1rem;
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
+  background-color: var(--danger-100);
+  border: 1px solid var(--danger-300);
   border-radius: 0.5rem;
-  color: #dc2626;
+  color: var(--danger-600);
   font-size: 0.875rem;
 }
 
 .successBox {
   text-align: center;
   padding: 2rem;
-  background-color: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  background-color: var(--success-50);
+  border: 1px solid var(--success-125);
   border-radius: 0.5rem;
   margin-bottom: 1.5rem;
 }
 
 .successBox h2 {
-  color: #166534;
+  color: var(--success-800);
   font-size: 1.25rem;
   margin-bottom: 0.5rem;
 }
 
 .successBox p {
-  color: #15803d;
+  color: var(--success-700);
   font-size: 0.875rem;
 }
 
 .devToken {
   margin-top: 1rem;
   padding: 1rem;
-  background-color: #fef3c7;
+  background-color: var(--warning-100);
   border-radius: 0.5rem;
 }
 
 .devToken p {
-  color: #92400e;
+  color: var(--warning-700);
   font-size: 0.75rem;
   margin-bottom: 0.5rem;
 }
@@ -127,8 +128,8 @@
 .devToken code {
   display: block;
   padding: 0.5rem;
-  background-color: #1e293b;
-  color: #22c55e;
+  background-color: var(--neutral-800);
+  color: var(--success-520);
   border-radius: 0.25rem;
   font-size: 0.75rem;
   word-break: break-all;
@@ -144,5 +145,5 @@
 
 .links a {
   font-size: 0.875rem;
-  color: #2563eb;
+  color: var(--brand-600);
 }

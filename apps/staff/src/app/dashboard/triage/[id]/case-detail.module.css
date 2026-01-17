@@ -5,7 +5,7 @@
 
 .sidebar {
   width: 250px;
-  background: #1e293b;
+  background: var(--neutral-800);
   color: white;
   display: flex;
   flex-direction: column;
@@ -13,13 +13,13 @@
 
 .sidebarHeader {
   padding: 1.5rem;
-  border-bottom: 1px solid #334155;
+  border-bottom: 1px solid var(--neutral-700);
 }
 
 .logo {
   font-size: 1.5rem;
   font-weight: bold;
-  color: #60a5fa;
+  color: var(--info-400);
 }
 
 .nav {
@@ -31,25 +31,25 @@
 .navItemActive {
   display: block;
   padding: 0.75rem 1.5rem;
-  color: #94a3b8;
+  color: var(--neutral-400);
   text-decoration: none;
   transition: all 0.2s;
 }
 
 .navItem:hover {
-  background: #334155;
+  background: var(--neutral-700);
   color: white;
 }
 
 .navItemActive {
-  background: #334155;
+  background: var(--neutral-700);
   color: white;
-  border-left: 3px solid #60a5fa;
+  border-left: 3px solid var(--info-400);
 }
 
 .main {
   flex: 1;
-  background: #f8fafc;
+  background: var(--neutral-50);
   padding: 1.5rem 2rem;
 }
 
@@ -63,17 +63,17 @@
   align-items: center;
   margin-bottom: 1rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--neutral-200);
 }
 
 .backLink {
-  color: #64748b;
+  color: var(--neutral-500);
   text-decoration: none;
   font-size: 0.875rem;
 }
 
 .backLink:hover {
-  color: #3b82f6;
+  color: var(--info-500);
 }
 
 .caseNavigation {
@@ -83,19 +83,20 @@
 }
 
 .navButton {
+  composes: ui-button from global;
   padding: 0.5rem 1rem;
   background: white;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--neutral-200);
   border-radius: 0.375rem;
   cursor: pointer;
   font-size: 0.875rem;
-  color: #475569;
+  color: var(--neutral-600);
   transition: all 0.2s;
 }
 
 .navButton:hover:not(:disabled) {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
+  background: var(--neutral-100);
+  border-color: var(--neutral-300);
 }
 
 .navButton:disabled {
@@ -105,22 +106,23 @@
 
 .casePosition {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--neutral-500);
   min-width: 60px;
   text-align: center;
 }
 
 .keyboardHelpButton {
+  composes: ui-button from global;
   padding: 0.5rem 0.75rem;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
+  background: var(--neutral-100);
+  border: 1px solid var(--neutral-200);
   border-radius: 0.375rem;
   cursor: pointer;
   font-size: 0.875rem;
 }
 
 .keyboardHelpButton:hover {
-  background: #e2e8f0;
+  background: var(--neutral-200);
 }
 
 /* ========================================
@@ -142,7 +144,7 @@
 
 .keyboardHelp h4 {
   margin: 0 0 1rem 0;
-  color: #1e293b;
+  color: var(--neutral-800);
 }
 
 .shortcutGrid {
@@ -153,24 +155,24 @@
 }
 
 .shortcutGrid kbd {
-  background: #f1f5f9;
+  background: var(--neutral-100);
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
-  font-family: monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   font-size: 0.875rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--neutral-200);
 }
 
 .shortcutGrid span {
-  color: #475569;
+  color: var(--neutral-600);
   font-size: 0.875rem;
 }
 
 .keyboardHelp button {
   width: 100%;
   padding: 0.5rem;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
+  background: var(--neutral-100);
+  border: 1px solid var(--neutral-200);
   border-radius: 0.375rem;
   cursor: pointer;
 }
@@ -199,25 +201,25 @@
   gap: 0.75rem;
   margin-top: 0.75rem;
   padding: 0.6rem 0.9rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--neutral-50);
+  border: 1px solid var(--neutral-200);
   border-radius: 0.5rem;
   font-size: 0.875rem;
 }
 
 .ownershipLabel {
-  color: #64748b;
+  color: var(--neutral-500);
 }
 
 .ownershipValue {
   font-weight: 600;
-  color: #0f172a;
+  color: var(--neutral-900);
 }
 
 .ownershipAction {
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--neutral-300);
   background: white;
-  color: #0f172a;
+  color: var(--neutral-900);
   padding: 0.35rem 0.75rem;
   border-radius: 0.375rem;
   font-size: 0.75rem;
@@ -225,7 +227,7 @@
 }
 
 .ownershipAction:hover {
-  background: #f1f5f9;
+  background: var(--neutral-100);
 }
 
 .tierBadgeLarge {
@@ -244,7 +246,7 @@
 .patientName {
   margin: 0 0 0.25rem 0;
   font-size: 1.25rem;
-  color: #1e293b;
+  color: var(--neutral-800);
 }
 
 .caseMetaRow {
@@ -254,13 +256,13 @@
 }
 
 .caseId {
-  color: #64748b;
+  color: var(--neutral-500);
   font-size: 0.875rem;
 }
 
 .pathwayBadge {
-  background: #e0e7ff;
-  color: #4338ca;
+  background: var(--accent-indigo-100);
+  color: var(--accent-indigo-700);
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-size: 0.75rem;
@@ -268,8 +270,8 @@
 }
 
 .finalizedBadge {
-  background: #dcfce7;
-  color: #16a34a;
+  background: var(--success-90);
+  color: var(--success-600);
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-size: 0.75rem;
@@ -299,23 +301,23 @@
 }
 
 .slaNormal {
-  background: #f0fdf4;
-  color: #16a34a;
+  background: var(--success-50);
+  color: var(--success-600);
 }
 
 .slaWarning {
-  background: #fef9c3;
-  color: #a16207;
+  background: var(--warning-150);
+  color: var(--warning-800);
 }
 
 .slaCritical {
-  background: #ffedd5;
-  color: #c2410c;
+  background: var(--accent-orange-150);
+  color: var(--accent-orange-650);
 }
 
 .slaBreach {
-  background: #fef2f2;
-  color: #dc2626;
+  background: var(--danger-100);
+  color: var(--danger-600);
   animation: pulse 2s infinite;
 }
 
@@ -328,13 +330,13 @@
 .whyPathway {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--neutral-200);
 }
 
 .whyPathwayToggle {
   background: none;
   border: none;
-  color: #3b82f6;
+  color: var(--info-500);
   cursor: pointer;
   font-size: 0.875rem;
   padding: 0;
@@ -344,39 +346,39 @@
 }
 
 .whyPathwayToggle:hover {
-  color: #2563eb;
+  color: var(--info-600);
 }
 
 .rulesSummary {
   margin-top: 0.75rem;
   padding: 0.75rem;
-  background: #f8fafc;
+  background: var(--neutral-50);
   border-radius: 0.375rem;
 }
 
 .rulesIntro {
   font-weight: 600;
-  color: #0f172a;
+  color: var(--neutral-900);
   margin-bottom: 0.5rem;
 }
 
 .rulesList {
   margin: 0 0 0.75rem 0;
   padding-left: 1.25rem;
-  color: #1f2937;
+  color: var(--neutral-800);
   font-size: 0.875rem;
   display: grid;
   gap: 0.35rem;
 }
 
 .ruleTriggers {
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--neutral-200);
   padding-top: 0.5rem;
 }
 
 .ruleSummaryItem {
   padding: 0.5rem 0;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--neutral-200);
 }
 
 .ruleSummaryItem:last-child {
@@ -384,8 +386,8 @@
 }
 
 .ruleSummaryItem code {
-  background: #e0e7ff;
-  color: #4338ca;
+  background: var(--accent-indigo-100);
+  color: var(--accent-indigo-700);
   padding: 0.125rem 0.375rem;
   border-radius: 0.25rem;
   font-size: 0.75rem;
@@ -395,7 +397,7 @@
 .ruleSummaryItem span {
   display: block;
   margin-top: 0.25rem;
-  color: #64748b;
+  color: var(--neutral-500);
   font-size: 0.8rem;
 }
 
@@ -406,7 +408,7 @@
   gap: 0.5rem;
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--neutral-200);
 }
 
 .riskFlag {
@@ -434,16 +436,16 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  background: #f0fdf4;
-  border: 1px solid #86efac;
-  color: #166534;
+  background: var(--success-50);
+  border: 1px solid var(--success-220);
+  color: var(--success-800);
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
   margin-bottom: 1rem;
 }
 
 .confirmBanner span {
-  color: #15803d;
+  color: var(--success-700);
   font-size: 0.875rem;
 }
 
@@ -456,13 +458,14 @@
 
 .confirmHint {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--neutral-500);
 }
 
 .restrictedButton {
-  background: #f1f5f9;
-  border: 1px dashed #cbd5e1;
-  color: #94a3b8;
+  composes: ui-button from global;
+  background: var(--neutral-100);
+  border: 1px dashed var(--neutral-300);
+  color: var(--neutral-400);
 }
 
 .restrictedButton:disabled {
@@ -487,44 +490,45 @@
   padding: 0.125rem 0.375rem;
   border-radius: 0.25rem;
   font-size: 0.75rem;
-  font-family: monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 }
 
 .primaryActionBook {
-  background: #16a34a;
+  background: var(--success-600);
   color: white;
 }
 
 .primaryActionBook:hover {
-  background: #15803d;
+  background: var(--success-700);
 }
 
 .primaryActionCall {
-  background: #f59e0b;
+  background: var(--warning-500);
   color: white;
 }
 
 .primaryActionCall:hover {
-  background: #d97706;
+  background: var(--warning-600);
 }
 
 .primaryActionEscalate {
-  background: #dc2626;
+  background: var(--danger-600);
   color: white;
 }
 
 .primaryActionEscalate:hover {
-  background: #b91c1c;
+  background: var(--danger-700);
 }
 
 .confirmButton {
-  background: #3b82f6;
+  composes: ui-button from global;
+  background: var(--info-500);
   color: white;
   flex: 1;
 }
 
 .confirmButton:hover:not(:disabled) {
-  background: #2563eb;
+  background: var(--info-600);
 }
 
 .confirmButton:disabled {
@@ -533,12 +537,13 @@
 }
 
 .downloadButton {
-  background: #64748b;
+  composes: ui-button from global;
+  background: var(--neutral-500);
   color: white;
 }
 
 .downloadButton:hover {
-  background: #475569;
+  background: var(--neutral-600);
 }
 
 /* ========================================
@@ -546,27 +551,27 @@
    ======================================== */
 
 .tierRed {
-  background: #dc2626;
+  background: var(--danger-600);
   color: white;
 }
 
 .tierAmber {
-  background: #f59e0b;
+  background: var(--warning-500);
   color: white;
 }
 
 .tierGreen {
-  background: #16a34a;
+  background: var(--success-600);
   color: white;
 }
 
 .tierBlue {
-  background: #3b82f6;
+  background: var(--info-500);
   color: white;
 }
 
 .tierPending {
-  background: #64748b;
+  background: var(--neutral-500);
   color: white;
 }
 
@@ -575,22 +580,22 @@
    ======================================== */
 
 .severityCritical {
-  background: #dc2626;
+  background: var(--danger-600);
   color: white;
 }
 
 .severityHigh {
-  background: #f97316;
+  background: var(--accent-orange-600);
   color: white;
 }
 
 .severityMedium {
-  background: #f59e0b;
+  background: var(--warning-500);
   color: white;
 }
 
 .severityLow {
-  background: #64748b;
+  background: var(--neutral-500);
   color: white;
 }
 
@@ -602,7 +607,7 @@
   display: flex;
   gap: 0.25rem;
   margin-bottom: 1rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--neutral-200);
   padding-bottom: 0;
 }
 
@@ -613,18 +618,18 @@
   padding: 0.75rem 1.5rem;
   cursor: pointer;
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--neutral-500);
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
 }
 
 .tab:hover {
-  color: #1e293b;
+  color: var(--neutral-800);
 }
 
 .tabActive {
-  color: #3b82f6;
-  border-bottom-color: #3b82f6;
+  color: var(--info-500);
+  border-bottom-color: var(--info-500);
   font-weight: 500;
 }
 
@@ -651,17 +656,17 @@
 
 .section h3 {
   margin: 0 0 1rem 0;
-  color: #1e293b;
+  color: var(--neutral-800);
   font-size: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--neutral-200);
 }
 
 .sectionHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--neutral-200);
   padding-bottom: 0.5rem;
   margin-bottom: 1rem;
 }
@@ -673,9 +678,9 @@
 }
 
 .timelineToggle {
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--neutral-300);
   background: white;
-  color: #0f172a;
+  color: var(--neutral-900);
   padding: 0.3rem 0.75rem;
   border-radius: 0.375rem;
   font-size: 0.75rem;
@@ -683,7 +688,7 @@
 }
 
 .timelineToggle:hover {
-  background: #f8fafc;
+  background: var(--neutral-50);
 }
 
 .timelineList {
@@ -694,14 +699,14 @@
 
 .timelineItem {
   padding: 0.75rem 1rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--neutral-200);
   border-radius: 0.5rem;
-  background: #f8fafc;
+  background: var(--neutral-50);
 }
 
 .timelineLabel {
   font-weight: 600;
-  color: #0f172a;
+  color: var(--neutral-900);
   margin-bottom: 0.35rem;
 }
 
@@ -709,13 +714,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #64748b;
+  color: var(--neutral-500);
   font-size: 0.8rem;
   gap: 0.75rem;
 }
 
 .timelineActor {
-  color: #475569;
+  color: var(--neutral-600);
   font-weight: 500;
 }
 
@@ -725,14 +730,14 @@
   justify-content: space-between;
   gap: 1.5rem;
   padding: 1rem 1.25rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--neutral-200);
   border-radius: 0.5rem;
-  background: #f8fafc;
+  background: var(--neutral-50);
 }
 
 .feedbackPromptText {
   margin: 0.5rem 0 0;
-  color: #475569;
+  color: var(--neutral-600);
   font-size: 0.9rem;
 }
 
@@ -743,7 +748,7 @@
 }
 
 .feedbackLink {
-  background: #0f172a;
+  background: var(--neutral-900);
   color: white;
   padding: 0.45rem 0.9rem;
   border-radius: 0.375rem;
@@ -753,13 +758,13 @@
 }
 
 .feedbackLink:hover {
-  background: #1e293b;
+  background: var(--neutral-800);
 }
 
 .feedbackDismiss {
   background: white;
-  border: 1px solid #e2e8f0;
-  color: #475569;
+  border: 1px solid var(--neutral-200);
+  color: var(--neutral-600);
   padding: 0.45rem 0.9rem;
   border-radius: 0.375rem;
   font-size: 0.875rem;
@@ -767,12 +772,12 @@
 }
 
 .feedbackDismiss:hover {
-  border-color: #cbd5e1;
-  background: #f1f5f9;
+  border-color: var(--neutral-300);
+  background: var(--neutral-100);
 }
 
 .muted {
-  color: #64748b;
+  color: var(--neutral-500);
   font-style: italic;
 }
 
@@ -783,17 +788,17 @@
 }
 
 .dl dt {
-  color: #64748b;
+  color: var(--neutral-500);
   font-size: 0.875rem;
 }
 
 .dl dd {
   margin: 0;
-  color: #1e293b;
+  color: var(--neutral-800);
 }
 
 .dl dd a {
-  color: #3b82f6;
+  color: var(--info-500);
   text-decoration: none;
 }
 
@@ -802,7 +807,7 @@
 }
 
 .override {
-  color: #f59e0b;
+  color: var(--warning-500);
   font-weight: 500;
 }
 
@@ -817,8 +822,9 @@
 }
 
 .scoreCard {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  composes: ui-card from global;
+  background: var(--neutral-50);
+  border: 1px solid var(--neutral-200);
   border-radius: 0.5rem;
   padding: 0.75rem;
   text-align: center;
@@ -827,7 +833,7 @@
 .scoreType {
   display: block;
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--neutral-500);
   text-transform: uppercase;
   margin-bottom: 0.25rem;
 }
@@ -836,13 +842,13 @@
   display: block;
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--neutral-800);
 }
 
 .scoreBand {
   display: block;
   font-size: 0.75rem;
-  color: #475569;
+  color: var(--neutral-600);
   margin-top: 0.25rem;
 }
 
@@ -859,13 +865,13 @@
 .table td {
   padding: 0.75rem 1rem;
   text-align: left;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--neutral-200);
 }
 
 .table th {
   font-weight: 600;
-  color: #475569;
-  background: #f8fafc;
+  color: var(--neutral-600);
+  background: var(--neutral-50);
 }
 
 /* ========================================
@@ -877,7 +883,7 @@
 }
 
 .responseTime {
-  color: #64748b;
+  color: var(--neutral-500);
   font-size: 0.875rem;
   margin-bottom: 0.5rem;
 }
@@ -891,26 +897,26 @@
 
 .answerItem {
   padding: 0.75rem 1rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--neutral-200);
   border-radius: 0.5rem;
-  background: #f8fafc;
+  background: var(--neutral-50);
 }
 
 .answerQuestion {
   font-weight: 600;
-  color: #0f172a;
+  color: var(--neutral-900);
   margin-bottom: 0.25rem;
 }
 
 .answerValue {
-  color: #1f2937;
+  color: var(--neutral-800);
   white-space: pre-wrap;
 }
 
 .rawToggle {
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--neutral-300);
   background: white;
-  color: #0f172a;
+  color: var(--neutral-900);
   padding: 0.4rem 0.8rem;
   border-radius: 0.375rem;
   font-size: 0.75rem;
@@ -919,11 +925,11 @@
 }
 
 .rawToggle:hover {
-  background: #f8fafc;
+  background: var(--neutral-50);
 }
 
 .answersJson {
-  background: #f8fafc;
+  background: var(--neutral-50);
   padding: 1rem;
   border-radius: 0.5rem;
   overflow-x: auto;
@@ -937,17 +943,17 @@
    ======================================== */
 
 .finalizedMessage {
-  background: #f0fdf4;
-  border: 1px solid #16a34a;
-  color: #16a34a;
+  background: var(--success-50);
+  border: 1px solid var(--success-600);
+  color: var(--success-600);
   padding: 1rem;
   border-radius: 0.5rem;
 }
 
 .warning {
-  background: #fffbeb;
-  border: 1px solid #f59e0b;
-  color: #92400e;
+  background: var(--warning-25);
+  border: 1px solid var(--warning-500);
+  color: var(--warning-700);
   padding: 1rem;
   border-radius: 0.5rem;
 }
@@ -961,7 +967,7 @@
 .modeButton,
 .modeActive {
   padding: 0.75rem 1.5rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--neutral-200);
   background: white;
   border-radius: 0.5rem;
   cursor: pointer;
@@ -970,20 +976,20 @@
 }
 
 .modeButton:hover {
-  border-color: #94a3b8;
+  border-color: var(--neutral-400);
 }
 
 .modeActive {
-  border-color: #3b82f6;
-  background: #eff6ff;
-  color: #3b82f6;
+  border-color: var(--info-500);
+  background: var(--info-150);
+  color: var(--info-500);
   font-weight: 500;
 }
 
 .dispositionError {
-  background: #fef2f2;
-  border: 1px solid #dc2626;
-  color: #dc2626;
+  background: var(--danger-100);
+  border: 1px solid var(--danger-600);
+  color: var(--danger-600);
   padding: 1rem;
   border-radius: 0.5rem;
   margin-bottom: 1rem;
@@ -995,9 +1001,9 @@
 }
 
 .overrideWarning {
-  background: #fef2f2;
-  border: 1px solid #dc2626;
-  color: #dc2626;
+  background: var(--danger-100);
+  border: 1px solid var(--danger-600);
+  color: var(--danger-600);
   padding: 1rem;
   border-radius: 0.5rem;
   margin-bottom: 1.5rem;
@@ -1012,14 +1018,14 @@
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
-  color: #1e293b;
+  color: var(--neutral-800);
 }
 
 .formGroup select,
 .formGroup textarea {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--neutral-200);
   border-radius: 0.375rem;
   font-size: 1rem;
 }
@@ -1027,19 +1033,19 @@
 .formGroup select:focus,
 .formGroup textarea:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  border-color: var(--brand-600);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
 }
 
 .charCount {
   display: block;
   margin-top: 0.25rem;
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--neutral-500);
 }
 
 .confirmButtonLarge {
-  background: #16a34a;
+  background: var(--success-600);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -1050,7 +1056,7 @@
 }
 
 .confirmButtonLarge:hover:not(:disabled) {
-  background: #15803d;
+  background: var(--success-700);
 }
 
 .confirmButtonLarge:disabled {
@@ -1059,7 +1065,7 @@
 }
 
 .overrideButtonLarge {
-  background: #f59e0b;
+  background: var(--warning-500);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -1070,7 +1076,7 @@
 }
 
 .overrideButtonLarge:hover:not(:disabled) {
-  background: #d97706;
+  background: var(--warning-600);
 }
 
 .overrideButtonLarge:disabled {
@@ -1079,9 +1085,9 @@
 }
 
 .error {
-  background: #fef2f2;
-  border: 1px solid #dc2626;
-  color: #dc2626;
+  background: var(--danger-100);
+  border: 1px solid var(--danger-600);
+  color: var(--danger-600);
   padding: 1rem;
   border-radius: 0.5rem;
   margin-bottom: 1rem;
@@ -1101,13 +1107,13 @@
 }
 
 .bannerRed {
-  background: #fef2f2;
-  border: 2px solid #dc2626;
+  background: var(--danger-100);
+  border: 2px solid var(--danger-600);
 }
 
 .bannerAmber {
-  background: #fffbeb;
-  border: 2px solid #f59e0b;
+  background: var(--warning-25);
+  border: 2px solid var(--warning-500);
 }
 
 .bannerIcon {
@@ -1126,11 +1132,11 @@
 }
 
 .bannerRed .bannerContent strong {
-  color: #991b1b;
+  color: var(--danger-800);
 }
 
 .bannerAmber .bannerContent strong {
-  color: #92400e;
+  color: var(--warning-700);
 }
 
 .bannerContent p {
@@ -1140,11 +1146,11 @@
 }
 
 .bannerRed .bannerContent p {
-  color: #b91c1c;
+  color: var(--danger-700);
 }
 
 .bannerAmber .bannerContent p {
-  color: #a16207;
+  color: var(--warning-800);
 }
 
 /* ========================================
@@ -1152,8 +1158,8 @@
    ======================================== */
 
 .overrideInfo {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--neutral-50);
+  border: 1px solid var(--neutral-200);
   border-radius: 0.5rem;
   padding: 1rem 1.25rem;
   margin-bottom: 1.5rem;
@@ -1161,13 +1167,13 @@
 
 .overrideInfo h4 {
   margin: 0 0 0.5rem 0;
-  color: #1e293b;
+  color: var(--neutral-800);
   font-size: 1.1rem;
 }
 
 .overrideExplainer {
   margin: 0;
-  color: #64748b;
+  color: var(--neutral-500);
   font-size: 0.9rem;
 }
 
@@ -1175,7 +1181,7 @@
   display: block;
   margin-top: 0.25rem;
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--neutral-500);
 }
 
 /* ========================================
@@ -1183,14 +1189,15 @@
    ======================================== */
 
 .incidentButton {
-  background: #f1f5f9;
-  color: #475569;
-  border: 1px solid #e2e8f0;
+  composes: ui-button from global;
+  background: var(--neutral-100);
+  color: var(--neutral-600);
+  border: 1px solid var(--neutral-200);
 }
 
 .incidentButton:hover {
-  background: #e2e8f0;
-  border-color: #cbd5e1;
+  background: var(--neutral-200);
+  border-color: var(--neutral-300);
 }
 
 /* ========================================
@@ -1220,13 +1227,13 @@
 
 .modalHeader {
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--neutral-200);
 }
 
 .modalHeader h3 {
   margin: 0;
   font-size: 1.1rem;
-  color: #1e293b;
+  color: var(--neutral-800);
 }
 
 .modalBody {
@@ -1234,9 +1241,9 @@
 }
 
 .modalWarning {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #991b1b;
+  background: var(--danger-100);
+  border: 1px solid var(--danger-300);
+  color: var(--danger-800);
   padding: 0.75rem 1rem;
   border-radius: 0.375rem;
   margin: 0 0 1rem 0;
@@ -1245,21 +1252,21 @@
 
 .modalInfo {
   margin: 0 0 0.75rem 0;
-  color: #475569;
+  color: var(--neutral-600);
   font-size: 0.9rem;
   line-height: 1.5;
 }
 
 .modalDetails {
   margin: 0;
-  color: #64748b;
+  color: var(--neutral-500);
   font-size: 0.85rem;
   line-height: 1.5;
 }
 
 .modalRationale {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--neutral-50);
+  border: 1px solid var(--neutral-200);
   border-radius: 0.375rem;
   padding: 0.75rem 1rem;
   margin-top: 1rem;
@@ -1268,14 +1275,14 @@
 .modalRationale strong {
   display: block;
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--neutral-500);
   text-transform: uppercase;
   margin-bottom: 0.25rem;
 }
 
 .modalRationale p {
   margin: 0;
-  color: #1e293b;
+  color: var(--neutral-800);
   font-size: 0.9rem;
 }
 
@@ -1284,30 +1291,30 @@
   justify-content: flex-end;
   gap: 0.75rem;
   padding: 1rem 1.5rem;
-  border-top: 1px solid #e2e8f0;
-  background: #f8fafc;
+  border-top: 1px solid var(--neutral-200);
+  background: var(--neutral-50);
   border-radius: 0 0 0.75rem 0.75rem;
 }
 
 .modalCancel {
   padding: 0.625rem 1.25rem;
   background: white;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--neutral-200);
   border-radius: 0.375rem;
-  color: #475569;
+  color: var(--neutral-600);
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .modalCancel:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
+  background: var(--neutral-100);
+  border-color: var(--neutral-300);
 }
 
 .modalConfirm {
   padding: 0.625rem 1.25rem;
-  background: #3b82f6;
+  background: var(--info-500);
   border: none;
   border-radius: 0.375rem;
   color: white;
@@ -1318,7 +1325,7 @@
 }
 
 .modalConfirm:hover:not(:disabled) {
-  background: #2563eb;
+  background: var(--info-600);
 }
 
 .modalConfirm:disabled {
@@ -1341,8 +1348,8 @@
 }
 
 .patientSection {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--neutral-50);
+  border: 1px solid var(--neutral-200);
   border-radius: 0.5rem;
   padding: 1rem 1.25rem;
 }
@@ -1350,16 +1357,16 @@
 .patientSection h3 {
   margin: 0 0 1rem 0;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e2e8f0;
-  color: #1e293b;
+  border-bottom: 1px solid var(--neutral-200);
+  color: var(--neutral-800);
   font-size: 0.95rem;
 }
 
 .ageBadge {
   display: inline-block;
   margin-left: 0.5rem;
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--info-200);
+  color: var(--info-750);
   padding: 0.125rem 0.5rem;
   border-radius: 9999px;
   font-size: 0.75rem;
@@ -1369,8 +1376,8 @@
 .flagBadge {
   display: inline-block;
   margin-left: 0.5rem;
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--warning-100);
+  color: var(--warning-700);
   padding: 0.125rem 0.5rem;
   border-radius: 9999px;
   font-size: 0.75rem;
@@ -1378,17 +1385,32 @@
 }
 
 .contactCard {
+  composes: ui-card from global;
   margin-top: 1rem;
   padding: 0.75rem 1rem;
   background: white;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--neutral-200);
   border-radius: 0.375rem;
+}
+
+.contactHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.contactType {
+  font-size: 0.75rem;
+  color: var(--neutral-500);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .contactCard h4 {
   margin: 0 0 0.5rem 0;
   font-size: 0.85rem;
-  color: #64748b;
+  color: var(--neutral-500);
   text-transform: uppercase;
   letter-spacing: 0.025em;
 }
@@ -1400,28 +1422,29 @@
   margin-bottom: 1rem;
   padding: 0.75rem 1rem;
   background: white;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--neutral-200);
   border-radius: 0.375rem;
 }
 
 .postcodeLabel {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--neutral-500);
   text-transform: uppercase;
 }
 
 .postcodeValue {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1e293b;
-  font-family: monospace;
+  color: var(--neutral-800);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 }
 
 .addressCard {
+  composes: ui-card from global;
   margin-top: 0.75rem;
   padding: 0.75rem 1rem;
   background: white;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--neutral-200);
   border-radius: 0.375rem;
 }
 
@@ -1434,14 +1457,14 @@
 
 .addressType {
   font-weight: 600;
-  color: #475569;
+  color: var(--neutral-600);
   font-size: 0.85rem;
   text-transform: capitalize;
 }
 
 .primaryBadge {
-  background: #dcfce7;
-  color: #16a34a;
+  background: var(--success-90);
+  color: var(--success-600);
   padding: 0.125rem 0.5rem;
   border-radius: 9999px;
   font-size: 0.7rem;
@@ -1449,17 +1472,17 @@
 }
 
 .addressLines {
-  color: #1e293b;
+  color: var(--neutral-800);
   font-size: 0.875rem;
   line-height: 1.5;
 }
 
 .presentingProblem {
   white-space: pre-wrap;
-  background: #fffbeb;
+  background: var(--warning-25);
   padding: 0.5rem 0.75rem;
   border-radius: 0.375rem;
-  border-left: 3px solid #f59e0b;
+  border-left: 3px solid var(--warning-500);
 }
 
 .medicationList {
@@ -1473,43 +1496,51 @@
 }
 
 .riskNotes {
-  background: #fef2f2;
-  color: #991b1b;
+  background: var(--danger-100);
+  color: var(--danger-800);
   padding: 0.5rem 0.75rem;
   border-radius: 0.375rem;
-  border-left: 3px solid #dc2626;
+  border-left: 3px solid var(--danger-600);
   white-space: pre-wrap;
 }
 
 .identifierCard {
+  composes: ui-card from global;
   display: flex;
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
   background: white;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--neutral-200);
   border-radius: 0.375rem;
   margin-bottom: 0.5rem;
 }
 
+.identifierHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 140px;
+}
+
 .identifierType {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--neutral-500);
   text-transform: uppercase;
   min-width: 100px;
 }
 
 .identifierValue {
   flex: 1;
-  font-family: monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   font-size: 1rem;
-  color: #1e293b;
+  color: var(--neutral-800);
   font-weight: 500;
 }
 
 .verifiedBadge {
-  background: #dcfce7;
-  color: #16a34a;
+  background: var(--success-90);
+  color: var(--success-600);
   padding: 0.125rem 0.5rem;
   border-radius: 9999px;
   font-size: 0.7rem;
@@ -1517,8 +1548,8 @@
 }
 
 .unverifiedBadge {
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--neutral-100);
+  color: var(--neutral-500);
   padding: 0.125rem 0.5rem;
   border-radius: 9999px;
   font-size: 0.7rem;
@@ -1527,7 +1558,7 @@
 
 .historyLink {
   display: inline-block;
-  color: #3b82f6;
+  color: var(--info-500);
   text-decoration: none;
   font-size: 0.875rem;
   font-weight: 500;
@@ -1541,7 +1572,7 @@
 .skeletonTitle {
   height: 1.25rem;
   width: 60%;
-  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background: linear-gradient(90deg, var(--neutral-200) 25%, var(--neutral-100) 50%, var(--neutral-200) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 0.25rem;
@@ -1551,7 +1582,7 @@
 .skeletonLine {
   height: 0.875rem;
   width: 100%;
-  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background: linear-gradient(90deg, var(--neutral-200) 25%, var(--neutral-100) 50%, var(--neutral-200) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 0.25rem;
@@ -1561,7 +1592,7 @@
 .skeletonLineShort {
   height: 0.875rem;
   width: 70%;
-  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background: linear-gradient(90deg, var(--neutral-200) 25%, var(--neutral-100) 50%, var(--neutral-200) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 0.25rem;
@@ -1581,8 +1612,8 @@
   align-items: center;
   justify-content: center;
   padding: 3rem;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: var(--danger-100);
+  border: 1px solid var(--danger-300);
   border-radius: 0.5rem;
   text-align: center;
 }
@@ -1593,13 +1624,14 @@
 }
 
 .patientDetailsError p {
-  color: #991b1b;
+  color: var(--danger-800);
   margin: 0 0 1rem 0;
 }
 
 .retryButton {
+  composes: ui-button from global;
   padding: 0.5rem 1rem;
-  background: #dc2626;
+  background: var(--danger-600);
   color: white;
   border: none;
   border-radius: 0.375rem;
@@ -1609,11 +1641,12 @@
 }
 
 .retryButton:hover {
-  background: #b91c1c;
+  background: var(--danger-700);
 }
 
 /* Copy Button */
 .copyButton {
+  composes: ui-button from global;
   background: none;
   border: none;
   cursor: pointer;
@@ -1639,22 +1672,22 @@
   margin-left: 0.5rem;
   font-size: 0.7rem;
   font-weight: 400;
-  color: #dc2626;
-  background: #fef2f2;
+  color: var(--danger-600);
+  background: var(--danger-100);
   padding: 0.125rem 0.5rem;
   border-radius: 9999px;
 }
 
 /* Not Recorded Placeholder */
 .notRecorded {
-  color: #94a3b8;
+  color: var(--neutral-400);
   font-style: italic;
 }
 
 /* Legacy Badge */
 .legacyBadge {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--warning-100);
+  color: var(--warning-700);
   padding: 0.125rem 0.5rem;
   border-radius: 9999px;
   font-size: 0.7rem;
@@ -1671,13 +1704,13 @@
 
 .lastUpdated {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--neutral-500);
 }
 
 .viewHistoryLink {
   background: none;
   border: none;
-  color: #3b82f6;
+  color: var(--info-500);
   cursor: pointer;
   font-size: 0.8rem;
   padding: 0;
@@ -1694,7 +1727,7 @@
   align-items: center;
   margin: 0 0 1rem 0;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--neutral-200);
 }
 
 .sectionHeaderEditable h3 {
@@ -1704,9 +1737,10 @@
 }
 
 .editButton {
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  color: #3b82f6;
+  composes: ui-button from global;
+  background: var(--neutral-100);
+  border: 1px solid var(--neutral-200);
+  color: var(--info-500);
   padding: 0.25rem 0.75rem;
   border-radius: 0.375rem;
   font-size: 0.75rem;
@@ -1716,13 +1750,27 @@
 }
 
 .editButton:hover {
-  background: #e0f2fe;
-  border-color: #3b82f6;
+  background: var(--info-120);
+  border-color: var(--info-500);
+}
+
+.editButtonSmall {
+  background: var(--neutral-50);
+  border: 1px solid var(--neutral-200);
+  color: var(--neutral-600);
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.editButtonSmall:hover {
+  background: var(--neutral-200);
 }
 
 .editForm {
   background: white;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--neutral-200);
   border-radius: 0.5rem;
   padding: 1rem;
 }
@@ -1743,7 +1791,7 @@
 .editField label {
   font-size: 0.75rem;
   font-weight: 500;
-  color: #64748b;
+  color: var(--neutral-500);
   text-transform: uppercase;
   letter-spacing: 0.025em;
 }
@@ -1752,10 +1800,10 @@
 .editField select,
 .editField textarea {
   padding: 0.5rem 0.75rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--neutral-200);
   border-radius: 0.375rem;
   font-size: 0.875rem;
-  background: #f8fafc;
+  background: var(--neutral-50);
   transition: border-color 0.15s;
 }
 
@@ -1763,7 +1811,7 @@
 .editField select:focus,
 .editField textarea:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--info-500);
   background: white;
 }
 
@@ -1781,7 +1829,7 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.875rem;
-  color: #1e293b;
+  color: var(--neutral-800);
   cursor: pointer;
   text-transform: none;
   letter-spacing: normal;
@@ -1796,8 +1844,8 @@
 .editReasonBox {
   margin-bottom: 1rem;
   padding: 0.75rem;
-  background: #fef3c7;
-  border: 1px solid #fcd34d;
+  background: var(--warning-100);
+  border: 1px solid var(--warning-250);
   border-radius: 0.375rem;
 }
 
@@ -1805,14 +1853,14 @@
   display: block;
   font-size: 0.75rem;
   font-weight: 500;
-  color: #92400e;
+  color: var(--warning-700);
   margin-bottom: 0.5rem;
 }
 
 .editReasonBox textarea {
   width: 100%;
   padding: 0.5rem;
-  border: 1px solid #fcd34d;
+  border: 1px solid var(--warning-250);
   border-radius: 0.25rem;
   font-size: 0.875rem;
   resize: vertical;
@@ -1825,22 +1873,24 @@
 }
 
 .cancelButton {
+  composes: ui-button from global;
   padding: 0.5rem 1rem;
   background: white;
-  border: 1px solid #e2e8f0;
-  color: #64748b;
+  border: 1px solid var(--neutral-200);
+  color: var(--neutral-500);
   border-radius: 0.375rem;
   font-size: 0.875rem;
   cursor: pointer;
 }
 
 .cancelButton:hover:not(:disabled) {
-  background: #f1f5f9;
+  background: var(--neutral-100);
 }
 
 .saveButton {
+  composes: ui-button from global;
   padding: 0.5rem 1rem;
-  background: #3b82f6;
+  background: var(--info-500);
   border: none;
   color: white;
   border-radius: 0.375rem;
@@ -1850,7 +1900,7 @@
 }
 
 .saveButton:hover:not(:disabled) {
-  background: #2563eb;
+  background: var(--info-600);
 }
 
 .saveButton:disabled,
@@ -1860,18 +1910,19 @@
 }
 
 .editError {
-  background: #fef2f2;
-  color: #dc2626;
+  background: var(--danger-100);
+  color: var(--danger-600);
   padding: 0.5rem 0.75rem;
   border-radius: 0.375rem;
   margin-bottom: 1rem;
   font-size: 0.875rem;
-  border-left: 3px solid #dc2626;
+  border-left: 3px solid var(--danger-600);
 }
 
 .riskNotesInput {
-  background: #fef2f2 !important;
-  border-color: #fecaca !important;
+  composes: ui-input from global;
+  background: var(--danger-100) !important;
+  border-color: var(--danger-300) !important;
 }
 
 /* Patient Summary Header (in case header area) */
@@ -1881,8 +1932,8 @@
   align-items: center;
   gap: 1rem;
   padding: 0.75rem 1rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--neutral-50);
+  border: 1px solid var(--neutral-200);
   border-radius: 0.5rem;
   margin-top: 0.75rem;
 }
@@ -1895,11 +1946,11 @@
 }
 
 .patientSummaryLabel {
-  color: #64748b;
+  color: var(--neutral-500);
 }
 
 .patientSummaryValue {
-  color: #1e293b;
+  color: var(--neutral-800);
   font-weight: 500;
 }
 
@@ -1909,17 +1960,17 @@
   justify-content: center;
   width: 1.5rem;
   height: 1.5rem;
-  background: #fef3c7;
+  background: var(--warning-100);
   border-radius: 9999px;
   font-size: 0.75rem;
 }
 
 .patientFlagIcon.interpreter {
-  background: #dbeafe;
+  background: var(--info-200);
 }
 
 .patientFlagIcon.adjustments {
-  background: #fef3c7;
+  background: var(--warning-100);
 }
 
 /* ========================================

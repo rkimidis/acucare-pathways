@@ -4,7 +4,7 @@
   align-items: center;
   min-height: 100vh;
   padding: 2rem;
-  background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+  background: linear-gradient(135deg, var(--brand-600) 0%, var(--brand-800) 100%);
 }
 
 .container {
@@ -19,7 +19,7 @@
 .logo {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #0f766e;
+  color: var(--brand-600);
   text-align: center;
   margin-bottom: 1rem;
 }
@@ -27,7 +27,7 @@
 .title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--neutral-900);
   margin-bottom: 1.5rem;
   text-align: center;
 }
@@ -47,12 +47,12 @@
 .field label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
+  color: var(--neutral-700);
 }
 
 .field input {
   padding: 0.75rem 1rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--neutral-125);
   border-radius: 0.5rem;
   font-size: 1rem;
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -60,33 +60,35 @@
 
 .field input:focus {
   outline: none;
-  border-color: #0f766e;
+  border-color: var(--brand-600);
   box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
 }
 
 .mfaInput {
+  composes: ui-input from global;
   text-align: center;
   font-size: 1.5rem;
   letter-spacing: 0.5rem;
-  font-family: monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 }
 
 .mfaInfo {
   text-align: center;
   padding: 1rem;
-  background-color: #f0fdfa;
+  background-color: var(--brand-50);
   border-radius: 0.5rem;
   margin-bottom: 0.5rem;
 }
 
 .mfaInfo p {
-  color: #0f766e;
+  color: var(--brand-600);
   font-size: 0.875rem;
 }
 
 .submitButton {
+  composes: ui-button from global;
   padding: 0.875rem 1.5rem;
-  background-color: #0f766e;
+  background-color: var(--brand-600);
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -97,19 +99,20 @@
 }
 
 .submitButton:hover {
-  background-color: #115e59;
+  background-color: var(--brand-800);
 }
 
 .submitButton:disabled {
-  background-color: #5eead4;
+  background-color: var(--brand-300);
   cursor: not-allowed;
 }
 
 .backButton {
+  composes: ui-button from global;
   padding: 0.75rem 1.5rem;
   background-color: transparent;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
+  color: var(--neutral-500);
+  border: 1px solid var(--neutral-200);
   border-radius: 0.5rem;
   font-size: 0.875rem;
   cursor: pointer;
@@ -117,15 +120,15 @@
 }
 
 .backButton:hover {
-  background-color: #f8fafc;
+  background-color: var(--neutral-50);
 }
 
 .error {
   padding: 0.75rem 1rem;
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
+  background-color: var(--danger-100);
+  border: 1px solid var(--danger-300);
   border-radius: 0.5rem;
-  color: #dc2626;
+  color: var(--danger-600);
   font-size: 0.875rem;
 }
 
@@ -139,5 +142,5 @@
 
 .links a {
   font-size: 0.875rem;
-  color: #0f766e;
+  color: var(--brand-600);
 }

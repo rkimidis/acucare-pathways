@@ -10,6 +10,7 @@
 }
 
 .card {
+  composes: ui-card from global;
   text-align: center;
 }
 
@@ -23,30 +24,30 @@
   justify-content: center;
   width: 64px;
   height: 64px;
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  background: linear-gradient(135deg, var(--warning-100) 0%, var(--warning-200) 100%);
   border-radius: 50%;
   margin-bottom: 1rem;
-  color: #d97706;
+  color: var(--warning-600);
 }
 
 .title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--neutral-800);
   margin: 0;
   line-height: 1.4;
 }
 
 .mainMessage {
   font-size: 1.05rem;
-  color: #4b5563;
+  color: var(--neutral-600);
   line-height: 1.6;
   margin: 0 0 1.5rem 0;
 }
 
 .nextSteps {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--neutral-50);
+  border: 1px solid var(--neutral-200);
   border-radius: 8px;
   padding: 1rem 1.5rem;
   margin-bottom: 1.5rem;
@@ -54,7 +55,7 @@
 
 .nextSteps p {
   margin: 0;
-  color: #475569;
+  color: var(--neutral-600);
   font-size: 0.95rem;
   line-height: 1.6;
 }
@@ -64,8 +65,8 @@
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: var(--danger-100);
+  border: 1px solid var(--danger-300);
   border-radius: 8px;
   padding: 1rem 1.25rem;
   text-align: left;
@@ -79,7 +80,7 @@
 
 .safetyLine p {
   margin: 0;
-  color: #991b1b;
+  color: var(--danger-800);
   font-size: 0.95rem;
   line-height: 1.5;
 }
@@ -89,9 +90,10 @@
 }
 
 .acknowledgeButton {
+  composes: ui-button from global;
   margin-top: 1.5rem;
   padding: 0.875rem 2rem;
-  background: #3b82f6;
+  background: var(--brand-600);
   color: white;
   border: none;
   border-radius: 8px;
@@ -102,7 +104,7 @@
 }
 
 .acknowledgeButton:hover {
-  background: #2563eb;
+  background: var(--brand-700);
 }
 
 /* Mobile adjustments */

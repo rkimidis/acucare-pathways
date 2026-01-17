@@ -1,6 +1,6 @@
 .main {
   min-height: 100vh;
-  background: #f8fafc;
+  background: var(--neutral-50);
 }
 
 .header {
@@ -9,20 +9,21 @@
   align-items: center;
   padding: 1rem 2rem;
   background-color: white;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--neutral-200);
 }
 
 .header h1 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--neutral-900);
 }
 
 .backButton {
+  composes: ui-button from global;
   padding: 0.5rem 1rem;
   background-color: white;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
+  color: var(--neutral-500);
+  border: 1px solid var(--neutral-200);
   border-radius: 0.375rem;
   font-size: 0.875rem;
   cursor: pointer;
@@ -30,7 +31,7 @@
 }
 
 .backButton:hover {
-  background-color: #f8fafc;
+  background-color: var(--neutral-50);
 }
 
 .content {
@@ -43,6 +44,7 @@
 }
 
 .card {
+  composes: ui-card from global;
   background-color: white;
   border-radius: 0.5rem;
   padding: 1.5rem;
@@ -52,30 +54,31 @@
 .card h2 {
   font-size: 1rem;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--neutral-900);
   margin-bottom: 1rem;
 }
 
 .successCard {
-  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-  border: 1px solid #28a745;
+  composes: ui-card from global;
+  background: linear-gradient(135deg, var(--success-150) 0%, var(--success-100) 100%);
+  border: 1px solid var(--success-550);
   border-radius: 0.5rem;
   padding: 2rem;
   text-align: center;
 }
 
 .successCard h2 {
-  color: #155724;
+  color: var(--success-950);
   margin-bottom: 1rem;
 }
 
 .successCard p {
-  color: #155724;
+  color: var(--success-950);
   margin-bottom: 1.5rem;
 }
 
 .successCard h1 {
-  color: #155724;
+  color: var(--success-950);
   font-size: 1.5rem;
   margin-bottom: 1.5rem;
 }
@@ -92,18 +95,18 @@
 .detailsSummary {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--neutral-800);
   margin: 0 0 0.5rem 0;
 }
 
 .detailsType {
-  color: #4b5563;
+  color: var(--neutral-600);
   margin: 0 0 0.5rem 0;
 }
 
 .detailsFormat,
 .detailsLocation {
-  color: #6b7280;
+  color: var(--neutral-500);
   font-size: 0.9rem;
   margin: 0.25rem 0;
 }
@@ -121,7 +124,7 @@
 .preparation h3 {
   font-size: 1rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--neutral-800);
   margin: 0 0 0.75rem 0;
 }
 
@@ -133,14 +136,14 @@
 
 .whatToExpect li,
 .preparation li {
-  color: #4b5563;
+  color: var(--neutral-600);
   font-size: 0.9rem;
   margin-bottom: 0.5rem;
 }
 
 .cancellationNote {
   font-size: 0.85rem;
-  color: #64748b;
+  color: var(--neutral-500);
   margin-bottom: 1.5rem;
 }
 
@@ -152,7 +155,7 @@
 }
 
 .manageLink {
-  color: #3b82f6;
+  color: var(--info-500);
   font-weight: 500;
   text-decoration: none;
 }
@@ -162,33 +165,34 @@
 }
 
 .blockedCard {
-  background: #fef2f2;
-  border: 1px solid #dc2626;
+  composes: ui-card from global;
+  background: var(--danger-100);
+  border: 1px solid var(--danger-600);
   border-radius: 0.5rem;
   padding: 2rem;
   text-align: center;
 }
 
 .blockedCard h2 {
-  color: #dc2626;
+  color: var(--danger-600);
   margin-bottom: 1rem;
 }
 
 .blockedCard p {
-  color: #7f1d1d;
+  color: var(--danger-900);
   margin-bottom: 0.5rem;
 }
 
 .helpText {
   font-size: 0.875rem;
-  color: #991b1b;
+  color: var(--danger-800);
   margin-top: 1rem;
 }
 
 .errorBanner {
-  background: #fef2f2;
-  border: 1px solid #dc2626;
-  color: #dc2626;
+  background: var(--danger-100);
+  border: 1px solid var(--danger-600);
+  color: var(--danger-600);
   padding: 1rem;
   border-radius: 0.5rem;
 }
@@ -201,8 +205,9 @@
 }
 
 .typeCard {
-  background: #f8fafc;
-  border: 2px solid #e2e8f0;
+  composes: ui-card from global;
+  background: var(--neutral-50);
+  border: 2px solid var(--neutral-200);
   border-radius: 0.5rem;
   padding: 1rem;
   text-align: left;
@@ -211,38 +216,38 @@
 }
 
 .typeCard:hover {
-  border-color: #94a3b8;
+  border-color: var(--neutral-400);
 }
 
 .typeCardSelected {
-  border-color: #3b82f6;
-  background: #eff6ff;
+  border-color: var(--info-500);
+  background: var(--info-150);
 }
 
 .typeCard h3 {
   font-size: 1rem;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--neutral-900);
   margin-bottom: 0.5rem;
 }
 
 .typeCard p {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--neutral-500);
   margin-bottom: 0.5rem;
 }
 
 .duration {
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--neutral-400);
 }
 
 .remoteBadge {
   display: inline-block;
   margin-left: 0.5rem;
   padding: 0.125rem 0.5rem;
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--info-200);
+  color: var(--info-700);
   font-size: 0.75rem;
   border-radius: 9999px;
 }
@@ -255,8 +260,9 @@
 }
 
 .clinicianCard {
-  background: #f8fafc;
-  border: 2px solid #e2e8f0;
+  composes: ui-card from global;
+  background: var(--neutral-50);
+  border: 2px solid var(--neutral-200);
   border-radius: 0.5rem;
   padding: 1rem;
   text-align: left;
@@ -265,31 +271,31 @@
 }
 
 .clinicianCard:hover {
-  border-color: #94a3b8;
+  border-color: var(--neutral-400);
 }
 
 .clinicianCardSelected {
-  border-color: #3b82f6;
-  background: #eff6ff;
+  border-color: var(--info-500);
+  background: var(--info-150);
 }
 
 .clinicianCard h3 {
   font-size: 1rem;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--neutral-900);
   margin-bottom: 0.25rem;
 }
 
 .specialties {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--neutral-500);
   margin-bottom: 0.5rem;
   text-transform: capitalize;
 }
 
 .bio {
   font-size: 0.875rem;
-  color: #475569;
+  color: var(--neutral-600);
   line-height: 1.4;
 }
 
@@ -306,9 +312,9 @@
 .dateHeader {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--neutral-900);
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--neutral-200);
   margin-bottom: 0.75rem;
 }
 
@@ -319,9 +325,10 @@
 }
 
 .slotButton {
+  composes: ui-button from global;
   padding: 0.5rem 1rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--neutral-50);
+  border: 1px solid var(--neutral-200);
   border-radius: 0.375rem;
   font-size: 0.875rem;
   cursor: pointer;
@@ -332,13 +339,13 @@
 }
 
 .slotButton:hover {
-  border-color: #94a3b8;
+  border-color: var(--neutral-400);
   background: white;
 }
 
 .slotButtonSelected {
-  border-color: #3b82f6;
-  background: #3b82f6;
+  border-color: var(--info-500);
+  background: var(--info-500);
   color: white;
 }
 
@@ -348,14 +355,14 @@
 
 .noSlots {
   text-align: center;
-  color: #64748b;
+  color: var(--neutral-500);
   font-style: italic;
   padding: 2rem;
 }
 
 /* Booking Confirmation */
 .summary {
-  background: #f8fafc;
+  background: var(--neutral-50);
   border-radius: 0.5rem;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -365,7 +372,7 @@
   display: flex;
   justify-content: space-between;
   padding: 0.5rem 0;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--neutral-200);
 }
 
 .summaryItem:last-child {
@@ -374,7 +381,7 @@
 
 .label {
   font-weight: 500;
-  color: #64748b;
+  color: var(--neutral-500);
 }
 
 .remoteOption {
@@ -387,7 +394,7 @@
   gap: 0.5rem;
   cursor: pointer;
   font-size: 0.875rem;
-  color: #0f172a;
+  color: var(--neutral-900);
 }
 
 .checkboxLabel input {
@@ -403,14 +410,14 @@
   display: block;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #0f172a;
+  color: var(--neutral-900);
   margin-bottom: 0.5rem;
 }
 
 .formGroup textarea {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--neutral-200);
   border-radius: 0.375rem;
   font-size: 0.875rem;
   resize: vertical;
@@ -418,14 +425,15 @@
 
 .formGroup textarea:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--brand-600);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
 }
 
 .bookButton {
+  composes: ui-button from global;
   width: 100%;
   padding: 1rem;
-  background: #16a34a;
+  background: var(--success-600);
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -436,7 +444,7 @@
 }
 
 .bookButton:hover:not(:disabled) {
-  background: #15803d;
+  background: var(--success-700);
 }
 
 .bookButton:disabled {
@@ -445,8 +453,9 @@
 }
 
 .primaryButton {
+  composes: ui-button from global;
   padding: 0.75rem 1.5rem;
-  background: #3b82f6;
+  background: var(--brand-600);
   color: white;
   border: none;
   border-radius: 0.375rem;
@@ -456,7 +465,7 @@
 }
 
 .primaryButton:hover {
-  background: #2563eb;
+  background: var(--brand-700);
 }
 
 /* Soft Nudge Banner */
@@ -465,11 +474,11 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.875rem 1rem;
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  border: 1px solid #f59e0b;
+  background: linear-gradient(135deg, var(--warning-100) 0%, var(--warning-200) 100%);
+  border: 1px solid var(--warning-500);
   border-radius: 0.5rem;
   font-size: 0.875rem;
-  color: #92400e;
+  color: var(--warning-700);
 }
 
 .nudgeIcon {
@@ -484,8 +493,8 @@
   gap: 0.5rem;
   margin-bottom: 1rem;
   padding: 0.75rem 1rem;
-  background: #f0fdf4;
-  border: 1px solid #22c55e;
+  background: var(--success-50);
+  border: 1px solid var(--success-520);
   border-radius: 0.5rem;
 }
 
@@ -494,14 +503,14 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.9rem;
-  color: #166534;
+  color: var(--success-800);
 }
 
 .todayBadge {
   display: inline-block;
   margin-left: 0.5rem;
   padding: 0.125rem 0.5rem;
-  background: #22c55e;
+  background: var(--success-520);
   color: white;
   font-size: 0.75rem;
   font-weight: 600;
@@ -510,14 +519,14 @@
 
 .earliestNudge {
   font-size: 0.8rem;
-  color: #166534;
+  color: var(--success-800);
   margin-left: 1.75rem;
 }
 
 /* Step Hints */
 .stepHint {
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--neutral-500);
   margin-top: -0.5rem;
   margin-bottom: 1rem;
 }
@@ -534,7 +543,7 @@
   top: 0;
   bottom: 0;
   width: 3px;
-  background: #22c55e;
+  background: var(--success-520);
   border-radius: 2px;
 }
 
@@ -542,8 +551,8 @@
   display: inline-block;
   margin-left: 0.75rem;
   padding: 0.125rem 0.5rem;
-  background: #dcfce7;
-  color: #166534;
+  background: var(--success-90);
+  color: var(--success-800);
   font-size: 0.7rem;
   font-weight: 500;
   border-radius: 9999px;
@@ -551,13 +560,13 @@
 }
 
 .slotButtonEarly {
-  border-color: #22c55e;
-  background: #f0fdf4;
+  border-color: var(--success-520);
+  background: var(--success-50);
 }
 
 .slotButtonEarly:hover {
-  background: #dcfce7;
-  border-color: #16a34a;
+  background: var(--success-90);
+  border-color: var(--success-600);
 }
 
 /* Success Card Enhancements */
@@ -565,7 +574,7 @@
   width: 3rem;
   height: 3rem;
   margin: 0 auto 1rem;
-  background: #22c55e;
+  background: var(--success-520);
   color: white;
   font-size: 1.5rem;
   font-weight: bold;
@@ -605,7 +614,7 @@
   content: '✓';
   position: absolute;
   left: 0;
-  color: #16a34a;
+  color: var(--success-600);
   font-weight: bold;
 }
 
@@ -614,8 +623,8 @@
    ======================================== */
 
 .pathwayExplanation {
-  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
-  border: 1px solid #86efac;
+  background: linear-gradient(135deg, var(--success-50) 0%, var(--success-60) 100%);
+  border: 1px solid var(--success-220);
   border-radius: 0.75rem;
   padding: 1.25rem 1.5rem;
   margin-bottom: 1.5rem;
@@ -623,7 +632,7 @@
 
 .pathwayMain {
   font-size: 1.05rem;
-  color: #166534;
+  color: var(--success-800);
   font-weight: 500;
   margin: 0 0 0.75rem 0;
   line-height: 1.5;
@@ -631,7 +640,7 @@
 
 .clinicianTypeExplanation {
   font-size: 0.95rem;
-  color: #15803d;
+  color: var(--success-700);
   margin: 0;
   line-height: 1.6;
 }
@@ -640,7 +649,7 @@
   display: block;
   margin-top: 0.5rem;
   font-size: 0.9rem;
-  color: #22c55e;
+  color: var(--success-520);
   font-style: italic;
 }
 
@@ -650,12 +659,12 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.875rem 1.25rem;
-  background: #eff6ff;
-  border: 1px solid #93c5fd;
+  background: var(--info-150);
+  border: 1px solid var(--info-220);
   border-radius: 0.5rem;
   margin-bottom: 1.5rem;
   font-size: 0.95rem;
-  color: #1d4ed8;
+  color: var(--info-700);
   font-weight: 500;
 }
 
@@ -665,8 +674,8 @@
 
 /* Payment Notice */
 .paymentNotice {
-  background: #fefce8;
-  border: 1px solid #fde047;
+  background: var(--warning-40);
+  border: 1px solid var(--warning-350);
   border-radius: 0.5rem;
   padding: 1rem 1.25rem;
   margin-bottom: 1.25rem;
@@ -674,7 +683,7 @@
 
 .paymentNotice p {
   margin: 0;
-  color: #854d0e;
+  color: var(--warning-780);
 }
 
 .paymentNotice p:first-child {
@@ -683,7 +692,7 @@
 
 .paymentReason {
   font-size: 0.875rem;
-  color: #a16207;
+  color: var(--warning-800);
 }
 
 /* ========================================
@@ -691,6 +700,7 @@
    ======================================== */
 
 .reviewCard {
+  composes: ui-card from global;
   text-align: center;
   padding: 2rem;
 }
@@ -699,7 +709,7 @@
   width: 64px;
   height: 64px;
   margin: 0 auto 1.5rem;
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  background: linear-gradient(135deg, var(--warning-100) 0%, var(--warning-200) 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -709,7 +719,7 @@
 
 .reviewMainCopy {
   font-size: 1.1rem;
-  color: #374151;
+  color: var(--neutral-700);
   line-height: 1.6;
   margin-bottom: 1.5rem;
   max-width: 480px;
@@ -718,8 +728,8 @@
 }
 
 .reviewCard .reassuranceBox {
-  background: #f0fdf4;
-  border: 1px solid #86efac;
+  background: var(--success-50);
+  border: 1px solid var(--success-220);
   border-radius: 0.75rem;
   padding: 1rem 1.5rem;
   margin-bottom: 1.5rem;
@@ -728,13 +738,13 @@
 
 .reviewCard .reassuranceBox p {
   margin: 0;
-  color: #166534;
+  color: var(--success-800);
   line-height: 1.6;
 }
 
 .reviewCard .whatHappensNext {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--neutral-50);
+  border: 1px solid var(--neutral-200);
   border-radius: 0.75rem;
   padding: 1.25rem 1.5rem;
   margin-bottom: 1.5rem;
@@ -744,14 +754,14 @@
 .reviewCard .whatHappensNext h3 {
   font-size: 1rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--neutral-800);
   margin: 0 0 0.75rem 0;
 }
 
 .reviewCard .whatHappensNext ul {
   margin: 0;
   padding-left: 1.25rem;
-  color: #475569;
+  color: var(--neutral-600);
 }
 
 .reviewCard .whatHappensNext li {
@@ -763,8 +773,8 @@
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: var(--danger-100);
+  border: 1px solid var(--danger-300);
   border-radius: 0.5rem;
   padding: 1rem 1.25rem;
   margin-bottom: 1.5rem;
@@ -773,7 +783,7 @@
 
 .reviewCard .safetyReminder p {
   margin: 0;
-  color: #991b1b;
+  color: var(--danger-800);
   font-size: 0.95rem;
   line-height: 1.5;
 }

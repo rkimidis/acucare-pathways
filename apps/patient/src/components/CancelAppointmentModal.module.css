@@ -1,0 +1,250 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal {
+  background: white;
+  border-radius: 0.75rem;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--neutral-200);
+}
+
+.header h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--neutral-900);
+  margin: 0;
+}
+
+.closeX {
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  cursor: pointer;
+  color: var(--neutral-400);
+  border-radius: 0.25rem;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.closeX:hover {
+  color: var(--neutral-600);
+  background-color: var(--neutral-100);
+}
+
+.body {
+  padding: 1.5rem;
+}
+
+.appointmentSummary {
+  background: var(--neutral-50);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.appointmentType {
+  font-weight: 600;
+  color: var(--neutral-900);
+  margin: 0 0 0.25rem 0;
+}
+
+.appointmentTime {
+  font-size: 0.9rem;
+  color: var(--neutral-600);
+  margin: 0 0 0.25rem 0;
+}
+
+.clinicianName {
+  font-size: 0.875rem;
+  color: var(--neutral-500);
+  margin: 0;
+}
+
+.formGroup {
+  margin-bottom: 1rem;
+}
+
+.label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--neutral-700);
+  margin-bottom: 0.5rem;
+}
+
+.textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--neutral-300);
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--info-620);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.textarea:disabled {
+  background: var(--neutral-50);
+  cursor: not-allowed;
+}
+
+.textarea::placeholder {
+  color: var(--neutral-400);
+}
+
+.error {
+  color: var(--danger-600);
+  font-size: 0.875rem;
+  margin: 0;
+  padding: 0.75rem;
+  background: var(--danger-100);
+  border-radius: 0.375rem;
+}
+
+.footer {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--neutral-200);
+  background: var(--neutral-50);
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+
+.secondaryButton {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: white;
+  color: var(--neutral-700);
+  border: 1px solid var(--neutral-300);
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: var(--neutral-100);
+  border-color: var(--neutral-400);
+}
+
+.secondaryButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dangerButton {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: var(--danger-600);
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.dangerButton:hover:not(:disabled) {
+  background: var(--danger-700);
+}
+
+.dangerButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Result states */
+.resultContent {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+}
+
+.successIcon {
+  color: var(--success-600);
+  margin-bottom: 1rem;
+}
+
+.pendingIcon {
+  color: var(--warning-600);
+  margin-bottom: 1rem;
+}
+
+.safetyIcon {
+  color: var(--info-620);
+  margin-bottom: 1rem;
+}
+
+.resultTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--neutral-900);
+  margin: 0 0 0.75rem 0;
+}
+
+.resultMessage {
+  font-size: 0.9rem;
+  color: var(--neutral-600);
+  margin: 0 0 1.5rem 0;
+  line-height: 1.5;
+}
+
+.safetyTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--neutral-900);
+  margin: 0 0 0.75rem 0;
+}
+
+.safetyMessage {
+  font-size: 0.9rem;
+  color: var(--neutral-600);
+  margin: 0 0 1.5rem 0;
+  line-height: 1.6;
+}
+
+.safetyMessage strong {
+  color: var(--danger-600);
+}
+
+.closeButton {
+  padding: 0.75rem 2rem;
+  background: var(--info-620);
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.closeButton:hover {
+  background: var(--info-800);
+}

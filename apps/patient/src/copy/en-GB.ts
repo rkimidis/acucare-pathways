@@ -329,6 +329,40 @@ export const copy = {
         rescheduleCta: 'Reschedule',
         cancelCta: 'Cancel appointment',
       },
+
+      cancel: {
+        title: 'Cancel appointment',
+        reasonLabel: 'Reason for cancellation (optional)',
+        reasonPlaceholder: 'Let us know why you need to cancel...',
+        confirm: 'Cancel appointment',
+        back: 'Keep appointment',
+
+        // Outcomes
+        successTitle: 'Appointment cancelled',
+        successMessage: 'Your appointment has been cancelled.',
+
+        requestTitle: 'Cancellation request received',
+        requestMessage: 'Our team will review your request and be in touch shortly.',
+
+        // [CLINICAL] Safety workflow messaging
+        safetyTitle: 'We\'ve received your message',
+        safetyMessage: 'A member of our team will contact you soon. If you need immediate support, please call 999 or attend A&E.',
+      },
+
+      reschedule: {
+        title: 'Reschedule appointment',
+        selectNewTime: 'Select a new time',
+        remainingReschedules: '{{remaining}} reschedule(s) remaining',
+        noReschedules: 'This appointment cannot be rescheduled further. Please contact us.',
+        confirm: 'Reschedule',
+        back: 'Keep current time',
+
+        successTitle: 'Appointment rescheduled',
+        successMessage: 'Your new appointment is confirmed for {{datetime}}.',
+
+        requestTitle: 'Reschedule request received',
+        requestMessage: 'Our team will review and confirm your new time shortly.',
+      },
     },
   },
 

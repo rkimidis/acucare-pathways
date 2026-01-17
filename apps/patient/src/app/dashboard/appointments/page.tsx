@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import EmergencyBanner from '@/components/EmergencyBanner';
+import CancelAppointmentModal, { CancelResult } from '@/components/CancelAppointmentModal';
+import RescheduleAppointmentModal, { RescheduleResult } from '@/components/RescheduleAppointmentModal';
 import { getToken, removeToken } from '@/lib/auth';
 import styles from './appointments.module.css';
 
@@ -11,10 +13,14 @@ interface Appointment {
   id: string;
   scheduled_datetime: string;
   appointment_type: string;
+  appointment_type_id: string;
+  clinician_id: string;
   clinician_name: string | null;
   status: string;
   location_or_link: string | null;
   notes: string | null;
+  reschedule_count?: number;
+  triage_case_id?: string;
 }
 
 export default function AppointmentsPage() {
@@ -23,35 +29,46 @@ export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  // Modal state
+  const [cancelModal, setCancelModal] = useState<Appointment | null>(null);
+  const [rescheduleModal, setRescheduleModal] = useState<Appointment | null>(null);
+  const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'info'; text: string } | null>(null);
+
+  const fetchAppointments = useCallback(async () => {
     const token = getToken();
     if (!token) {
       router.push('/auth/login');
       return;
     }
 
-    fetch('/api/v1/scheduling/patient/appointments', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(async (res) => {
-        if (res.status === 401) {
-          removeToken();
-          router.push('/auth/login');
-          return;
-        }
-        if (!res.ok) {
-          throw new Error('Failed to load appointments');
-        }
-        const data = await res.json();
-        setAppointments(data);
-      })
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : 'Failed to load appointments');
-      })
-      .finally(() => {
-        setLoading(false);
+    try {
+      const res = await fetch('/api/v1/scheduling/patient/appointments?include_past=true', {
+        headers: { Authorization: `Bearer ${token}` },
       });
+
+      if (res.status === 401) {
+        removeToken();
+        router.push('/auth/login');
+        return;
+      }
+
+      if (!res.ok) {
+        throw new Error('Failed to load appointments');
+      }
+
+      const data = await res.json();
+      setAppointments(data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load appointments');
+    } finally {
+      setLoading(false);
+    }
   }, [router]);
+
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments]);
 
   const handleLogout = () => {
     removeToken();
@@ -73,6 +90,7 @@ export default function AppointmentsPage() {
   const getStatusBadgeClass = (status: string) => {
     switch (status.toLowerCase()) {
       case 'confirmed':
+      case 'scheduled':
         return styles.statusConfirmed;
       case 'pending':
         return styles.statusPending;
@@ -84,6 +102,54 @@ export default function AppointmentsPage() {
         return '';
     }
   };
+
+  const canModifyAppointment = (apt: Appointment) => {
+    const status = apt.status.toLowerCase();
+    return (
+      status !== 'cancelled' &&
+      status !== 'completed' &&
+      status !== 'no_show' &&
+      new Date(apt.scheduled_datetime) > new Date()
+    );
+  };
+
+  const handleCancelSuccess = (result: CancelResult) => {
+    setCancelModal(null);
+
+    if (result.cancelled) {
+      setActionMessage({ type: 'success', text: 'Your appointment has been cancelled.' });
+      fetchAppointments();
+    } else if (result.safety_workflow_triggered) {
+      setActionMessage({ type: 'info', text: 'A member of our team will contact you soon.' });
+    } else if (result.request_submitted) {
+      setActionMessage({ type: 'info', text: 'Your cancellation request has been received.' });
+    }
+
+    // Clear message after 5 seconds
+    setTimeout(() => setActionMessage(null), 5000);
+  };
+
+  const handleRescheduleSuccess = (result: RescheduleResult) => {
+    setRescheduleModal(null);
+
+    if (result.rescheduled) {
+      setActionMessage({ type: 'success', text: 'Your appointment has been rescheduled.' });
+      fetchAppointments();
+    } else if (result.request_submitted) {
+      setActionMessage({ type: 'info', text: 'Your reschedule request has been received.' });
+    }
+
+    // Clear message after 5 seconds
+    setTimeout(() => setActionMessage(null), 5000);
+  };
+
+  const upcomingAppointments = appointments.filter(
+    (apt) => new Date(apt.scheduled_datetime) >= new Date()
+  );
+
+  const pastAppointments = appointments
+    .filter((apt) => new Date(apt.scheduled_datetime) < new Date())
+    .slice(0, 5);
 
   return (
     <main className={styles.main}>
@@ -102,6 +168,12 @@ export default function AppointmentsPage() {
       </header>
 
       <div className={styles.content}>
+        {actionMessage && (
+          <div className={`${styles.actionMessage} ${styles[actionMessage.type]}`}>
+            {actionMessage.text}
+          </div>
+        )}
+
         {loading ? (
           <div className={styles.loading}>Loading appointments...</div>
         ) : error ? (
@@ -130,98 +202,124 @@ export default function AppointmentsPage() {
           <>
             <section className={styles.upcomingSection}>
               <h2>Upcoming Appointments</h2>
-              {appointments
-                .filter((apt) => new Date(apt.scheduled_datetime) >= new Date())
-                .map((apt) => (
-                  <div key={apt.id} className={styles.appointmentCard}>
-                    <div className={styles.appointmentHeader}>
-                      <span className={styles.appointmentType}>
-                        {apt.appointment_type}
-                      </span>
-                      <span
-                        className={`${styles.statusBadge} ${getStatusBadgeClass(apt.status)}`}
-                      >
-                        {apt.status}
-                      </span>
-                    </div>
-                    <div className={styles.appointmentDetails}>
-                      <p className={styles.dateTime}>
-                        {formatDateTime(apt.scheduled_datetime)}
-                      </p>
-                      {apt.clinician_name && (
-                        <p className={styles.clinician}>
-                          With: {apt.clinician_name}
-                        </p>
-                      )}
-                      {apt.location_or_link && (
-                        <p className={styles.location}>
-                          {apt.location_or_link.startsWith('http') ? (
-                            <a
-                              href={apt.location_or_link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              Join Video Call
-                            </a>
-                          ) : (
-                            <>Location: {apt.location_or_link}</>
-                          )}
-                        </p>
-                      )}
-                      {apt.notes && (
-                        <p className={styles.notes}>{apt.notes}</p>
-                      )}
-                    </div>
+              {upcomingAppointments.map((apt) => (
+                <div key={apt.id} className={styles.appointmentCard}>
+                  <div className={styles.appointmentHeader}>
+                    <span className={styles.appointmentType}>
+                      {apt.appointment_type}
+                    </span>
+                    <span
+                      className={`${styles.statusBadge} ${getStatusBadgeClass(apt.status)}`}
+                    >
+                      {apt.status}
+                    </span>
                   </div>
-                ))}
-              {appointments.filter(
-                (apt) => new Date(apt.scheduled_datetime) >= new Date()
-              ).length === 0 && (
+                  <div className={styles.appointmentDetails}>
+                    <p className={styles.dateTime}>
+                      {formatDateTime(apt.scheduled_datetime)}
+                    </p>
+                    {apt.clinician_name && (
+                      <p className={styles.clinician}>
+                        With: {apt.clinician_name}
+                      </p>
+                    )}
+                    {apt.location_or_link && (
+                      <p className={styles.location}>
+                        {apt.location_or_link.startsWith('http') ? (
+                          <a
+                            href={apt.location_or_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Join Video Call
+                          </a>
+                        ) : (
+                          <>Location: {apt.location_or_link}</>
+                        )}
+                      </p>
+                    )}
+                    {apt.notes && (
+                      <p className={styles.notes}>{apt.notes}</p>
+                    )}
+                  </div>
+
+                  {canModifyAppointment(apt) && (
+                    <div className={styles.appointmentActions}>
+                      <button
+                        onClick={() => setRescheduleModal(apt)}
+                        className={styles.rescheduleButton}
+                      >
+                        Reschedule
+                      </button>
+                      <button
+                        onClick={() => setCancelModal(apt)}
+                        className={styles.cancelButton}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {upcomingAppointments.length === 0 && (
                 <p className={styles.placeholder}>No upcoming appointments.</p>
               )}
             </section>
 
             <section className={styles.pastSection}>
               <h2>Past Appointments</h2>
-              {appointments
-                .filter((apt) => new Date(apt.scheduled_datetime) < new Date())
-                .slice(0, 5)
-                .map((apt) => (
-                  <div
-                    key={apt.id}
-                    className={`${styles.appointmentCard} ${styles.pastCard}`}
-                  >
-                    <div className={styles.appointmentHeader}>
-                      <span className={styles.appointmentType}>
-                        {apt.appointment_type}
-                      </span>
-                      <span
-                        className={`${styles.statusBadge} ${getStatusBadgeClass(apt.status)}`}
-                      >
-                        {apt.status}
-                      </span>
-                    </div>
-                    <div className={styles.appointmentDetails}>
-                      <p className={styles.dateTime}>
-                        {formatDateTime(apt.scheduled_datetime)}
-                      </p>
-                      {apt.clinician_name && (
-                        <p className={styles.clinician}>
-                          With: {apt.clinician_name}
-                        </p>
-                      )}
-                    </div>
+              {pastAppointments.map((apt) => (
+                <div
+                  key={apt.id}
+                  className={`${styles.appointmentCard} ${styles.pastCard}`}
+                >
+                  <div className={styles.appointmentHeader}>
+                    <span className={styles.appointmentType}>
+                      {apt.appointment_type}
+                    </span>
+                    <span
+                      className={`${styles.statusBadge} ${getStatusBadgeClass(apt.status)}`}
+                    >
+                      {apt.status}
+                    </span>
                   </div>
-                ))}
-              {appointments.filter(
-                (apt) => new Date(apt.scheduled_datetime) < new Date()
-              ).length === 0 && (
+                  <div className={styles.appointmentDetails}>
+                    <p className={styles.dateTime}>
+                      {formatDateTime(apt.scheduled_datetime)}
+                    </p>
+                    {apt.clinician_name && (
+                      <p className={styles.clinician}>
+                        With: {apt.clinician_name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {pastAppointments.length === 0 && (
                 <p className={styles.placeholder}>No past appointments.</p>
               )}
             </section>
           </>
         )}
       </div>
+
+      {/* Cancel Modal */}
+      {cancelModal && (
+        <CancelAppointmentModal
+          appointment={cancelModal}
+          onClose={() => setCancelModal(null)}
+          onSuccess={handleCancelSuccess}
+        />
+      )}
+
+      {/* Reschedule Modal */}
+      {rescheduleModal && (
+        <RescheduleAppointmentModal
+          appointment={rescheduleModal}
+          onClose={() => setRescheduleModal(null)}
+          onSuccess={handleRescheduleSuccess}
+        />
+      )}
     </main>
   );
 }

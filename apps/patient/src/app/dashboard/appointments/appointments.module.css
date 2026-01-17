@@ -1,0 +1,344 @@
+.main {
+  min-height: 100vh;
+  background: var(--neutral-50);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: white;
+  border-bottom: 1px solid var(--neutral-200);
+}
+
+.headerNav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.backLink {
+  font-size: 0.75rem;
+  color: var(--info-620);
+  text-decoration: none;
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}
+
+.header h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--neutral-900);
+  margin: 0;
+}
+
+.logoutButton {
+  composes: ui-button from global;
+  padding: 0.5rem 1rem;
+  background-color: white;
+  color: var(--neutral-500);
+  border: 1px solid var(--neutral-200);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.logoutButton:hover {
+  background-color: var(--neutral-50);
+}
+
+.content {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.loading,
+.error {
+  padding: 3rem;
+  text-align: center;
+  color: var(--neutral-500);
+  background: white;
+  border-radius: 0.5rem;
+}
+
+.error {
+  color: var(--danger-600);
+}
+
+.retryButton {
+  composes: ui-button from global;
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1px solid var(--neutral-200);
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.retryButton:hover {
+  background: var(--neutral-50);
+}
+
+.emptyState {
+  background: white;
+  border-radius: 0.5rem;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.emptyState h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--neutral-900);
+  margin: 0 0 0.75rem 0;
+}
+
+.emptyState p {
+  font-size: 0.875rem;
+  color: var(--neutral-500);
+  margin: 0 0 0.5rem 0;
+  line-height: 1.5;
+}
+
+.hint {
+  font-style: italic;
+  margin-top: 1rem !important;
+}
+
+.primaryButton {
+  composes: ui-button from global;
+  display: inline-block;
+  margin-top: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--info-620);
+  color: white;
+  text-decoration: none;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.primaryButton:hover {
+  background-color: var(--info-800);
+}
+
+.upcomingSection,
+.pastSection {
+  margin-bottom: 2rem;
+}
+
+.upcomingSection h2,
+.pastSection h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--neutral-900);
+  margin: 0 0 1rem 0;
+}
+
+.appointmentCard {
+  composes: ui-card from global;
+  background: white;
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.pastCard {
+  composes: ui-card from global;
+  opacity: 0.7;
+}
+
+.appointmentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.appointmentType {
+  font-weight: 600;
+  color: var(--neutral-900);
+}
+
+.statusBadge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.statusConfirmed {
+  background: var(--success-90);
+  color: var(--success-800);
+}
+
+.statusPending {
+  background: var(--warning-100);
+  color: var(--warning-700);
+}
+
+.statusCancelled {
+  background: var(--danger-150);
+  color: var(--danger-800);
+}
+
+.statusCompleted {
+  background: var(--accent-indigo-100);
+  color: var(--accent-indigo-800);
+}
+
+.appointmentDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.dateTime {
+  font-size: 0.9rem;
+  color: var(--neutral-700);
+  font-weight: 500;
+  margin: 0;
+}
+
+.clinician {
+  font-size: 0.875rem;
+  color: var(--neutral-500);
+  margin: 0;
+}
+
+.location {
+  font-size: 0.875rem;
+  color: var(--neutral-500);
+  margin: 0;
+}
+
+.location a {
+  color: var(--info-620);
+  text-decoration: none;
+}
+
+.location a:hover {
+  text-decoration: underline;
+}
+
+.notes {
+  font-size: 0.8125rem;
+  color: var(--neutral-400);
+  font-style: italic;
+  margin: 0.5rem 0 0 0;
+}
+
+.placeholder {
+  padding: 1.5rem;
+  background: var(--neutral-50);
+  border-radius: 0.375rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--neutral-500);
+  font-style: italic;
+}
+
+/* Action message banner */
+.actionMessage {
+  padding: 0.875rem 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.actionMessage.success {
+  background: var(--success-100);
+  color: var(--success-700);
+  border: 1px solid var(--success-300);
+}
+
+.actionMessage.info {
+  background: var(--info-100);
+  color: var(--info-700);
+  border: 1px solid var(--info-300);
+}
+
+/* Appointment action buttons */
+.appointmentActions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--neutral-100);
+}
+
+.rescheduleButton {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  background: white;
+  color: var(--info-620);
+  border: 1px solid var(--info-300);
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.rescheduleButton:hover {
+  background: var(--info-50);
+  border-color: var(--info-620);
+}
+
+.cancelButton {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  background: white;
+  color: var(--danger-600);
+  border: 1px solid var(--danger-300);
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.cancelButton:hover {
+  background: var(--danger-100);
+  border-color: var(--danger-600);
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+  .content {
+    padding: 1rem;
+  }
+
+  .appointmentActions {
+    flex-direction: column;
+  }
+
+  .rescheduleButton,
+  .cancelButton {
+    flex: none;
+    width: 100%;
+  }
+}

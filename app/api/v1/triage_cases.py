@@ -368,19 +368,31 @@ async def get_triage_queue(
             )
         )
 
-    # Get counts by tier (unfiltered)
+    # Get counts by tier (only cases in the queue - TRIAGED/IN_REVIEW and not reviewed)
     counts_query = (
         select(TriageCase.tier, func.count().label("count"))
         .where(TriageCase.deleted_at.is_(None))
+        .where(TriageCase.reviewed_at.is_(None))
+        .where(
+            TriageCase.status.in_([
+                TriageCaseStatus.TRIAGED,
+                TriageCaseStatus.IN_REVIEW,
+            ])
+        )
         .group_by(TriageCase.tier)
     )
     counts_result = await session.execute(counts_query)
     tier_counts = {row.tier: row.count for row in counts_result}
 
-    # Get breach count
+    # Get breach count (only for cases in the queue)
     breach_query = select(func.count()).where(
         and_(
             TriageCase.deleted_at.is_(None),
+            TriageCase.reviewed_at.is_(None),
+            TriageCase.status.in_([
+                TriageCaseStatus.TRIAGED,
+                TriageCaseStatus.IN_REVIEW,
+            ]),
             TriageCase.sla_breached == True,
         )
     )

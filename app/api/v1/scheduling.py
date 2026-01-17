@@ -17,7 +17,13 @@ from app.api.deps import (
     DbSession,
     require_permissions,
 )
-from app.models.scheduling import AppointmentStatus, BookingSource
+from app.models.scheduling import (
+    AppointmentStatus,
+    BookingSource,
+    CancellationRequest,
+    CancellationRequestStatus,
+    CancellationRequestType,
+)
 from app.services.rbac import Permission
 from app.services.scheduling import (
     BookingNotAllowedError,
@@ -168,6 +174,78 @@ class SelfBookCheckResponse(BaseModel):
     reason: str | None
 
 
+class CancelAppointmentRequest(BaseModel):
+    """Request body for patient cancellation."""
+
+    reason: str | None = Field(None, max_length=2000)
+
+
+class CancelAppointmentResponse(BaseModel):
+    """Response for cancellation attempt."""
+
+    success: bool
+    message: str
+    cancelled: bool  # True if immediately cancelled
+    request_submitted: bool  # True if request created for staff review
+    request_id: str | None  # If request was created
+    safety_workflow_triggered: bool
+    appointment_id: str | None  # If cancelled, the appointment ID
+
+
+class RescheduleAppointmentRequest(BaseModel):
+    """Request body for patient reschedule."""
+
+    new_scheduled_start: datetime
+    new_clinician_id: str | None = None
+
+
+class RescheduleAppointmentResponse(BaseModel):
+    """Response for reschedule attempt."""
+
+    success: bool
+    message: str
+    rescheduled: bool  # True if immediately rescheduled
+    request_submitted: bool  # True if request created for staff review
+    request_id: str | None  # If request was created
+    new_appointment_id: str | None  # If rescheduled, the new appointment ID
+
+
+class CancellationRequestResponse(BaseModel):
+    """Response for a cancellation/reschedule request."""
+
+    id: str
+    appointment_id: str
+    patient_id: str
+    triage_case_id: str | None
+    request_type: str
+    tier_at_request: str
+    reason: str | None
+    safety_concern_flagged: bool
+    status: str
+    within_24h: bool
+    requested_new_start: datetime | None
+    requested_new_clinician_id: str | None
+    reviewed_by: str | None
+    reviewed_at: datetime | None
+    review_notes: str | None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ReviewCancellationRequest(BaseModel):
+    """Request body for staff review of cancellation request."""
+
+    notes: str | None = Field(None, max_length=2000)
+
+
+class DenyCancellationRequest(BaseModel):
+    """Request body for denying a cancellation request."""
+
+    denial_reason: str = Field(..., min_length=1, max_length=2000)
+
+
 # ============================================================================
 # Patient Endpoints
 # ============================================================================
@@ -314,39 +392,113 @@ async def get_patient_appointments(
 
 @router.post(
     "/patient/appointments/{appointment_id}/cancel",
-    response_model=AppointmentResponse,
+    response_model=CancelAppointmentResponse,
 )
 async def cancel_appointment_patient(
     appointment_id: str,
     patient: CurrentPatient,
     session: DbSession,
-    cancellation_reason: str | None = None,
-) -> AppointmentResponse:
-    """Cancel an appointment (patient-initiated)."""
+    request: CancelAppointmentRequest | None = None,
+) -> CancelAppointmentResponse:
+    """Cancel an appointment (patient-initiated).
+
+    Behavior depends on tier and time window:
+    - GREEN/BLUE 24h+: Immediate cancellation
+    - GREEN/BLUE <24h: Creates request for staff review
+    - AMBER: Creates request (staff arranges)
+    - RED: Creates request + safety messaging
+
+    If reason contains safety concerns, triggers safety workflow.
+    """
     service = SchedulingService(session)
 
-    appointment = await service.get_appointment(appointment_id)
-
-    if not appointment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Appointment not found",
+    try:
+        result, message, safety_flagged = await service.cancel_appointment_patient(
+            appointment_id=appointment_id,
+            patient_id=patient.id,
+            reason=request.reason if request else None,
         )
 
-    if appointment.patient_id != patient.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to cancel this appointment",
+        from app.models.scheduling import Appointment
+
+        if isinstance(result, Appointment):
+            return CancelAppointmentResponse(
+                success=True,
+                message=message,
+                cancelled=True,
+                request_submitted=False,
+                request_id=None,
+                safety_workflow_triggered=False,
+                appointment_id=result.id,
+            )
+        else:  # CancellationRequest
+            return CancelAppointmentResponse(
+                success=True,
+                message=message,
+                cancelled=False,
+                request_submitted=True,
+                request_id=result.id,
+                safety_workflow_triggered=safety_flagged,
+                appointment_id=None,
+            )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post(
+    "/patient/appointments/{appointment_id}/reschedule",
+    response_model=RescheduleAppointmentResponse,
+)
+async def reschedule_appointment_patient(
+    appointment_id: str,
+    patient: CurrentPatient,
+    session: DbSession,
+    request: RescheduleAppointmentRequest,
+) -> RescheduleAppointmentResponse:
+    """Reschedule an appointment (patient-initiated).
+
+    Behavior depends on tier and time window:
+    - GREEN/BLUE 24h+: Immediate reschedule (max 2 per appointment)
+    - GREEN/BLUE <24h: Creates request for staff review
+    - AMBER/RED: Creates request (staff arranges)
+    """
+    service = SchedulingService(session)
+
+    try:
+        result, message = await service.reschedule_appointment_patient(
+            appointment_id=appointment_id,
+            patient_id=patient.id,
+            new_scheduled_start=request.new_scheduled_start,
+            new_clinician_id=request.new_clinician_id,
         )
 
-    updated = await service.update_appointment_status(
-        appointment_id=appointment_id,
-        new_status=AppointmentStatus.CANCELLED,
-        cancelled_by=patient.id,
-        cancellation_reason=cancellation_reason,
-    )
+        from app.models.scheduling import Appointment
 
-    return AppointmentResponse.model_validate(updated)
+        if isinstance(result, Appointment):
+            return RescheduleAppointmentResponse(
+                success=True,
+                message=message,
+                rescheduled=True,
+                request_submitted=False,
+                request_id=None,
+                new_appointment_id=result.id,
+            )
+        else:  # CancellationRequest
+            return RescheduleAppointmentResponse(
+                success=True,
+                message=message,
+                rescheduled=False,
+                request_submitted=True,
+                request_id=result.id,
+                new_appointment_id=None,
+            )
+    except SlotNotAvailableError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The requested time slot is not available",
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 # ============================================================================
@@ -636,3 +788,130 @@ async def list_appointment_types_staff(
     types = await service.get_appointment_types(bookable_only=bookable_only)
 
     return [AppointmentTypeResponse.model_validate(t) for t in types]
+
+
+# ============================================================================
+# Staff Cancellation Request Management
+# ============================================================================
+
+
+@router.get(
+    "/staff/cancellation-requests",
+    response_model=list[CancellationRequestResponse],
+    dependencies=[Depends(require_permissions(Permission.TRIAGE_READ))],
+)
+async def list_cancellation_requests(
+    user: CurrentUser,
+    session: DbSession,
+    status: str | None = Query(None, description="Filter by status: pending, approved, denied"),
+    safety_flagged_only: bool = Query(False, description="Only show safety-flagged requests"),
+) -> list[CancellationRequestResponse]:
+    """List cancellation/reschedule requests requiring staff review.
+
+    Priority should be given to:
+    1. Safety-flagged requests (immediate attention)
+    2. AMBER/RED tier requests
+    3. Within-24h requests from GREEN/BLUE
+    """
+    service = SchedulingService(session)
+
+    # Parse status filter
+    status_filter = None
+    if status:
+        try:
+            status_filter = CancellationRequestStatus(status)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid status: {status}. Valid values: pending, approved, denied, auto_approved",
+            )
+
+    requests = await service.list_cancellation_requests(
+        status=status_filter,
+        safety_flagged_only=safety_flagged_only,
+    )
+
+    return [CancellationRequestResponse.model_validate(r) for r in requests]
+
+
+@router.get(
+    "/staff/cancellation-requests/{request_id}",
+    response_model=CancellationRequestResponse,
+    dependencies=[Depends(require_permissions(Permission.TRIAGE_READ))],
+)
+async def get_cancellation_request(
+    request_id: str,
+    user: CurrentUser,
+    session: DbSession,
+) -> CancellationRequestResponse:
+    """Get details of a specific cancellation request."""
+    service = SchedulingService(session)
+    request = await service.get_cancellation_request(request_id)
+
+    if not request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Cancellation request not found",
+        )
+
+    return CancellationRequestResponse.model_validate(request)
+
+
+@router.post(
+    "/staff/cancellation-requests/{request_id}/approve",
+    response_model=CancellationRequestResponse,
+    dependencies=[Depends(require_permissions(Permission.TRIAGE_WRITE))],
+)
+async def approve_cancellation_request(
+    request_id: str,
+    user: CurrentUser,
+    session: DbSession,
+    body: ReviewCancellationRequest | None = None,
+) -> CancellationRequestResponse:
+    """Approve a cancellation or reschedule request.
+
+    For cancellation requests: Cancels the appointment.
+    For reschedule requests: Creates new appointment at requested time.
+    """
+    service = SchedulingService(session)
+
+    try:
+        request = await service.approve_cancellation_request(
+            request_id=request_id,
+            staff_user_id=user.id,
+            notes=body.notes if body else None,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    return CancellationRequestResponse.model_validate(request)
+
+
+@router.post(
+    "/staff/cancellation-requests/{request_id}/deny",
+    response_model=CancellationRequestResponse,
+    dependencies=[Depends(require_permissions(Permission.TRIAGE_WRITE))],
+)
+async def deny_cancellation_request(
+    request_id: str,
+    user: CurrentUser,
+    session: DbSession,
+    body: DenyCancellationRequest,
+) -> CancellationRequestResponse:
+    """Deny a cancellation or reschedule request.
+
+    The patient will be notified that their request was denied
+    with the provided reason.
+    """
+    service = SchedulingService(session)
+
+    try:
+        request = await service.deny_cancellation_request(
+            request_id=request_id,
+            staff_user_id=user.id,
+            denial_reason=body.denial_reason,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    return CancellationRequestResponse.model_validate(request)

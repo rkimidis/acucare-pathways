@@ -270,3 +270,183 @@ class TestStaffBooking:
 
         # Should succeed without checking tier restrictions
         assert mock_session.add.called
+
+
+class TestCancellationPolicy:
+    """Tests for cancellation and rescheduling policy enforcement."""
+
+    def test_red_tier_cannot_self_cancel(self) -> None:
+        """RED tier patients cannot immediately cancel - requires request."""
+        from app.booking.policy import can_patient_self_cancel
+
+        allowed, message, requires_request = can_patient_self_cancel(
+            tier="RED",
+            hours_until_appointment=48,  # Even far in advance
+        )
+
+        assert allowed is False
+        assert requires_request is True
+        assert "999" in message or "A&E" in message  # Safety messaging
+
+    def test_amber_tier_cannot_self_cancel(self) -> None:
+        """AMBER tier patients cannot immediately cancel - requires request."""
+        from app.booking.policy import can_patient_self_cancel
+
+        allowed, message, requires_request = can_patient_self_cancel(
+            tier="AMBER",
+            hours_until_appointment=48,
+        )
+
+        assert allowed is False
+        assert requires_request is True
+        assert "contact" in message.lower()
+
+    def test_green_tier_can_self_cancel_over_24h(self) -> None:
+        """GREEN tier can immediately cancel if >24h before appointment."""
+        from app.booking.policy import can_patient_self_cancel
+
+        allowed, message, requires_request = can_patient_self_cancel(
+            tier="GREEN",
+            hours_until_appointment=48,
+        )
+
+        assert allowed is True
+        assert requires_request is False
+        assert "cancelled" in message.lower()
+
+    def test_green_tier_cannot_self_cancel_under_24h(self) -> None:
+        """GREEN tier cannot immediately cancel if <24h - requires request."""
+        from app.booking.policy import can_patient_self_cancel
+
+        allowed, message, requires_request = can_patient_self_cancel(
+            tier="GREEN",
+            hours_until_appointment=12,
+        )
+
+        assert allowed is False
+        assert requires_request is True
+        assert "24" in message  # References 24h window
+
+    def test_blue_tier_can_self_cancel_over_24h(self) -> None:
+        """BLUE tier can immediately cancel if >24h before appointment."""
+        from app.booking.policy import can_patient_self_cancel
+
+        allowed, message, requires_request = can_patient_self_cancel(
+            tier="BLUE",
+            hours_until_appointment=48,
+        )
+
+        assert allowed is True
+        assert requires_request is False
+
+    def test_blue_tier_cannot_self_cancel_under_24h(self) -> None:
+        """BLUE tier cannot immediately cancel if <24h - requires request."""
+        from app.booking.policy import can_patient_self_cancel
+
+        allowed, message, requires_request = can_patient_self_cancel(
+            tier="BLUE",
+            hours_until_appointment=12,
+        )
+
+        assert allowed is False
+        assert requires_request is True
+
+
+class TestReschedulePolicy:
+    """Tests for rescheduling policy enforcement."""
+
+    def test_max_reschedule_limit_enforced(self) -> None:
+        """Max reschedule count blocks further reschedules."""
+        from app.booking.policy import can_patient_self_reschedule
+
+        allowed, message, requires_request = can_patient_self_reschedule(
+            tier="GREEN",
+            hours_until_appointment=48,
+            current_reschedule_count=2,  # At limit
+        )
+
+        assert allowed is False
+        assert requires_request is True
+        assert "maximum" in message.lower()
+
+    def test_red_tier_cannot_self_reschedule(self) -> None:
+        """RED tier patients cannot self-reschedule."""
+        from app.booking.policy import can_patient_self_reschedule
+
+        allowed, message, requires_request = can_patient_self_reschedule(
+            tier="RED",
+            hours_until_appointment=48,
+            current_reschedule_count=0,
+        )
+
+        assert allowed is False
+        assert requires_request is True
+
+    def test_amber_tier_cannot_self_reschedule(self) -> None:
+        """AMBER tier patients cannot self-reschedule."""
+        from app.booking.policy import can_patient_self_reschedule
+
+        allowed, message, requires_request = can_patient_self_reschedule(
+            tier="AMBER",
+            hours_until_appointment=48,
+            current_reschedule_count=0,
+        )
+
+        assert allowed is False
+        assert requires_request is True
+
+    def test_green_tier_can_self_reschedule_over_24h(self) -> None:
+        """GREEN tier can self-reschedule if >24h and under limit."""
+        from app.booking.policy import can_patient_self_reschedule
+
+        allowed, message, requires_request = can_patient_self_reschedule(
+            tier="GREEN",
+            hours_until_appointment=48,
+            current_reschedule_count=1,  # Under limit
+        )
+
+        assert allowed is True
+        assert requires_request is False
+
+    def test_green_tier_cannot_self_reschedule_under_24h(self) -> None:
+        """GREEN tier cannot self-reschedule if <24h."""
+        from app.booking.policy import can_patient_self_reschedule
+
+        allowed, message, requires_request = can_patient_self_reschedule(
+            tier="GREEN",
+            hours_until_appointment=12,
+            current_reschedule_count=0,
+        )
+
+        assert allowed is False
+        assert requires_request is True
+
+
+class TestSafetyPhraseDetection:
+    """Tests for safety concern detection in cancellation reasons."""
+
+    def test_detects_direct_safety_phrases(self) -> None:
+        """Detects direct safety concern phrases."""
+        from app.booking.policy import check_safety_concern_in_reason
+
+        assert check_safety_concern_in_reason("I feel unsafe") is True
+        assert check_safety_concern_in_reason("I might harm myself") is True
+        assert check_safety_concern_in_reason("having suicidal thoughts") is True
+        assert check_safety_concern_in_reason("I don't want to live anymore") is True
+
+    def test_case_insensitive_detection(self) -> None:
+        """Detection is case insensitive."""
+        from app.booking.policy import check_safety_concern_in_reason
+
+        assert check_safety_concern_in_reason("I FEEL UNSAFE") is True
+        assert check_safety_concern_in_reason("Suicidal") is True
+
+    def test_no_false_positives_on_normal_reasons(self) -> None:
+        """Normal cancellation reasons don't trigger safety flag."""
+        from app.booking.policy import check_safety_concern_in_reason
+
+        assert check_safety_concern_in_reason("Work conflict") is False
+        assert check_safety_concern_in_reason("Feeling better") is False
+        assert check_safety_concern_in_reason("Scheduling issue") is False
+        assert check_safety_concern_in_reason(None) is False
+        assert check_safety_concern_in_reason("") is False

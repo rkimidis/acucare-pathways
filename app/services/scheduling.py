@@ -17,6 +17,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.booking.policy import (
     BLOCKED_TIERS,
     can_patient_self_book,
+    can_patient_self_cancel,
+    can_patient_self_reschedule,
+    check_safety_concern_in_reason,
     get_booking_policy,
     validate_booking_request,
 )
@@ -26,6 +29,9 @@ from app.models.scheduling import (
     AppointmentType,
     AvailabilitySlot,
     BookingSource,
+    CancellationRequest,
+    CancellationRequestStatus,
+    CancellationRequestType,
     ClinicianProfile,
 )
 from app.models.triage_case import TriageCase, TriageTier
@@ -554,5 +560,415 @@ class SchedulingService:
                 Appointment.id == appointment_id,
                 Appointment.is_deleted == False,
             )
+        )
+        return result.scalar_one_or_none()
+
+    # =========================================================================
+    # PATIENT CANCELLATION AND RESCHEDULING
+    # =========================================================================
+
+    async def _get_appointment_tier(self, appointment: Appointment) -> str:
+        """Get the tier for an appointment from its triage case."""
+        if not appointment.triage_case_id:
+            return "GREEN"  # Default to GREEN if no triage case
+
+        result = await self.session.execute(
+            select(TriageCase).where(TriageCase.id == appointment.triage_case_id)
+        )
+        case = result.scalar_one_or_none()
+
+        if case and case.tier:
+            return case.tier.value if isinstance(case.tier, TriageTier) else str(case.tier)
+
+        return "GREEN"  # Default
+
+    def _hours_until_appointment(self, appointment: Appointment) -> float:
+        """Calculate hours until appointment starts."""
+        now = datetime.now(timezone.utc)
+        scheduled = appointment.scheduled_start
+
+        # Ensure both are timezone-aware
+        if scheduled.tzinfo is None:
+            scheduled = scheduled.replace(tzinfo=timezone.utc)
+
+        delta = scheduled - now
+        return delta.total_seconds() / 3600
+
+    async def _create_cancellation_request(
+        self,
+        appointment: Appointment,
+        patient_id: str,
+        tier: str,
+        reason: str | None,
+        request_type: CancellationRequestType,
+        within_24h: bool,
+        safety_flagged: bool,
+        requested_new_start: datetime | None = None,
+        requested_new_clinician_id: str | None = None,
+    ) -> CancellationRequest:
+        """Create a cancellation/reschedule request for staff review."""
+        from app.db.base import utc_now
+
+        request = CancellationRequest(
+            id=str(uuid4()),
+            appointment_id=appointment.id,
+            patient_id=patient_id,
+            triage_case_id=appointment.triage_case_id,
+            request_type=request_type,
+            tier_at_request=tier,
+            reason=reason,
+            safety_concern_flagged=safety_flagged,
+            status=CancellationRequestStatus.PENDING,
+            within_24h=within_24h,
+            requested_new_start=requested_new_start,
+            requested_new_clinician_id=requested_new_clinician_id,
+            created_at=utc_now(),
+        )
+
+        self.session.add(request)
+        await self.session.flush()
+
+        return request
+
+    async def _trigger_safety_workflow(
+        self,
+        request: CancellationRequest,
+        appointment: Appointment,
+        reason: str | None,
+    ) -> None:
+        """Trigger safety workflow when cancellation reason suggests risk.
+
+        SAFETY CRITICAL: Creates a critical alert for immediate staff attention.
+        """
+        from app.models.monitoring import MonitoringAlert
+
+        # Create critical alert
+        alert = MonitoringAlert(
+            id=str(uuid4()),
+            patient_id=request.patient_id,
+            triage_case_id=request.triage_case_id,
+            alert_type="safety_concern_cancellation",
+            severity="critical",
+            title="Safety concern in cancellation reason",
+            description=(
+                f"Patient expressed safety concern when cancelling appointment. "
+                f"Reason: '{reason[:200] if reason else 'No reason given'}'"
+            ),
+        )
+        self.session.add(alert)
+
+    async def _increment_patient_cancellation_count(self, patient_id: str) -> None:
+        """Increment the patient's 90-day cancellation count."""
+        from app.models.patient import Patient
+
+        result = await self.session.execute(
+            select(Patient).where(Patient.id == patient_id)
+        )
+        patient = result.scalar_one_or_none()
+
+        if patient:
+            patient.cancellation_count_90d += 1
+
+    async def cancel_appointment_patient(
+        self,
+        appointment_id: str,
+        patient_id: str,
+        reason: str | None = None,
+    ) -> tuple[Appointment | CancellationRequest, str, bool]:
+        """Patient-initiated cancellation with tier-based rules.
+
+        SAFETY CRITICAL: Enforces tier restrictions and safety workflow.
+
+        Returns:
+            Tuple of (result, message, safety_flagged)
+            - result: Either Appointment (if cancelled) or CancellationRequest (if request created)
+            - message: Human-readable status message
+            - safety_flagged: True if safety workflow was triggered
+        """
+        from app.db.base import utc_now
+
+        # Get appointment
+        appointment = await self.get_appointment(appointment_id)
+        if not appointment:
+            raise ValueError("Appointment not found")
+
+        if appointment.patient_id != patient_id:
+            raise ValueError("Not authorized to cancel this appointment")
+
+        if appointment.status == AppointmentStatus.CANCELLED:
+            raise ValueError("Appointment is already cancelled")
+
+        if appointment.status in (AppointmentStatus.COMPLETED, AppointmentStatus.NO_SHOW):
+            raise ValueError("Cannot cancel a completed or no-show appointment")
+
+        # Get tier and calculate time
+        tier = await self._get_appointment_tier(appointment)
+        hours_until = self._hours_until_appointment(appointment)
+
+        # Check for safety concerns
+        safety_flagged = check_safety_concern_in_reason(reason)
+
+        # Apply policy
+        allowed, message, requires_request = can_patient_self_cancel(tier, hours_until)
+
+        # Safety flagged always creates a request (even if otherwise allowed)
+        if safety_flagged:
+            requires_request = True
+            allowed = False
+
+        if allowed and not requires_request:
+            # Immediate cancellation
+            appointment.status = AppointmentStatus.CANCELLED
+            appointment.cancelled_at = utc_now()
+            appointment.cancelled_by = patient_id
+            appointment.cancellation_reason = reason
+
+            await self._increment_patient_cancellation_count(patient_id)
+            await self.session.commit()
+            await self.session.refresh(appointment)
+
+            return appointment, message, False
+        else:
+            # Create request for staff review
+            request = await self._create_cancellation_request(
+                appointment=appointment,
+                patient_id=patient_id,
+                tier=tier,
+                reason=reason,
+                request_type=CancellationRequestType.CANCEL,
+                within_24h=hours_until < 24,
+                safety_flagged=safety_flagged,
+            )
+
+            if safety_flagged:
+                await self._trigger_safety_workflow(request, appointment, reason)
+                message = (
+                    "Your request has been submitted. "
+                    "If you're feeling unsafe, please call 999 or attend A&E."
+                )
+
+            await self.session.commit()
+
+            return request, message, safety_flagged
+
+    async def reschedule_appointment_patient(
+        self,
+        appointment_id: str,
+        patient_id: str,
+        new_scheduled_start: datetime,
+        new_clinician_id: str | None = None,
+    ) -> tuple[Appointment | CancellationRequest, str]:
+        """Patient-initiated rescheduling with tier-based rules.
+
+        Returns:
+            Tuple of (result, message)
+            - result: Either new Appointment (if rescheduled) or CancellationRequest (if request created)
+            - message: Human-readable status message
+        """
+        from app.db.base import utc_now
+
+        # Get appointment
+        appointment = await self.get_appointment(appointment_id)
+        if not appointment:
+            raise ValueError("Appointment not found")
+
+        if appointment.patient_id != patient_id:
+            raise ValueError("Not authorized to reschedule this appointment")
+
+        if appointment.status != AppointmentStatus.SCHEDULED:
+            raise ValueError("Only scheduled appointments can be rescheduled")
+
+        # Get tier and calculate time
+        tier = await self._get_appointment_tier(appointment)
+        hours_until = self._hours_until_appointment(appointment)
+
+        # Apply policy
+        allowed, message, requires_request = can_patient_self_reschedule(
+            tier, hours_until, appointment.reschedule_count
+        )
+
+        if allowed and not requires_request:
+            # Execute immediate reschedule
+            clinician_id = new_clinician_id or appointment.clinician_id
+
+            # Verify new slot is available
+            new_date = new_scheduled_start.date()
+            existing = await self._get_appointments_in_range(
+                clinician_id, new_date, new_date
+            )
+
+            # Get appointment type for duration
+            result = await self.session.execute(
+                select(AppointmentType).where(
+                    AppointmentType.id == appointment.appointment_type_id
+                )
+            )
+            apt_type = result.scalar_one_or_none()
+            if not apt_type:
+                raise ValueError("Appointment type not found")
+
+            new_scheduled_end = new_scheduled_start + timedelta(minutes=apt_type.duration_minutes)
+            buffer = timedelta(minutes=apt_type.buffer_minutes)
+
+            if self._check_conflict(new_scheduled_start, new_scheduled_end, existing, buffer):
+                raise SlotNotAvailableError("The requested time slot is not available")
+
+            # Mark old appointment as rescheduled
+            appointment.status = AppointmentStatus.RESCHEDULED
+
+            # Create new appointment
+            new_appointment = Appointment(
+                id=str(uuid4()),
+                patient_id=patient_id,
+                clinician_id=clinician_id,
+                appointment_type_id=appointment.appointment_type_id,
+                triage_case_id=appointment.triage_case_id,
+                scheduled_start=new_scheduled_start,
+                scheduled_end=new_scheduled_end,
+                booking_source=BookingSource.PATIENT_SELF_BOOK,
+                is_remote=appointment.is_remote,
+                location=appointment.location,
+                patient_notes=appointment.patient_notes,
+                status=AppointmentStatus.SCHEDULED,
+                reschedule_count=appointment.reschedule_count + 1,
+                rescheduled_from_id=appointment.id,
+            )
+
+            self.session.add(new_appointment)
+            await self.session.commit()
+            await self.session.refresh(new_appointment)
+
+            return new_appointment, "Your appointment has been rescheduled."
+        else:
+            # Create request for staff review
+            request = await self._create_cancellation_request(
+                appointment=appointment,
+                patient_id=patient_id,
+                tier=tier,
+                reason=f"Reschedule requested to {new_scheduled_start.isoformat()}",
+                request_type=CancellationRequestType.RESCHEDULE,
+                within_24h=hours_until < 24,
+                safety_flagged=False,
+                requested_new_start=new_scheduled_start,
+                requested_new_clinician_id=new_clinician_id,
+            )
+
+            await self.session.commit()
+
+            return request, message
+
+    # =========================================================================
+    # STAFF CANCELLATION REQUEST MANAGEMENT
+    # =========================================================================
+
+    async def list_cancellation_requests(
+        self,
+        status: CancellationRequestStatus | None = None,
+        safety_flagged_only: bool = False,
+    ) -> list[CancellationRequest]:
+        """List cancellation/reschedule requests for staff review."""
+        query = select(CancellationRequest)
+
+        if status:
+            query = query.where(CancellationRequest.status == status)
+
+        if safety_flagged_only:
+            query = query.where(CancellationRequest.safety_concern_flagged == True)
+
+        query = query.order_by(
+            CancellationRequest.safety_concern_flagged.desc(),
+            CancellationRequest.created_at.asc(),
+        )
+
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    async def approve_cancellation_request(
+        self,
+        request_id: str,
+        staff_user_id: str,
+        notes: str | None = None,
+    ) -> CancellationRequest:
+        """Staff approves a cancellation/reschedule request."""
+        from app.db.base import utc_now
+
+        result = await self.session.execute(
+            select(CancellationRequest).where(CancellationRequest.id == request_id)
+        )
+        request = result.scalar_one_or_none()
+
+        if not request:
+            raise ValueError("Request not found")
+
+        if request.status != CancellationRequestStatus.PENDING:
+            raise ValueError("Request has already been processed")
+
+        # Update request status
+        request.status = CancellationRequestStatus.APPROVED
+        request.reviewed_by = staff_user_id
+        request.reviewed_at = utc_now()
+        request.review_notes = notes
+
+        # Execute the cancellation or reschedule
+        appointment = await self.get_appointment(request.appointment_id)
+        if not appointment:
+            raise ValueError("Appointment not found")
+
+        if request.request_type == CancellationRequestType.CANCEL:
+            # Execute cancellation
+            appointment.status = AppointmentStatus.CANCELLED
+            appointment.cancelled_at = utc_now()
+            appointment.cancelled_by = staff_user_id
+            appointment.cancellation_reason = request.reason
+
+            await self._increment_patient_cancellation_count(request.patient_id)
+
+        elif request.request_type == CancellationRequestType.RESCHEDULE:
+            # Staff will need to book the new appointment separately
+            # Just mark the old one as rescheduled
+            appointment.status = AppointmentStatus.RESCHEDULED
+
+        await self.session.commit()
+        await self.session.refresh(request)
+
+        return request
+
+    async def deny_cancellation_request(
+        self,
+        request_id: str,
+        staff_user_id: str,
+        denial_reason: str,
+    ) -> CancellationRequest:
+        """Staff denies a cancellation/reschedule request."""
+        from app.db.base import utc_now
+
+        result = await self.session.execute(
+            select(CancellationRequest).where(CancellationRequest.id == request_id)
+        )
+        request = result.scalar_one_or_none()
+
+        if not request:
+            raise ValueError("Request not found")
+
+        if request.status != CancellationRequestStatus.PENDING:
+            raise ValueError("Request has already been processed")
+
+        request.status = CancellationRequestStatus.DENIED
+        request.reviewed_by = staff_user_id
+        request.reviewed_at = utc_now()
+        request.review_notes = denial_reason
+
+        await self.session.commit()
+        await self.session.refresh(request)
+
+        return request
+
+    async def get_cancellation_request(
+        self,
+        request_id: str,
+    ) -> CancellationRequest | None:
+        """Get a single cancellation request by ID."""
+        result = await self.session.execute(
+            select(CancellationRequest).where(CancellationRequest.id == request_id)
         )
         return result.scalar_one_or_none()

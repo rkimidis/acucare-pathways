@@ -417,6 +417,17 @@ class Appointment(Base, TimestampMixin, SoftDeleteMixin):
         DateTime(timezone=True),
         nullable=True,
     )
+    # Reschedule tracking
+    reschedule_count: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False,
+    )
+    rescheduled_from_id: Mapped[str | None] = mapped_column(
+        UUID(as_uuid=False),
+        ForeignKey("appointments.id", ondelete="SET NULL"),
+        nullable=True,
+    )
 
     # Relationships
     clinician: Mapped["ClinicianProfile"] = relationship(
@@ -431,6 +442,120 @@ class Appointment(Base, TimestampMixin, SoftDeleteMixin):
 
     def __repr__(self) -> str:
         return f"<Appointment {self.id[:8]}... {self.scheduled_start} status={self.status}>"
+
+
+class CancellationRequestStatus(str, Enum):
+    """Status of a cancellation/reschedule request."""
+
+    PENDING = "pending"
+    APPROVED = "approved"
+    DENIED = "denied"
+    AUTO_APPROVED = "auto_approved"
+
+
+class CancellationRequestType(str, Enum):
+    """Type of cancellation request."""
+
+    CANCEL = "cancel"
+    RESCHEDULE = "reschedule"
+
+
+class CancellationRequest(Base, TimestampMixin):
+    """Request for cancellation or rescheduling requiring staff review.
+
+    Created when:
+    - AMBER/RED tier patients request cancel/reschedule
+    - GREEN/BLUE patients request within 24h window
+    - Safety concern detected in cancellation reason
+
+    Staff must review and approve/deny these requests.
+    """
+
+    __tablename__ = "cancellation_requests"
+
+    # Core relationships
+    appointment_id: Mapped[str] = mapped_column(
+        UUID(as_uuid=False),
+        ForeignKey("appointments.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    patient_id: Mapped[str] = mapped_column(
+        UUID(as_uuid=False),
+        ForeignKey("patients.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    triage_case_id: Mapped[str | None] = mapped_column(
+        UUID(as_uuid=False),
+        ForeignKey("triage_cases.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    # Request details
+    request_type: Mapped[CancellationRequestType] = mapped_column(
+        String(20),
+        nullable=False,
+    )
+    tier_at_request: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+    )
+    reason: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+    safety_concern_flagged: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+    status: Mapped[CancellationRequestStatus] = mapped_column(
+        String(20),
+        default=CancellationRequestStatus.PENDING,
+        nullable=False,
+        index=True,
+    )
+    within_24h: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+
+    # For reschedule requests: requested new time
+    requested_new_start: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    requested_new_clinician_id: Mapped[str | None] = mapped_column(
+        UUID(as_uuid=False),
+        ForeignKey("clinician_profiles.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    # Staff review
+    reviewed_by: Mapped[str | None] = mapped_column(
+        UUID(as_uuid=False),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    review_notes: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    # Relationships
+    appointment: Mapped["Appointment"] = relationship(
+        "Appointment",
+        lazy="joined",
+    )
+
+    def __repr__(self) -> str:
+        return f"<CancellationRequest {self.id[:8]}... type={self.request_type} status={self.status}>"
 
 
 # Import for type hints

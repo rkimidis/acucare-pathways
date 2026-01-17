@@ -169,3 +169,194 @@ def validate_booking_request(
         return True, "Clinician override accepted"
 
     return False, policy.message
+
+
+# =============================================================================
+# CANCELLATION AND RESCHEDULING POLICY
+# =============================================================================
+
+# Safety-critical phrases that trigger immediate safety workflow
+SAFETY_CONCERN_PHRASES = frozenset({
+    "unsafe",
+    "feel unsafe",
+    "i feel unsafe",
+    "not safe",
+    "danger",
+    "harm myself",
+    "hurt myself",
+    "harm myself",
+    "self harm",
+    "self-harm",
+    "suicide",
+    "suicidal",
+    "end my life",
+    "kill myself",
+    "don't want to live",
+    "can't go on",
+})
+
+# Maximum reschedules allowed per appointment
+MAX_RESCHEDULES_PER_APPOINTMENT = 2
+
+# Cancellation threshold before flagging (within 90 days)
+CANCELLATION_FLAG_THRESHOLD = 2
+
+# Hours before appointment when self-service is restricted
+SELF_SERVICE_WINDOW_HOURS = 24
+
+
+def can_patient_self_cancel(
+    tier: str,
+    hours_until_appointment: float,
+) -> tuple[bool, str, bool]:
+    """Check if patient can immediately self-cancel their appointment.
+
+    SAFETY CRITICAL: AMBER/RED tiers always require staff review.
+    GREEN/BLUE can self-cancel up to 24h before appointment.
+
+    Args:
+        tier: Triage tier (RED, AMBER, GREEN, BLUE)
+        hours_until_appointment: Hours until the appointment starts
+
+    Returns:
+        Tuple of (allowed, message, requires_request)
+        - allowed: True if immediate cancellation is permitted
+        - message: Human-readable explanation
+        - requires_request: True if a CancellationRequest should be created
+    """
+    tier_upper = tier.upper()
+
+    # RED tier: Always requires staff - highest risk
+    if tier_upper == "RED":
+        return (
+            False,
+            "Please contact us to cancel your appointment. "
+            "If you're feeling unsafe, call 999 or attend A&E.",
+            True,
+        )
+
+    # AMBER tier: Always requires staff review
+    if tier_upper == "AMBER":
+        return (
+            False,
+            "Please contact us to arrange your cancellation. "
+            "Our team will find the best next steps for you.",
+            True,
+        )
+
+    # GREEN/BLUE: Check time window
+    if tier_upper in ALLOWED_TIERS:
+        if hours_until_appointment >= SELF_SERVICE_WINDOW_HOURS:
+            return (
+                True,
+                "Your appointment has been cancelled.",
+                False,
+            )
+        else:
+            return (
+                False,
+                f"Cancellations within {SELF_SERVICE_WINDOW_HOURS} hours "
+                "need to be reviewed. We'll confirm shortly.",
+                True,
+            )
+
+    # Unknown tier - fail safe
+    return (
+        False,
+        "Please contact us to cancel your appointment.",
+        True,
+    )
+
+
+def can_patient_self_reschedule(
+    tier: str,
+    hours_until_appointment: float,
+    current_reschedule_count: int,
+) -> tuple[bool, str, bool]:
+    """Check if patient can immediately self-reschedule their appointment.
+
+    SAFETY CRITICAL: AMBER/RED tiers cannot self-reschedule.
+    GREEN/BLUE can reschedule up to 24h before, max 2 times per appointment.
+
+    Args:
+        tier: Triage tier (RED, AMBER, GREEN, BLUE)
+        hours_until_appointment: Hours until the appointment starts
+        current_reschedule_count: How many times this appointment has been rescheduled
+
+    Returns:
+        Tuple of (allowed, message, requires_request)
+    """
+    tier_upper = tier.upper()
+
+    # Check reschedule limit first (applies to all tiers)
+    if current_reschedule_count >= MAX_RESCHEDULES_PER_APPOINTMENT:
+        return (
+            False,
+            "This appointment has reached the maximum number of reschedules. "
+            "Please contact us if you need to make changes.",
+            True,
+        )
+
+    # RED/AMBER: No self-reschedule
+    if tier_upper in BLOCKED_TIERS:
+        return (
+            False,
+            "Please contact us to reschedule your appointment.",
+            True,
+        )
+
+    # GREEN/BLUE: Check time window
+    if tier_upper in ALLOWED_TIERS:
+        if hours_until_appointment >= SELF_SERVICE_WINDOW_HOURS:
+            return (
+                True,
+                "You can reschedule your appointment.",
+                False,
+            )
+        else:
+            return (
+                False,
+                f"Rescheduling within {SELF_SERVICE_WINDOW_HOURS} hours "
+                "is not available online. Please contact us.",
+                True,
+            )
+
+    # Unknown tier - fail safe
+    return (
+        False,
+        "Please contact us to reschedule your appointment.",
+        True,
+    )
+
+
+def check_safety_concern_in_reason(reason: Optional[str]) -> bool:
+    """Check if a cancellation reason contains safety-critical phrases.
+
+    SAFETY CRITICAL: If this returns True, staff must be immediately notified
+    and a safety workflow must be triggered.
+
+    Args:
+        reason: The patient-provided cancellation reason
+
+    Returns:
+        True if safety concern detected, False otherwise
+    """
+    if not reason:
+        return False
+
+    reason_lower = reason.lower()
+    return any(phrase in reason_lower for phrase in SAFETY_CONCERN_PHRASES)
+
+
+def should_flag_patient_cancellations(cancellation_count_90d: int) -> bool:
+    """Check if patient has exceeded cancellation threshold.
+
+    Patients with excessive cancellations may require deposit or staff booking.
+
+    Args:
+        cancellation_count_90d: Number of cancellations in last 90 days
+
+    Returns:
+        True if patient should be flagged for review
+    """
+    return cancellation_count_90d >= CANCELLATION_FLAG_THRESHOLD

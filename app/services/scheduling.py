@@ -7,7 +7,7 @@ SAFETY CRITICAL: This module enforces booking restrictions for RED/AMBER tiers.
 Any bypass of these restrictions would be a critical safety violation.
 """
 
-from datetime import datetime, timedelta, time, date
+from datetime import datetime, timedelta, time, date, timezone
 from typing import Sequence
 from uuid import uuid4
 
@@ -307,9 +307,9 @@ class SchedulingService:
             day_slots = [s for s in slots if s.day_of_week == day_of_week]
 
             for slot in day_slots:
-                # Generate time slots within this availability window
-                slot_start = datetime.combine(current_date, slot.start_time)
-                slot_end = datetime.combine(current_date, slot.end_time)
+                # Generate time slots within this availability window (UTC)
+                slot_start = datetime.combine(current_date, slot.start_time, tzinfo=timezone.utc)
+                slot_end = datetime.combine(current_date, slot.end_time, tzinfo=timezone.utc)
 
                 current_time = slot_start
                 while current_time + duration <= slot_end:
@@ -320,7 +320,7 @@ class SchedulingService:
                         current_time, proposed_end, existing, buffer
                     )
 
-                    if not has_conflict and current_time > datetime.now():
+                    if not has_conflict and current_time > datetime.now(timezone.utc):
                         available.append({
                             "start": current_time.isoformat(),
                             "end": proposed_end.isoformat(),
@@ -343,8 +343,8 @@ class SchedulingService:
         end_date: date,
     ) -> Sequence[Appointment]:
         """Get existing appointments for a clinician in a date range."""
-        start_dt = datetime.combine(start_date, time.min)
-        end_dt = datetime.combine(end_date, time.max)
+        start_dt = datetime.combine(start_date, time.min, tzinfo=timezone.utc)
+        end_dt = datetime.combine(end_date, time.max, tzinfo=timezone.utc)
 
         result = await self.session.execute(
             select(Appointment).where(
@@ -479,7 +479,7 @@ class SchedulingService:
         )
 
         if not include_past:
-            query = query.where(Appointment.scheduled_start >= datetime.now())
+            query = query.where(Appointment.scheduled_start >= datetime.now(timezone.utc))
 
         query = query.order_by(Appointment.scheduled_start)
 
@@ -501,12 +501,12 @@ class SchedulingService:
 
         if start_date:
             query = query.where(
-                Appointment.scheduled_start >= datetime.combine(start_date, time.min)
+                Appointment.scheduled_start >= datetime.combine(start_date, time.min, tzinfo=timezone.utc)
             )
 
         if end_date:
             query = query.where(
-                Appointment.scheduled_start <= datetime.combine(end_date, time.max)
+                Appointment.scheduled_start <= datetime.combine(end_date, time.max, tzinfo=timezone.utc)
             )
 
         if status:

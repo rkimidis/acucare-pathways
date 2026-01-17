@@ -350,11 +350,22 @@ class PatientSummary(BaseModel):
     last_name: str
     preferred_name: str | None = None
     date_of_birth: date | None = None
+    phone_e164: str | None = None
     postcode: str | None = None
     is_active: bool
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class PatientListResponse(BaseModel):
+    """Paginated patient list response."""
+
+    items: list[PatientSummary]
+    total: int
+    page: int
+    page_size: int
+    pages: int
 
 
 class PatientRead(PatientBase):

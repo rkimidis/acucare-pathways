@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { getToken, removeToken } from '@/lib/auth';
 import styles from './audit.module.css';
 
 interface AuditEvent {
@@ -24,10 +25,13 @@ const ACTION_LABELS: Record<string, string> = {
   patient_created: 'Patient Created',
   patient_updated: 'Patient Updated',
   patient_address_created: 'Address Added',
+  patient_address_updated: 'Address Updated',
   patient_contact_created: 'Contact Added',
+  patient_contact_updated: 'Contact Updated',
   patient_preferences_updated: 'Preferences Updated',
   patient_clinical_profile_updated: 'Clinical Profile Updated',
   patient_identifier_created: 'Identifier Added',
+  patient_identifier_updated: 'Identifier Updated',
   triage_case_created: 'Triage Case Created',
   triage_case_opened: 'Case Opened',
   triage_case_assigned: 'Case Assigned',
@@ -79,7 +83,7 @@ export default function AuditLogPage() {
   const [filterCategory, setFilterCategory] = useState(category || '');
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
+    const token = getToken();
     if (!token) {
       router.push('/auth/login');
       return;
@@ -101,7 +105,7 @@ export default function AuditLogPage() {
     })
       .then(async (res) => {
         if (res.status === 401) {
-          localStorage.removeItem('access_token');
+          removeToken();
           router.push('/auth/login');
           return;
         }
@@ -126,7 +130,7 @@ export default function AuditLogPage() {
   }, [entityId, entityType, actorId, action, filterCategory, router]);
 
   const loadMore = async () => {
-    const token = localStorage.getItem('access_token');
+    const token = getToken();
     if (!token) return;
 
     const newOffset = offset + limit;

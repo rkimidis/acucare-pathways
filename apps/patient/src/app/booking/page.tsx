@@ -7,6 +7,7 @@ import ImmediateSafetyAction from '@/components/ImmediateSafetyAction';
 import BookingRestrictedReview from '@/components/BookingRestrictedReview';
 import { copy, renderTemplate } from '@/copy';
 import { trackEvent, EVENTS } from '@/lib/analytics';
+import { getToken } from '@/lib/auth';
 import styles from './booking.module.css';
 
 interface Clinician {
@@ -67,8 +68,6 @@ export default function BookingPage() {
   const [selfBookCheck, setSelfBookCheck] = useState<SelfBookCheck | null>(null);
   const [triageCaseInfo, setTriageCaseInfo] = useState<TriageCaseInfo | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
-  const getToken = () => localStorage.getItem('access_token');
 
   useEffect(() => {
     const token = getToken();

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { setToken } from '@/lib/auth';
 import styles from '../auth.module.css';
 
 export default function LoginPage() {
@@ -39,7 +40,7 @@ export default function LoginPage() {
         setMfaRequired(true);
         setUserId(data.user_id);
       } else {
-        localStorage.setItem('access_token', data.access_token);
+        setToken(data.access_token);
         router.push('/dashboard');
       }
     } catch (err) {

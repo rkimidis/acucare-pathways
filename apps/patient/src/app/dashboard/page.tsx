@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import EmergencyBanner from '@/components/EmergencyBanner';
+import { getToken, removeToken } from '@/lib/auth';
 import styles from './dashboard.module.css';
 
 export default function DashboardPage() {
@@ -13,7 +14,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     // Check for auth token
-    const token = localStorage.getItem('access_token');
+    const token = getToken();
     if (!token) {
       router.push('/auth/login');
     } else {
@@ -26,7 +27,7 @@ export default function DashboardPage() {
   }, [router, searchParams]);
 
   const handleLogout = () => {
-    localStorage.removeItem('access_token');
+    removeToken();
     router.push('/');
   };
 

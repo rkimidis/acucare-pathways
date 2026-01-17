@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { getToken, removeToken } from '@/lib/auth';
 import styles from './history.module.css';
 
 interface PatientRecordUpdate {
@@ -123,7 +124,7 @@ export default function PatientHistoryPage() {
   const limit = 50;
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
+    const token = getToken();
     if (!token) {
       router.push('/auth/login');
       return;
@@ -139,8 +140,9 @@ export default function PatientHistoryPage() {
       }),
     ])
       .then(async ([patientRes, updatesRes]) => {
-        if (patientRes.status === 401 || updatesRes.status === 401) {
-          localStorage.removeItem('access_token');
+        if (patientRes.status === 401 || updatesRes.status === 401 ||
+            patientRes.status === 403 || updatesRes.status === 403) {
+          removeToken();
           router.push('/auth/login');
           return;
         }
@@ -174,7 +176,7 @@ export default function PatientHistoryPage() {
   }, [patientId, router]);
 
   const loadMore = async () => {
-    const token = localStorage.getItem('access_token');
+    const token = getToken();
     if (!token) return;
 
     const newOffset = offset + limit;

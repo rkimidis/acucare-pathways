@@ -7,6 +7,7 @@ import QuestionnaireRenderer from '@/components/QuestionnaireRenderer';
 import ConsentStep from '@/components/ConsentStep';
 import { copy, renderTemplate } from '@/copy';
 import { trackEvent, EVENTS } from '@/lib/analytics';
+import { getToken } from '@/lib/auth';
 import styles from './intake.module.css';
 
 type FieldType = 'text' | 'textarea' | 'number' | 'boolean' | 'select' | 'multiselect' | 'date';
@@ -100,7 +101,7 @@ export default function IntakePage() {
 
   // Load consent status and questionnaire on mount
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
+    const token = getToken();
     if (!token) {
       router.push('/auth/login');
       return;
@@ -151,7 +152,7 @@ export default function IntakePage() {
 
   // Auto-save draft when answers change
   const saveDraft = useCallback(async () => {
-    const token = localStorage.getItem('access_token');
+    const token = getToken();
     if (!token || Object.keys(answers).length === 0) return;
 
     setDraftSaveStatus('saving');
@@ -192,7 +193,7 @@ export default function IntakePage() {
     consent_items: Record<string, boolean>;
     channels: Record<string, boolean>;
   }) => {
-    const token = localStorage.getItem('access_token');
+    const token = getToken();
     if (!token) return;
 
     setSubmitting(true);
@@ -210,11 +211,12 @@ export default function IntakePage() {
         setStep('background');
       } else {
         const data = await res.json();
-        alert(data.detail?.message || 'Failed to save consent');
+        console.error('Consent API error:', res.status, data);
+        alert(data.detail?.message || data.detail || `Failed to save consent (${res.status})`);
       }
     } catch (err) {
       console.error('Consent error:', err);
-      alert('Failed to save consent. Please try again.');
+      alert(`Failed to save consent: ${err instanceof Error ? err.message : 'Network error'}`);
     } finally {
       setSubmitting(false);
     }
@@ -247,8 +249,8 @@ export default function IntakePage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const validateAllAnswers = (): boolean => {
-    if (!questionnaire) return false;
+  const validateAllAnswers = (): Record<string, string> => {
+    if (!questionnaire) return {};
 
     const newErrors: Record<string, string> = {};
     const fields = questionnaire.schema.fields || [];
@@ -265,7 +267,7 @@ export default function IntakePage() {
     });
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return newErrors;
   };
 
   const handleNextStep = () => {
@@ -301,9 +303,10 @@ export default function IntakePage() {
   };
 
   const handleFinalSubmit = async () => {
-    if (!validateAllAnswers()) {
+    const validationErrors = validateAllAnswers();
+    if (Object.keys(validationErrors).length > 0) {
       // Find which step has the first error
-      const firstErrorField = Object.keys(errors)[0];
+      const firstErrorField = Object.keys(validationErrors)[0];
       const field = questionnaire?.schema.fields.find(
         (f) => f.id === firstErrorField
       );
@@ -318,7 +321,7 @@ export default function IntakePage() {
       return;
     }
 
-    const token = localStorage.getItem('access_token');
+    const token = getToken();
     if (!token) return;
 
     setSubmitting(true);
@@ -336,6 +339,7 @@ export default function IntakePage() {
         setStep('complete');
       } else {
         const data = await res.json();
+        console.error('Submission error response:', data);
         if (data.detail?.errors) {
           const newErrors: Record<string, string> = {};
           data.detail.errors.forEach((err: string) => {
@@ -345,9 +349,26 @@ export default function IntakePage() {
             }
           });
           setErrors(newErrors);
-          setStep('background');
+
+          // Navigate to the step containing the first error
+          const firstErrorField = Object.keys(newErrors)[0];
+          if (firstErrorField && questionnaire) {
+            const field = questionnaire.schema.fields.find((f) => f.id === firstErrorField);
+            if (field) {
+              const fieldStep = SECTION_TO_STEP[field.section || ''] || 'background';
+              setStep(fieldStep);
+              setTimeout(() => {
+                const element = document.getElementById(firstErrorField);
+                element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }, 100);
+            } else {
+              setStep('background');
+            }
+          } else {
+            setStep('background');
+          }
         } else {
-          alert(data.detail?.message || 'Submission failed');
+          alert(data.detail?.message || data.detail || 'Submission failed');
         }
       }
     } catch (err) {
@@ -371,6 +392,14 @@ export default function IntakePage() {
       const fieldStep = SECTION_TO_STEP[field.section || ''] || 'background';
       return fieldStep === wizardStep;
     });
+  };
+
+  // Get sections that have fields for a specific wizard step
+  const getSectionsForStep = (wizardStep: WizardStep) => {
+    if (!questionnaire) return [];
+    const fieldsForStep = getFieldsForStep(wizardStep);
+    const sectionIds = new Set(fieldsForStep.map((f) => f.section).filter(Boolean));
+    return (questionnaire.schema.sections || []).filter((s) => sectionIds.has(s.id));
   };
 
   // Track page views and step changes
@@ -490,9 +519,9 @@ export default function IntakePage() {
 
         {/* Step content */}
         <div className={step === 'landing' ? '' : styles.content}>
-          {step === 'consent' && consentStatus && (
+          {step === 'consent' && (
             <ConsentStep
-              consentVersion={consentStatus.current_version}
+              consentVersion={consentStatus?.current_version || '1.0'}
               onConsent={handleConsentSubmit}
               disabled={submitting}
             />
@@ -511,6 +540,7 @@ export default function IntakePage() {
               <QuestionnaireRenderer
                 schema={{
                   ...questionnaire.schema,
+                  sections: getSectionsForStep('background'),
                   fields: getFieldsForStep('background'),
                 }}
                 answers={answers}
@@ -550,6 +580,7 @@ export default function IntakePage() {
               <QuestionnaireRenderer
                 schema={{
                   ...questionnaire.schema,
+                  sections: getSectionsForStep('symptoms'),
                   fields: getFieldsForStep('symptoms'),
                 }}
                 answers={answers}
@@ -607,6 +638,7 @@ export default function IntakePage() {
               <QuestionnaireRenderer
                 schema={{
                   ...questionnaire.schema,
+                  sections: getSectionsForStep('safety'),
                   fields: getFieldsForStep('safety'),
                 }}
                 answers={answers}

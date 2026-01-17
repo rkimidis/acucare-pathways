@@ -6,6 +6,7 @@ import EmergencyBanner from '@/components/EmergencyBanner';
 import CheckInEscalated from '@/components/CheckInEscalated';
 import { copy } from '@/copy';
 import { trackEvent, EVENTS } from '@/lib/analytics';
+import { getToken } from '@/lib/auth';
 import styles from './checkin.module.css';
 
 interface CheckIn {
@@ -63,8 +64,6 @@ export default function CheckInPage() {
     patient_comments: '',
     wants_callback: false,
   });
-
-  const getToken = () => localStorage.getItem('access_token');
 
   useEffect(() => {
     const token = getToken();

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { getToken } from '@/lib/auth';
 import styles from './monitoring.module.css';
 
 interface AlertCounts {
@@ -48,7 +49,6 @@ export default function MonitoringPage() {
   const [resolveNotes, setResolveNotes] = useState('');
   const [resolveAction, setResolveAction] = useState('');
 
-  const getToken = () => localStorage.getItem('access_token');
 
   useEffect(() => {
     const token = getToken();

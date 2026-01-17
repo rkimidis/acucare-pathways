@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { getToken, removeToken } from '@/lib/auth';
 import styles from './case-detail.module.css';
 
 interface Score {
@@ -112,6 +113,8 @@ interface PatientAddress {
   county: string | null;
   postcode: string | null;
   country: string;
+  valid_from: string | null;
+  valid_to: string | null;
   is_primary: boolean;
   created_at: string;
 }
@@ -188,6 +191,8 @@ interface PatientDetail {
   preferences: PatientPreferences | null;
   clinical_profile: PatientClinicalProfile | null;
   identifiers: PatientIdentifier[];
+  primary_gp_contact_id: string | null;
+  emergency_contact_id: string | null;
   primary_gp_contact: PatientContact | null;
   emergency_contact: PatientContact | null;
 }
@@ -229,19 +234,49 @@ export default function CaseDetailPage() {
   const [showConfirmBanner, setShowConfirmBanner] = useState(false);
 
   // Edit mode state
-  type EditSection = 'identity' | 'contact' | 'address' | 'safeguarding' | 'clinical' | 'preferences' | null;
+  type EditSection =
+    | 'identity'
+    | 'contact'
+    | 'contacts'
+    | 'address'
+    | 'identifiers'
+    | 'safeguarding'
+    | 'clinical'
+    | 'preferences'
+    | null;
   const [editingSection, setEditingSection] = useState<EditSection>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Record<string, unknown>>({});
   const [editReason, setEditReason] = useState('');
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
   // Fields that require a reason when changed
-  const REASON_REQUIRED_FIELDS = ['first_name', 'last_name', 'date_of_birth'];
+  const REASON_REQUIRED_FIELDS = [
+    'first_name',
+    'last_name',
+    'date_of_birth',
+    'email',
+    'phone_e164',
+    'primary_gp_contact_id',
+    'emergency_contact_id',
+  ];
 
   // Check if user can edit patient details
-  const canEditPatient = currentUserRole && ['admin', 'clinical_lead', 'clinician', 'receptionist'].includes(currentUserRole);
-  const canAddIdentifiers = currentUserRole === 'admin';
+  const isAdminEditor = currentUserRole && ['admin', 'clinical_lead'].includes(currentUserRole);
+  const isClinicianEditor = currentUserRole && ['clinician', 'clinical_lead', 'admin'].includes(currentUserRole);
+
+  const canEditSection = (section: EditSection) => {
+    if (!section) return false;
+    if (section === 'preferences' || section === 'clinical' || section === 'contacts') {
+      return !!isClinicianEditor;
+    }
+    if (section === 'identity' || section === 'contact' || section === 'safeguarding' || section === 'address' || section === 'identifiers') {
+      return !!isAdminEditor;
+    }
+    return false;
+  };
+
 
   const decodeTokenPayload = (token: string) => {
     try {
@@ -259,7 +294,7 @@ export default function CaseDetailPage() {
 
   // Load queue for navigation
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
+    const token = getToken();
     if (!token) return;
 
     fetch('/api/v1/dashboard/queue', {
@@ -271,7 +306,7 @@ export default function CaseDetailPage() {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
+    const token = getToken();
     if (!token) {
       router.push('/auth/login');
       return;
@@ -383,8 +418,8 @@ export default function CaseDetailPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (response.status === 401) {
-        localStorage.removeItem('access_token');
+      if (response.status === 401 || response.status === 403) {
+        removeToken();
         router.push('/auth/login');
         return;
       }
@@ -410,7 +445,7 @@ export default function CaseDetailPage() {
   };
 
   const fetchPatientDetails = async (patientId: string) => {
-    const token = localStorage.getItem('access_token');
+    const token = getToken();
     if (!token) return;
 
     try {
@@ -446,8 +481,8 @@ export default function CaseDetailPage() {
   };
 
   // Start editing a section
-  const startEditSection = (section: EditSection) => {
-    if (!patientDetails || !canEditPatient) return;
+  const startEditSection = (section: EditSection, itemId: string | null = null) => {
+    if (!patientDetails || !canEditSection(section)) return;
 
     // Pre-fill form based on section
     let formData: Record<string, unknown> = {};
@@ -474,8 +509,48 @@ export default function CaseDetailPage() {
           can_leave_voicemail: patientDetails.can_leave_voicemail,
           consent_to_sms: patientDetails.consent_to_sms,
           consent_to_email: patientDetails.consent_to_email,
+          primary_gp_contact_id: patientDetails.primary_gp_contact_id || '',
+          emergency_contact_id: patientDetails.emergency_contact_id || '',
         };
         break;
+      case 'contacts': {
+        const contact = patientDetails.contacts.find((item) => item.id === itemId);
+        formData = {
+          contact_type: contact?.contact_type || '',
+          name: contact?.name || '',
+          relationship_to_patient: contact?.relationship_to_patient || '',
+          phone_e164: contact?.phone_e164 || '',
+          email: contact?.email || '',
+          organisation: contact?.organisation || '',
+          notes: contact?.notes || '',
+        };
+        break;
+      }
+      case 'address': {
+        const address = patientDetails.addresses.find((item) => item.id === itemId);
+        formData = {
+          type: address?.type || '',
+          line1: address?.line1 || '',
+          line2: address?.line2 || '',
+          city: address?.city || '',
+          county: address?.county || '',
+          postcode: address?.postcode || '',
+          country: address?.country || 'GB',
+          valid_from: address?.valid_from || '',
+          valid_to: address?.valid_to || '',
+          is_primary: address?.is_primary || false,
+        };
+        break;
+      }
+      case 'identifiers': {
+        const identifier = patientDetails.identifiers.find((item) => item.id === itemId);
+        formData = {
+          id_type: identifier?.id_type || '',
+          id_value: identifier?.id_value || '',
+          is_verified: identifier?.is_verified || false,
+        };
+        break;
+      }
       case 'safeguarding':
         formData = {
           has_dependents: patientDetails.has_dependents,
@@ -510,30 +585,82 @@ export default function CaseDetailPage() {
     setEditReason('');
     setEditError(null);
     setEditingSection(section);
+    setEditingItemId(itemId);
   };
 
   const cancelEdit = () => {
     setEditingSection(null);
+    setEditingItemId(null);
     setEditForm({});
     setEditReason('');
     setEditError(null);
   };
 
+  const getChangedFieldsForSection = (): string[] => {
+    if (!patientDetails || !editingSection) return [];
+
+    const normalizeValue = (value: unknown) => (value === '' ? null : value);
+    const compareAgainst = (source: Record<string, unknown> | null) =>
+      Object.keys(editForm).filter(
+        (key) => normalizeValue(editForm[key]) !== normalizeValue(source?.[key] as unknown)
+      );
+
+    if (editingSection === 'identity' || editingSection === 'contact' || editingSection === 'safeguarding') {
+      return compareAgainst(patientDetails as unknown as Record<string, unknown>);
+    }
+    if (editingSection === 'preferences') {
+      return compareAgainst((patientDetails.preferences || {}) as unknown as Record<string, unknown>);
+    }
+    if (editingSection === 'clinical') {
+      return compareAgainst((patientDetails.clinical_profile || {}) as unknown as Record<string, unknown>);
+    }
+    if (editingSection === 'contacts') {
+      const contact = patientDetails.contacts.find((item) => item.id === editingItemId);
+      if (!contact) {
+        return Object.keys(editForm).filter(
+          (key) => editForm[key] !== '' && editForm[key] !== null && editForm[key] !== undefined
+        );
+      }
+      return compareAgainst(contact as unknown as Record<string, unknown>);
+    }
+    if (editingSection === 'address') {
+      const address = patientDetails.addresses.find((item) => item.id === editingItemId);
+      if (!address) {
+        return Object.keys(editForm).filter(
+          (key) => editForm[key] !== '' && editForm[key] !== null && editForm[key] !== undefined
+        );
+      }
+      return compareAgainst(address as unknown as Record<string, unknown>);
+    }
+    if (editingSection === 'identifiers') {
+      const identifier = patientDetails.identifiers.find((item) => item.id === editingItemId);
+      if (!identifier) {
+        return Object.keys(editForm).filter(
+          (key) => editForm[key] !== '' && editForm[key] !== null && editForm[key] !== undefined
+        );
+      }
+      return compareAgainst(identifier as unknown as Record<string, unknown>);
+    }
+    return [];
+  };
+
   const saveEdit = async () => {
     if (!patientDetails || !editingSection) return;
 
-    const token = localStorage.getItem('access_token');
+    const token = getToken();
     if (!token) return;
 
-    // Check if reason is required for any changed fields
-    const changedFields = Object.keys(editForm).filter((key) => {
-      const original = (patientDetails as unknown as Record<string, unknown>)[key];
-      return editForm[key] !== original;
-    });
+    const normalizedForm = Object.fromEntries(
+      Object.entries(editForm).map(([key, value]) => [key, value === '' ? null : value])
+    );
 
-    const needsReason = changedFields.some((f) => REASON_REQUIRED_FIELDS.includes(f));
+    // Check if reason is required for any changed fields
+    const changedFields = getChangedFieldsForSection();
+    const needsReason = editingSection === 'identifiers'
+      ? changedFields.length > 0
+      : changedFields.some((f) => REASON_REQUIRED_FIELDS.includes(f));
     if (needsReason && !editReason.trim()) {
-      setEditError('Reason required when changing name or date of birth');
+      setEditError('Reason required for this change');
       return;
     }
 
@@ -549,19 +676,46 @@ export default function CaseDetailPage() {
         // These fields go to PATCH /patients/{id}
         endpoint = `/api/v1/patients/${patientDetails.id}`;
         body = {
-          updates: editForm,
-          reason: editReason || null,
+          updates: normalizedForm,
+          reason: needsReason ? editReason : null,
         };
       } else if (editingSection === 'preferences') {
         // PUT /patients/{id}/preferences
         endpoint = `/api/v1/patients/${patientDetails.id}/preferences`;
         method = 'PUT';
-        body = editForm;
+        body = normalizedForm;
       } else if (editingSection === 'clinical') {
         // PUT /patients/{id}/clinical-profile
         endpoint = `/api/v1/patients/${patientDetails.id}/clinical-profile`;
         method = 'PUT';
-        body = editForm;
+        body = normalizedForm;
+      } else if (editingSection === 'contacts') {
+        if (editingItemId) {
+          endpoint = `/api/v1/patients/${patientDetails.id}/contacts/${editingItemId}`;
+          method = 'PATCH';
+        } else {
+          endpoint = `/api/v1/patients/${patientDetails.id}/contacts`;
+          method = 'POST';
+        }
+        body = normalizedForm;
+      } else if (editingSection === 'address') {
+        if (editingItemId) {
+          endpoint = `/api/v1/patients/${patientDetails.id}/addresses/${editingItemId}`;
+          method = 'PATCH';
+        } else {
+          endpoint = `/api/v1/patients/${patientDetails.id}/addresses`;
+          method = 'POST';
+        }
+        body = normalizedForm;
+      } else if (editingSection === 'identifiers') {
+        if (editingItemId) {
+          endpoint = `/api/v1/patients/${patientDetails.id}/identifiers/${editingItemId}`;
+          method = 'PATCH';
+        } else {
+          endpoint = `/api/v1/patients/${patientDetails.id}/identifiers`;
+          method = 'POST';
+        }
+        body = { ...normalizedForm, reason: editReason || null };
       }
 
       const response = await fetch(endpoint, {
@@ -597,7 +751,7 @@ export default function CaseDetailPage() {
 
   const handleClaimCase = async () => {
     try {
-      const token = localStorage.getItem('access_token');
+      const token = getToken();
       if (!token) {
         router.push('/auth/login');
         return;
@@ -618,7 +772,7 @@ export default function CaseDetailPage() {
 
   const handleUnassignCase = async () => {
     try {
-      const token = localStorage.getItem('access_token');
+      const token = getToken();
       if (!token) {
         router.push('/auth/login');
         return;
@@ -638,7 +792,7 @@ export default function CaseDetailPage() {
   };
 
   const handleConfirmDisposition = async () => {
-    const token = localStorage.getItem('access_token');
+    const token = getToken();
     if (!token) return;
 
     setIsDisposing(true);
@@ -674,7 +828,7 @@ export default function CaseDetailPage() {
   };
 
   const handleOverrideDisposition = async () => {
-    const token = localStorage.getItem('access_token');
+    const token = getToken();
     if (!token) return;
 
     // Validate rationale
@@ -721,7 +875,7 @@ export default function CaseDetailPage() {
   };
 
   const handleDownloadPdf = async () => {
-    const token = localStorage.getItem('access_token');
+    const token = getToken();
     if (!token) return;
 
     try {
@@ -994,6 +1148,11 @@ export default function CaseDetailPage() {
   const confirmPathwayLabel = formatPathwayLabel(
     summary.draft_disposition?.pathway || summary.case.pathway || null
   );
+  const editReasonNeeded = editingSection
+    ? (editingSection === 'identifiers'
+        ? getChangedFieldsForSection().length > 0
+        : getChangedFieldsForSection().some((field) => REASON_REQUIRED_FIELDS.includes(field)))
+    : false;
   const timelineEntries = (summary.timeline || [])
     .filter((entry) => entry.timestamp)
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
@@ -1505,7 +1664,7 @@ export default function CaseDetailPage() {
                   <section className={styles.patientSection}>
                     <div className={styles.sectionHeaderEditable}>
                       <h3>Identity & Demographics</h3>
-                      {canEditPatient && editingSection !== 'identity' && (
+                      {canEditSection('identity') && editingSection !== 'identity' && (
                         <button
                           className={styles.editButton}
                           onClick={() => startEditSection('identity')}
@@ -1599,15 +1758,17 @@ export default function CaseDetailPage() {
                             </label>
                           </div>
                         </div>
-                        <div className={styles.editReasonBox}>
-                          <label>Reason for changes (required for name/DOB changes)</label>
-                          <textarea
-                            value={editReason}
-                            onChange={(e) => setEditReason(e.target.value)}
-                            placeholder="Why are you making this change?"
-                            rows={2}
-                          />
-                        </div>
+                        {editReasonNeeded && (
+                          <div className={styles.editReasonBox}>
+                            <label>Reason for changes (required for sensitive updates)</label>
+                            <textarea
+                              value={editReason}
+                              onChange={(e) => setEditReason(e.target.value)}
+                              placeholder="Why are you making this change?"
+                              rows={2}
+                            />
+                          </div>
+                        )}
                         <div className={styles.editActions}>
                           <button onClick={cancelEdit} className={styles.cancelButton} disabled={editSaving}>
                             Cancel
@@ -1655,7 +1816,7 @@ export default function CaseDetailPage() {
                   <section className={styles.patientSection}>
                     <div className={styles.sectionHeaderEditable}>
                       <h3>Contact</h3>
-                      {canEditPatient && editingSection !== 'contact' && (
+                      {canEditSection('contact') && editingSection !== 'contact' && (
                         <button
                           className={styles.editButton}
                           onClick={() => startEditSection('contact')}
@@ -1728,7 +1889,50 @@ export default function CaseDetailPage() {
                               Email Consent
                             </label>
                           </div>
+                          <div className={styles.editField}>
+                            <label>Emergency Contact Pointer</label>
+                            <select
+                              value={editForm.emergency_contact_id as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, emergency_contact_id: e.target.value })}
+                            >
+                              <option value="">None</option>
+                              {patientDetails.contacts
+                                .filter((contact) => contact.contact_type === 'emergency')
+                                .map((contact) => (
+                                  <option key={contact.id} value={contact.id}>
+                                    {contact.name || contact.organisation || contact.contact_type}
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Primary GP Pointer</label>
+                            <select
+                              value={editForm.primary_gp_contact_id as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, primary_gp_contact_id: e.target.value })}
+                            >
+                              <option value="">None</option>
+                              {patientDetails.contacts
+                                .filter((contact) => contact.contact_type === 'gp')
+                                .map((contact) => (
+                                  <option key={contact.id} value={contact.id}>
+                                    {contact.organisation || contact.name || contact.contact_type}
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
                         </div>
+                        {editReasonNeeded && (
+                          <div className={styles.editReasonBox}>
+                            <label>Reason for changes (required for sensitive updates)</label>
+                            <textarea
+                              value={editReason}
+                              onChange={(e) => setEditReason(e.target.value)}
+                              placeholder="Why are you making this change?"
+                              rows={2}
+                            />
+                          </div>
+                        )}
                         <div className={styles.editActions}>
                           <button onClick={cancelEdit} className={styles.cancelButton} disabled={editSaving}>
                             Cancel
@@ -1810,19 +2014,261 @@ export default function CaseDetailPage() {
                     )}
                   </section>
 
+                  {/* Section 2b: Contacts */}
+                  <section className={styles.patientSection}>
+                    <div className={styles.sectionHeaderEditable}>
+                      <h3>Contacts</h3>
+                      {canEditSection('contacts') && editingSection !== 'contacts' && (
+                        <button
+                          className={styles.editButton}
+                          onClick={() => startEditSection('contacts')}
+                        >
+                          Add contact
+                        </button>
+                      )}
+                    </div>
+
+                    {editingSection === 'contacts' ? (
+                      <div className={styles.editForm}>
+                        {editError && <div className={styles.editError}>{editError}</div>}
+                        <div className={styles.editFormGrid}>
+                          <div className={styles.editField}>
+                            <label>Contact Type</label>
+                            <select
+                              value={editForm.contact_type as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, contact_type: e.target.value })}
+                            >
+                              <option value="">Select...</option>
+                              <option value="emergency">Emergency</option>
+                              <option value="gp">GP</option>
+                              <option value="next_of_kin">Next of Kin</option>
+                              <option value="other">Other</option>
+                            </select>
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Name</label>
+                            <input
+                              type="text"
+                              value={editForm.name as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Relationship to Patient</label>
+                            <input
+                              type="text"
+                              value={editForm.relationship_to_patient as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, relationship_to_patient: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Phone</label>
+                            <input
+                              type="tel"
+                              value={editForm.phone_e164 as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, phone_e164: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Email</label>
+                            <input
+                              type="email"
+                              value={editForm.email as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Organisation</label>
+                            <input
+                              type="text"
+                              value={editForm.organisation as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, organisation: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editFieldFull}>
+                            <label>Notes</label>
+                            <textarea
+                              value={editForm.notes as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                              rows={3}
+                            />
+                          </div>
+                        </div>
+                        <div className={styles.editActions}>
+                          <button onClick={cancelEdit} className={styles.cancelButton} disabled={editSaving}>
+                            Cancel
+                          </button>
+                          <button onClick={saveEdit} className={styles.saveButton} disabled={editSaving}>
+                            {editSaving ? 'Saving...' : 'Save Contact'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : patientDetails.contacts.length > 0 ? (
+                      patientDetails.contacts.map((contact) => (
+                        <div key={contact.id} className={styles.contactCard}>
+                          <div className={styles.contactHeader}>
+                            <span className={styles.contactType}>{contact.contact_type.replace(/_/g, ' ')}</span>
+                            {canEditSection('contacts') && (
+                              <button
+                                className={styles.editButtonSmall}
+                                onClick={() => startEditSection('contacts', contact.id)}
+                              >
+                                Edit
+                              </button>
+                            )}
+                          </div>
+                          <dl className={styles.dl}>
+                            <dt>Name</dt>
+                            <dd>{contact.name || '-'}</dd>
+                            <dt>Relationship</dt>
+                            <dd>{contact.relationship_to_patient || '-'}</dd>
+                            <dt>Phone</dt>
+                            <dd>{contact.phone_e164 || '-'}</dd>
+                            <dt>Email</dt>
+                            <dd>{contact.email || '-'}</dd>
+                            <dt>Organisation</dt>
+                            <dd>{contact.organisation || '-'}</dd>
+                          </dl>
+                        </div>
+                      ))
+                    ) : (
+                      <p className={styles.muted}>No contacts recorded</p>
+                    )}
+                  </section>
+
                   {/* Section 3: Address */}
                   <section className={styles.patientSection}>
-                    <h3>Address</h3>
+                    <div className={styles.sectionHeaderEditable}>
+                      <h3>Address</h3>
+                      {canEditSection('address') && editingSection !== 'address' && (
+                        <button
+                          className={styles.editButton}
+                          onClick={() => startEditSection('address')}
+                        >
+                          Add address
+                        </button>
+                      )}
+                    </div>
                     <div className={styles.postcodeDisplay}>
                       <span className={styles.postcodeLabel}>Postcode</span>
-                      <span className={styles.postcodeValue}>{patientDetails.postcode || '—'}</span>
+                      <span className={styles.postcodeValue}>{patientDetails.postcode || '-'}</span>
                     </div>
+                    {editingSection === 'address' && (
+                      <div className={styles.editForm}>
+                        {editError && <div className={styles.editError}>{editError}</div>}
+                        <div className={styles.editFormGrid}>
+                          <div className={styles.editField}>
+                            <label>Type</label>
+                            <select
+                              value={editForm.type as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}
+                            >
+                              <option value="">Select...</option>
+                              <option value="home">Home</option>
+                              <option value="current">Current</option>
+                              <option value="billing">Billing</option>
+                              <option value="other">Other</option>
+                            </select>
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Line 1</label>
+                            <input
+                              type="text"
+                              value={editForm.line1 as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, line1: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Line 2</label>
+                            <input
+                              type="text"
+                              value={editForm.line2 as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, line2: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editField}>
+                            <label>City</label>
+                            <input
+                              type="text"
+                              value={editForm.city as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editField}>
+                            <label>County</label>
+                            <input
+                              type="text"
+                              value={editForm.county as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, county: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Postcode</label>
+                            <input
+                              type="text"
+                              value={editForm.postcode as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, postcode: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Country</label>
+                            <input
+                              type="text"
+                              value={editForm.country as string || 'GB'}
+                              onChange={(e) => setEditForm({ ...editForm, country: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Valid From</label>
+                            <input
+                              type="date"
+                              value={editForm.valid_from as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, valid_from: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Valid To</label>
+                            <input
+                              type="date"
+                              value={editForm.valid_to as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, valid_to: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editFieldCheckbox}>
+                            <label>
+                              <input
+                                type="checkbox"
+                                checked={editForm.is_primary as boolean || false}
+                                onChange={(e) => setEditForm({ ...editForm, is_primary: e.target.checked })}
+                              />
+                              Primary address
+                            </label>
+                          </div>
+                        </div>
+                        <div className={styles.editActions}>
+                          <button onClick={cancelEdit} className={styles.cancelButton} disabled={editSaving}>
+                            Cancel
+                          </button>
+                          <button onClick={saveEdit} className={styles.saveButton} disabled={editSaving}>
+                            {editSaving ? 'Saving...' : 'Save Address'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                     {patientDetails.addresses.length > 0 ? (
                       patientDetails.addresses.map((addr) => (
                         <div key={addr.id} className={styles.addressCard}>
                           <div className={styles.addressHeader}>
                             <span className={styles.addressType}>{addr.type}</span>
                             {addr.is_primary && <span className={styles.primaryBadge}>Primary</span>}
+                            {canEditSection('address') && (
+                              <button
+                                className={styles.editButtonSmall}
+                                onClick={() => startEditSection('address', addr.id)}
+                              >
+                                Edit
+                              </button>
+                            )}
                           </div>
                           <div className={styles.addressLines}>
                             {addr.line1 && <div>{addr.line1}</div>}
@@ -1843,7 +2289,7 @@ export default function CaseDetailPage() {
                   <section className={styles.patientSection}>
                     <div className={styles.sectionHeaderEditable}>
                       <h3>Safeguarding & Adjustments</h3>
-                      {canEditPatient && editingSection !== 'safeguarding' && (
+                      {canEditSection('safeguarding') && editingSection !== 'safeguarding' && (
                         <button
                           className={styles.editButton}
                           onClick={() => startEditSection('safeguarding')}
@@ -1957,7 +2403,7 @@ export default function CaseDetailPage() {
                   <section className={styles.patientSection}>
                     <div className={styles.sectionHeaderEditable}>
                       <h3>Clinical Context</h3>
-                      {canEditPatient && editingSection !== 'clinical' && (
+                    {canEditSection('clinical') && editingSection !== 'clinical' && (
                         <button
                           className={styles.editButton}
                           onClick={() => startEditSection('clinical')}
@@ -2162,7 +2608,7 @@ export default function CaseDetailPage() {
                   <section className={styles.patientSection}>
                     <div className={styles.sectionHeaderEditable}>
                       <h3>Preferences</h3>
-                      {canEditPatient && editingSection !== 'preferences' && (
+                    {canEditSection('preferences') && editingSection !== 'preferences' && (
                         <button
                           className={styles.editButton}
                           onClick={() => startEditSection('preferences')}
@@ -2274,60 +2720,137 @@ export default function CaseDetailPage() {
 
                   {/* Section 7: Identifiers */}
                   <section className={styles.patientSection}>
-                    <h3>Identifiers</h3>
-                    {(() => {
-                      // Check if NHS number exists in identifiers table (preferred)
-                      const nhsFromIdentifiers = patientDetails.identifiers.find(
-                        (id) => id.id_type.toLowerCase() === 'nhs_number'
-                      );
-                      // Only show legacy field if not migrated to identifiers
-                      const showLegacyNhs = patientDetails.nhs_number && !nhsFromIdentifiers;
+                    <div className={styles.sectionHeaderEditable}>
+                      <h3>Identifiers</h3>
+                      {canEditSection('identifiers') && editingSection !== 'identifiers' && (
+                        <button
+                          className={styles.editButton}
+                          onClick={() => startEditSection('identifiers')}
+                        >
+                          Add identifier
+                        </button>
+                      )}
+                    </div>
+                    {editingSection === 'identifiers' ? (
+                      <div className={styles.editForm}>
+                        {editError && <div className={styles.editError}>{editError}</div>}
+                        <div className={styles.editFormGrid}>
+                          <div className={styles.editField}>
+                            <label>Identifier Type</label>
+                            <select
+                              value={editForm.id_type as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, id_type: e.target.value })}
+                            >
+                              <option value="">Select...</option>
+                              <option value="nhs_number">NHS Number</option>
+                              <option value="private_id">Private ID</option>
+                              <option value="other">Other</option>
+                            </select>
+                          </div>
+                          <div className={styles.editField}>
+                            <label>Identifier Value</label>
+                            <input
+                              type="text"
+                              value={editForm.id_value as string || ''}
+                              onChange={(e) => setEditForm({ ...editForm, id_value: e.target.value })}
+                            />
+                          </div>
+                          <div className={styles.editFieldCheckbox}>
+                            <label>
+                              <input
+                                type="checkbox"
+                                checked={editForm.is_verified as boolean || false}
+                                onChange={(e) => setEditForm({ ...editForm, is_verified: e.target.checked })}
+                              />
+                              Verified
+                            </label>
+                          </div>
+                        </div>
+                        {editReasonNeeded && (
+                          <div className={styles.editReasonBox}>
+                            <label>Reason for changes (required for identifiers)</label>
+                            <textarea
+                              value={editReason}
+                              onChange={(e) => setEditReason(e.target.value)}
+                              placeholder="Why are you making this change?"
+                              rows={2}
+                            />
+                          </div>
+                        )}
+                        <div className={styles.editActions}>
+                          <button onClick={cancelEdit} className={styles.cancelButton} disabled={editSaving}>
+                            Cancel
+                          </button>
+                          <button onClick={saveEdit} className={styles.saveButton} disabled={editSaving}>
+                            {editSaving ? 'Saving...' : 'Save Identifier'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      (() => {
+                        // Check if NHS number exists in identifiers table (preferred)
+                        const nhsFromIdentifiers = patientDetails.identifiers.find(
+                          (id) => id.id_type.toLowerCase() === 'nhs_number'
+                        );
+                        // Only show legacy field if not migrated to identifiers
+                        const showLegacyNhs = patientDetails.nhs_number && !nhsFromIdentifiers;
 
-                      const hasAnyIdentifiers = patientDetails.identifiers.length > 0 || showLegacyNhs;
+                        const hasAnyIdentifiers = patientDetails.identifiers.length > 0 || showLegacyNhs;
 
-                      if (!hasAnyIdentifiers) {
-                        return <p className={styles.muted}>No identifiers on file</p>;
-                      }
+                        if (!hasAnyIdentifiers) {
+                          return <p className={styles.muted}>No identifiers on file</p>;
+                        }
 
-                      return (
-                        <>
-                          {patientDetails.identifiers.map((ident) => (
-                            <div key={ident.id} className={styles.identifierCard}>
-                              <span className={styles.identifierType}>
-                                {ident.id_type.replace(/_/g, ' ')}
-                              </span>
-                              <span className={styles.identifierValue}>{ident.id_value}</span>
-                              <button
-                                className={styles.copyButton}
-                                onClick={() => navigator.clipboard.writeText(ident.id_value)}
-                                title="Copy to clipboard"
-                              >
-                                📋
-                              </button>
-                              {ident.is_verified ? (
-                                <span className={styles.verifiedBadge}>Verified</span>
-                              ) : (
-                                <span className={styles.unverifiedBadge}>Unverified</span>
-                              )}
-                            </div>
-                          ))}
-                          {showLegacyNhs && (
-                            <div className={styles.identifierCard}>
-                              <span className={styles.identifierType}>NHS Number</span>
-                              <span className={styles.identifierValue}>{patientDetails.nhs_number}</span>
-                              <button
-                                className={styles.copyButton}
-                                onClick={() => navigator.clipboard.writeText(patientDetails.nhs_number!)}
-                                title="Copy to clipboard"
-                              >
-                                📋
-                              </button>
-                              <span className={styles.legacyBadge}>Legacy</span>
-                            </div>
-                          )}
-                        </>
-                      );
-                    })()}
+                        return (
+                          <>
+                            {patientDetails.identifiers.map((ident) => (
+                              <div key={ident.id} className={styles.identifierCard}>
+                                <div className={styles.identifierHeader}>
+                                  <span className={styles.identifierType}>
+                                    {ident.id_type.replace(/_/g, ' ')}
+                                  </span>
+                                  {canEditSection('identifiers') && (
+                                    <button
+                                      className={styles.editButtonSmall}
+                                      onClick={() => startEditSection('identifiers', ident.id)}
+                                    >
+                                      Edit
+                                    </button>
+                                  )}
+                                </div>
+                                <span className={styles.identifierValue}>{ident.id_value}</span>
+                                <button
+                                  className={styles.copyButton}
+                                  onClick={() => navigator.clipboard.writeText(ident.id_value)}
+                                  title="Copy to clipboard"
+                                >
+                                  ??
+                                </button>
+                                {ident.is_verified ? (
+                                  <span className={styles.verifiedBadge}>Verified</span>
+                                ) : (
+                                  <span className={styles.unverifiedBadge}>Unverified</span>
+                                )}
+                              </div>
+                            ))}
+                            {showLegacyNhs && (
+                              <div className={styles.identifierCard}>
+                                <span className={styles.identifierType}>NHS Number</span>
+                                <span className={styles.identifierValue}>{patientDetails.nhs_number}</span>
+                                <button
+                                  className={styles.copyButton}
+                                  onClick={() => navigator.clipboard.writeText(patientDetails.nhs_number!)}
+                                  title="Copy to clipboard"
+                                >
+                                  ??
+                                </button>
+                                <span className={styles.legacyBadge}>Legacy</span>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()
+                    )}
                   </section>
 
                   {/* Section 7: Update History */}

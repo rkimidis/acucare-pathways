@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { getToken, removeToken } from '@/lib/auth';
 import styles from './patients.module.css';
 
 interface Patient {
@@ -38,7 +39,7 @@ export default function PatientsPage() {
   const pageSize = 25;
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
+    const token = getToken();
     if (!token) {
       router.push('/auth/login');
       return;
@@ -57,8 +58,8 @@ export default function PatientsPage() {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(async (res) => {
-        if (res.status === 401) {
-          localStorage.removeItem('access_token');
+        if (res.status === 401 || res.status === 403) {
+          removeToken();
           router.push('/auth/login');
           return;
         }

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { setToken as saveToken } from '@/lib/auth';
 import styles from '../auth.module.css';
 
 export default function LoginPage() {
@@ -30,7 +31,7 @@ export default function LoginPage() {
 
       const data = await response.json();
       // Store token (in production, use httpOnly cookies)
-      localStorage.setItem('access_token', data.access_token);
+      saveToken(data.access_token);
       router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');

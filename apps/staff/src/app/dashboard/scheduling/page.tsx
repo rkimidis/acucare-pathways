@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { getToken } from '@/lib/auth';
 import styles from './scheduling.module.css';
 
 interface ClinicianProfile {
@@ -59,7 +60,6 @@ export default function SchedulingPage() {
 
   const [activeTab, setActiveTab] = useState<'availability' | 'appointments'>('availability');
 
-  const getToken = () => localStorage.getItem('access_token');
 
   useEffect(() => {
     const token = getToken();

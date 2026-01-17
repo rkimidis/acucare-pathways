@@ -3,6 +3,8 @@ const nextConfig = {
   reactStrictMode: true,
   // Enable standalone output for Docker
   output: 'standalone',
+  // Base path for production routing
+  basePath: '/patient',
   // API proxy to backend (uses env var in production)
   async rewrites() {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';

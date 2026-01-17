@@ -1,81 +1,19 @@
-.layout {
-  display: flex;
-  min-height: 100vh;
-}
-
-.sidebar {
-  width: 250px;
-  background: #1e293b;
-  color: white;
-  display: flex;
-  flex-direction: column;
-}
-
-.sidebarHeader {
-  padding: 1.5rem;
-  border-bottom: 1px solid #334155;
-}
-
-.logo {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #60a5fa;
-}
-
-.nav {
-  flex: 1;
-  padding: 1rem 0;
-}
-
-.navItem,
-.navItemActive {
-  display: block;
-  padding: 0.75rem 1.5rem;
-  color: #94a3b8;
-  text-decoration: none;
-  transition: all 0.2s;
-}
-
-.navItem:hover {
-  background: #334155;
-  color: white;
-}
-
-.navItemActive {
-  background: #334155;
-  color: white;
-  border-left: 3px solid #60a5fa;
-}
-
-.main {
-  flex: 1;
-  background: #f8fafc;
-  padding: 2rem;
-}
-
-.header {
-  margin-bottom: 1.5rem;
-}
-
-.header h1 {
-  margin: 0;
-  color: #1e293b;
-}
-
 .content {
+  padding: 2rem;
   max-width: 1200px;
 }
 
 .error {
-  background: #fef2f2;
-  border: 1px solid #dc2626;
-  color: #dc2626;
+  background: var(--danger-100);
+  border: 1px solid var(--danger-600);
+  color: var(--danger-600);
   padding: 1rem;
   border-radius: 0.5rem;
   margin-bottom: 1rem;
 }
 
 .clinicianSelect {
+  composes: ui-select from global;
   background: white;
   padding: 1rem;
   border-radius: 0.5rem;
@@ -88,12 +26,12 @@
 
 .clinicianSelect label {
   font-weight: 500;
-  color: #1e293b;
+  color: var(--neutral-800);
 }
 
 .clinicianSelect select {
   padding: 0.5rem 1rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--neutral-200);
   border-radius: 0.375rem;
   font-size: 0.95rem;
   min-width: 250px;
@@ -103,7 +41,7 @@
   display: flex;
   gap: 0.25rem;
   margin-bottom: 1rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--neutral-200);
 }
 
 .tab,
@@ -113,18 +51,18 @@
   border: none;
   cursor: pointer;
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--neutral-500);
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
 }
 
 .tab:hover {
-  color: #1e293b;
+  color: var(--neutral-800);
 }
 
 .tabActive {
-  color: #3b82f6;
-  border-bottom-color: #3b82f6;
+  color: var(--info-500);
+  border-bottom-color: var(--info-500);
   font-weight: 500;
 }
 
@@ -145,12 +83,13 @@
 .tabHeader h2 {
   margin: 0;
   font-size: 1.1rem;
-  color: #1e293b;
+  color: var(--neutral-800);
 }
 
 .addButton {
+  composes: ui-button from global;
   padding: 0.5rem 1rem;
-  background: #3b82f6;
+  background: var(--info-500);
   color: white;
   border: none;
   border-radius: 0.375rem;
@@ -159,7 +98,7 @@
 }
 
 .addButton:hover {
-  background: #2563eb;
+  background: var(--info-600);
 }
 
 .availabilityGrid {
@@ -175,22 +114,23 @@
 .dayColumn h3 {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--neutral-800);
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--neutral-200);
   margin-bottom: 0.75rem;
 }
 
 .noSlots {
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--neutral-400);
   text-align: center;
   font-style: italic;
 }
 
 .slotCard {
-  background: #f0fdf4;
-  border: 1px solid #16a34a;
+  composes: ui-card from global;
+  background: var(--success-50);
+  border: 1px solid var(--success-600);
   border-radius: 0.375rem;
   padding: 0.5rem;
   margin-bottom: 0.5rem;
@@ -198,23 +138,23 @@
 }
 
 .slotInactive {
-  background: #f8fafc;
-  border-color: #e2e8f0;
+  background: var(--neutral-50);
+  border-color: var(--neutral-200);
   opacity: 0.6;
 }
 
 .slotTime {
   display: block;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--neutral-800);
   margin-bottom: 0.25rem;
 }
 
 .remoteBadge {
   display: inline-block;
   padding: 0.125rem 0.375rem;
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--info-200);
+  color: var(--info-700);
   border-radius: 9999px;
   font-size: 0.625rem;
   margin-right: 0.25rem;
@@ -222,7 +162,7 @@
 
 .location {
   display: block;
-  color: #64748b;
+  color: var(--neutral-500);
   font-size: 0.625rem;
   margin-top: 0.25rem;
 }
@@ -240,13 +180,13 @@
 }
 
 .deactivateBtn {
-  background: #fee2e2;
-  color: #dc2626;
+  background: var(--danger-150);
+  color: var(--danger-600);
 }
 
 .activateBtn {
-  background: #d1fae5;
-  color: #16a34a;
+  background: var(--success-200);
+  color: var(--success-600);
 }
 
 .table {
@@ -258,13 +198,13 @@
 .table td {
   padding: 0.75rem 1rem;
   text-align: left;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--neutral-200);
 }
 
 .table th {
   font-weight: 600;
-  color: #475569;
-  background: #f8fafc;
+  color: var(--neutral-600);
+  background: var(--neutral-50);
   font-size: 0.875rem;
 }
 
@@ -284,50 +224,51 @@
 }
 
 .statusScheduled {
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--neutral-100);
+  color: var(--neutral-500);
 }
 
 .statusConfirmed {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--info-200);
+  color: var(--info-700);
 }
 
 .statusCompleted {
-  background: #d1fae5;
-  color: #16a34a;
+  background: var(--success-200);
+  color: var(--success-600);
 }
 
 .statusCancelled {
-  background: #fee2e2;
-  color: #dc2626;
+  background: var(--danger-150);
+  color: var(--danger-600);
 }
 
 .statusNoShow {
-  background: #fef3c7;
-  color: #d97706;
+  background: var(--warning-100);
+  color: var(--warning-600);
 }
 
 .selfBookBadge {
   display: inline-block;
   margin-left: 0.5rem;
   padding: 0.125rem 0.375rem;
-  background: #f3e8ff;
-  color: #7c3aed;
+  background: var(--accent-purple-75);
+  color: var(--accent-purple-500);
   border-radius: 9999px;
   font-size: 0.625rem;
 }
 
 .statusSelect {
+  composes: ui-select from global;
   padding: 0.25rem 0.5rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--neutral-200);
   border-radius: 0.25rem;
   font-size: 0.75rem;
 }
 
 .emptyState {
   text-align: center;
-  color: #64748b;
+  color: var(--neutral-500);
   font-style: italic;
   padding: 2rem;
 }
@@ -354,7 +295,7 @@
 .modalContent h2 {
   margin: 0 0 1.5rem 0;
   font-size: 1.1rem;
-  color: #1e293b;
+  color: var(--neutral-800);
 }
 
 .formGroup {
@@ -365,7 +306,7 @@
   display: block;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #1e293b;
+  color: var(--neutral-800);
   margin-bottom: 0.5rem;
 }
 
@@ -373,7 +314,7 @@
 .formGroup select {
   width: 100%;
   padding: 0.5rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--neutral-200);
   border-radius: 0.375rem;
   font-size: 0.875rem;
 }
@@ -406,17 +347,19 @@
 }
 
 .cancelButton {
+  composes: ui-button from global;
   padding: 0.5rem 1rem;
   background: white;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
+  color: var(--neutral-500);
+  border: 1px solid var(--neutral-200);
   border-radius: 0.375rem;
   cursor: pointer;
 }
 
 .saveButton {
+  composes: ui-button from global;
   padding: 0.5rem 1rem;
-  background: #16a34a;
+  background: var(--success-600);
   color: white;
   border: none;
   border-radius: 0.375rem;
@@ -424,5 +367,242 @@
 }
 
 .saveButton:hover {
-  background: #15803d;
+  background: var(--success-700);
+}
+
+/* Pending count badge on tab */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.375rem;
+  margin-left: 0.5rem;
+  background: var(--danger-600);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+}
+
+/* Filter select for requests */
+.filterSelect {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--neutral-200);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  background: white;
+}
+
+/* Requests list */
+.requestsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Request card */
+.requestCard {
+  composes: ui-card from global;
+  background: white;
+  border: 1px solid var(--neutral-200);
+  border-left: 4px solid var(--info-500);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.requestCard.safetyFlagged {
+  border-left-color: var(--danger-600);
+  background: var(--danger-50);
+}
+
+.safetyBanner {
+  background: var(--danger-600);
+  color: white;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 0.25rem;
+  margin-bottom: 0.75rem;
+  display: inline-block;
+}
+
+.requestHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.requestType {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  color: var(--neutral-600);
+}
+
+/* Tier badges */
+.tierBadge {
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.tierRed {
+  background: var(--danger-150);
+  color: var(--danger-700);
+}
+
+.tierAmber {
+  background: var(--warning-100);
+  color: var(--warning-700);
+}
+
+.tierGreen {
+  background: var(--success-100);
+  color: var(--success-700);
+}
+
+.tierBlue {
+  background: var(--info-100);
+  color: var(--info-700);
+}
+
+/* Status badge for processed requests */
+.statusBadge {
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-left: auto;
+}
+
+.statusApproved {
+  background: var(--success-100);
+  color: var(--success-700);
+}
+
+.statusDenied {
+  background: var(--danger-150);
+  color: var(--danger-700);
+}
+
+.requestDetails {
+  font-size: 0.875rem;
+  color: var(--neutral-700);
+}
+
+.requestDetails p {
+  margin: 0.25rem 0;
+}
+
+.urgentNote {
+  color: var(--warning-600);
+  font-weight: 500;
+}
+
+.reasonBox {
+  background: var(--neutral-50);
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  margin-top: 0.75rem;
+  color: var(--neutral-700);
+}
+
+.requestActions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--neutral-100);
+}
+
+.approveButton {
+  composes: ui-button from global;
+  padding: 0.5rem 1rem;
+  background: var(--success-600);
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.approveButton:hover {
+  background: var(--success-700);
+}
+
+.denyButton {
+  composes: ui-button from global;
+  padding: 0.5rem 1rem;
+  background: white;
+  color: var(--danger-600);
+  border: 1px solid var(--danger-300);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.denyButton:hover {
+  background: var(--danger-100);
+  border-color: var(--danger-600);
+}
+
+/* Request summary in modal */
+.requestSummary {
+  background: var(--neutral-50);
+  padding: 1rem;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+.requestSummary p {
+  margin: 0.25rem 0;
+  font-size: 0.875rem;
+}
+
+/* Textarea in modal */
+.formGroup textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--neutral-200);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.fieldHint {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.75rem;
+  color: var(--warning-600);
+}
+
+/* Deny button in modal */
+.denyButtonModal {
+  composes: ui-button from global;
+  padding: 0.5rem 1rem;
+  background: var(--danger-600);
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.denyButtonModal:hover:not(:disabled) {
+  background: var(--danger-700);
+}
+
+.denyButtonModal:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

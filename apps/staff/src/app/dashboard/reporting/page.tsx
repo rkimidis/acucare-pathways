@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { removeToken } from '@/lib/auth';
+import { AppShell, EmptyState, PageHeader } from '@/ui/components';
 import styles from './reporting.module.css';
 
 interface TierVolume {
@@ -53,6 +55,7 @@ const TIER_COLORS: Record<string, string> = {
 };
 
 export default function ReportingPage() {
+  const router = useRouter();
   const [tierVolumes, setTierVolumes] = useState<TierVolume[]>([]);
   const [pathwayVolumes, setPathwayVolumes] = useState<PathwayVolume[]>([]);
   const [waitTimes, setWaitTimes] = useState<WaitTimeMetrics[]>([]);
@@ -103,27 +106,20 @@ export default function ReportingPage() {
     return waitTimes.reduce((sum, w) => sum + w.breaches, 0);
   };
 
-  return (
-    <div className={styles.layout}>
-      <aside className={styles.sidebar}>
-        <div className={styles.sidebarHeader}>
-          <span className={styles.logo}>AcuCare</span>
-        </div>
-        <nav className={styles.nav}>
-          <Link href="/dashboard" className={styles.navItem}>Dashboard</Link>
-          <Link href="/dashboard/queue" className={styles.navItem}>Triage Queue</Link>
-          <Link href="/dashboard/scheduling" className={styles.navItem}>Scheduling</Link>
-          <Link href="/dashboard/monitoring" className={styles.navItem}>Monitoring</Link>
-          <Link href="/dashboard/incidents" className={styles.navItem}>Incidents</Link>
-          <Link href="/dashboard/reporting" className={styles.navItemActive}>Reporting</Link>
-          <Link href="/dashboard/evidence" className={styles.navItem}>Evidence Export</Link>
-          <Link href="/dashboard/change-control" className={styles.navItem}>Change Control</Link>
-        </nav>
-      </aside>
+  const handleLogout = () => {
+    removeToken();
+    router.push('/');
+  };
 
-      <main className={styles.main}>
-        <header className={styles.header}>
-          <h1>Reports & Analytics</h1>
+  return (
+    <AppShell activeNav="reporting" onSignOut={handleLogout}>
+      <PageHeader
+        title="Reports & Analytics"
+        breadcrumb={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Reporting' },
+        ]}
+        actions={
           <div className={styles.dateFilters}>
             <input
               type="date"
@@ -139,14 +135,14 @@ export default function ReportingPage() {
               className={styles.dateInput}
             />
           </div>
-        </header>
+        }
+      />
 
-        {error && <div className={styles.error}>{error}</div>}
-
-        {loading ? (
-          <div className={styles.loading}>Loading dashboard data...</div>
-        ) : (
-          <div className={styles.content}>
+      {loading ? (
+        <EmptyState title="Loading dashboard data" variant="loading" />
+      ) : (
+        <div className={styles.content}>
+          {error && <div className={styles.error}>{error}</div>}
             {/* Summary Cards */}
             <div className={styles.summaryCards}>
               <div className={styles.summaryCard}>
@@ -367,9 +363,8 @@ export default function ReportingPage() {
                 <p className={styles.noData}>No outcome data available</p>
               )}
             </div>
-          </div>
-        )}
-      </main>
-    </div>
+        </div>
+      )}
+    </AppShell>
   );
 }

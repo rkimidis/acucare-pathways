@@ -1,18 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import styles from '../auth.module.css';
 
 export default function RequestLinkPage() {
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [success, setSuccess] = useState(false);
   const [devToken, setDevToken] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [justRegistered, setJustRegistered] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Handle post-registration: pre-fill email and auto-request magic link
+  useEffect(() => {
+    const registered = searchParams.get('registered');
+    const emailParam = searchParams.get('email');
+
+    if (registered === 'true' && emailParam) {
+      setJustRegistered(true);
+      setEmail(emailParam);
+      // Auto-request magic link after registration
+      requestMagicLink(emailParam);
+    }
+  }, [searchParams]);
+
+  const requestMagicLink = async (emailToUse: string) => {
     setError('');
     setSuccess(false);
     setLoading(true);
@@ -21,7 +36,7 @@ export default function RequestLinkPage() {
       const response = await fetch('/api/v1/auth/patient/request-magic-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: emailToUse }),
       });
 
       if (!response.ok) {
@@ -42,6 +57,11 @@ export default function RequestLinkPage() {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await requestMagicLink(email);
+  };
+
   return (
     <main className={styles.main}>
       <div className={styles.container}>
@@ -52,11 +72,22 @@ export default function RequestLinkPage() {
 
         {success ? (
           <div className={styles.successBox}>
-            <h2>Check your email</h2>
-            <p>
-              If an account exists for {email}, you will receive a magic link
-              shortly.
-            </p>
+            {justRegistered ? (
+              <>
+                <h2>Registration Successful!</h2>
+                <p>
+                  Your account has been created. A sign-in link has been sent to {email}.
+                </p>
+              </>
+            ) : (
+              <>
+                <h2>Check your email</h2>
+                <p>
+                  If an account exists for {email}, you will receive a magic link
+                  shortly.
+                </p>
+              </>
+            )}
             {devToken && (
               <div className={styles.devToken}>
                 <p>

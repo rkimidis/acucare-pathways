@@ -79,10 +79,21 @@ class TriageCase(Base, TimestampMixin, SoftDeleteMixin):
         JSON,
         nullable=True,
     )
-    # Clinician assigned for review (if applicable)
+    # Clinician assigned for review (legacy field)
     assigned_clinician_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         ForeignKey("users.id"),
+        nullable=True,
+    )
+    # Current assignment owner (soft assignment model)
+    assigned_to_user_id: Mapped[str | None] = mapped_column(
+        UUID(as_uuid=False),
+        ForeignKey("users.id"),
+        nullable=True,
+        index=True,
+    )
+    assigned_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
         nullable=True,
     )
     # Clinical notes (staff only)

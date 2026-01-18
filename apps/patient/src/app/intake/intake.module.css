@@ -1,7 +1,7 @@
 .main {
   min-height: 100vh;
   padding: 1rem;
-  background: #f7fafc;
+  background: var(--neutral-50);
 }
 
 .loading {
@@ -9,7 +9,7 @@
   justify-content: center;
   align-items: center;
   min-height: 50vh;
-  color: #718096;
+  color: var(--neutral-550);
   font-size: 1.1rem;
 }
 
@@ -41,14 +41,14 @@
 .landingHeader {
   font-size: 1.75rem;
   font-weight: 700;
-  color: #1a365d;
+  color: var(--info-900);
   line-height: 1.3;
   margin-bottom: 1rem;
 }
 
 .landingSubheader {
   font-size: 1.1rem;
-  color: #4a5568;
+  color: var(--neutral-650);
   line-height: 1.6;
   margin-bottom: 2rem;
 }
@@ -57,8 +57,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: #ebf8ff;
-  color: #2b6cb0;
+  background: var(--info-100);
+  color: var(--info-650);
   padding: 0.75rem 1.25rem;
   border-radius: 24px;
   font-size: 0.95rem;
@@ -71,8 +71,8 @@
 }
 
 .reassuranceBox {
-  background: #f0fff4;
-  border: 1px solid #9ae6b4;
+  background: var(--success-75);
+  border: 1px solid var(--success-250);
   border-radius: 8px;
   padding: 1rem 1.5rem;
   margin-bottom: 1.5rem;
@@ -80,7 +80,7 @@
 }
 
 .reassuranceBox p {
-  color: #276749;
+  color: var(--success-400);
   font-size: 0.95rem;
   margin: 0.25rem 0;
   line-height: 1.5;
@@ -90,8 +90,8 @@
   display: flex;
   align-items: flex-start;
   gap: 1rem;
-  background: #fff5f5;
-  border: 1px solid #feb2b2;
+  background: var(--danger-75);
+  border: 1px solid var(--danger-200);
   border-radius: 8px;
   padding: 1.25rem 1.5rem;
   margin-bottom: 2rem;
@@ -104,22 +104,23 @@
 }
 
 .emergencyNotice strong {
-  color: #c53030;
+  color: var(--danger-500);
   display: block;
   margin-bottom: 0.25rem;
 }
 
 .emergencyNotice p {
-  color: #742a2a;
+  color: var(--danger-850);
   font-size: 0.9rem;
   margin: 0;
   line-height: 1.5;
 }
 
 .startButton {
+  composes: ui-button from global;
   width: 100%;
   padding: 1rem 2rem;
-  background: #3182ce;
+  background: var(--info-620);
   color: white;
   border: none;
   border-radius: 8px;
@@ -130,7 +131,7 @@
 }
 
 .startButton:hover {
-  background: #2c5282;
+  background: var(--info-800);
 }
 
 .startButton:active {
@@ -150,7 +151,7 @@
   padding: 1rem 1.5rem;
   margin-bottom: 1.5rem;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--neutral-200);
 }
 
 .progressHeader {
@@ -169,25 +170,25 @@
 .stepIndicator {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #2b6cb0;
+  color: var(--info-650);
 }
 
 .stepLabel {
   font-size: 1rem;
-  color: #4a5568;
+  color: var(--neutral-650);
   font-weight: 500;
 }
 
 .progressBar {
   height: 8px;
-  background: #e2e8f0;
+  background: var(--neutral-200);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .progressFill {
   height: 100%;
-  background: linear-gradient(90deg, #3182ce, #63b3ed);
+  background: linear-gradient(90deg, var(--info-620), var(--info-300));
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -199,13 +200,13 @@
 
 .infoIcon {
   font-size: 1.1rem;
-  color: #a0aec0;
+  color: var(--neutral-350);
   cursor: help;
   transition: color 0.2s;
 }
 
 .infoIcon:hover {
-  color: #3182ce;
+  color: var(--info-620);
 }
 
 .progressTooltip {
@@ -214,7 +215,7 @@
   right: 0;
   margin-top: 0.5rem;
   padding: 0.75rem 1rem;
-  background: #2d3748;
+  background: var(--neutral-750);
   color: white;
   font-size: 0.85rem;
   line-height: 1.5;
@@ -234,7 +235,7 @@
   right: 8px;
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
-  border-bottom: 6px solid #2d3748;
+  border-bottom: 6px solid var(--neutral-750);
 }
 
 .progressTooltipWrapper:hover .progressTooltip {
@@ -257,21 +258,21 @@
   flex: 1;
   text-align: center;
   padding: 0.75rem 0.5rem;
-  border-bottom: 3px solid #e2e8f0;
-  color: #a0aec0;
+  border-bottom: 3px solid var(--neutral-200);
+  color: var(--neutral-350);
   font-size: 0.9rem;
   font-weight: 500;
   transition: all 0.2s;
 }
 
 .progressStep.active {
-  border-color: #3182ce;
-  color: #3182ce;
+  border-color: var(--info-620);
+  color: var(--info-620);
 }
 
 .progressStep.completed {
-  border-color: #48bb78;
-  color: #48bb78;
+  border-color: var(--success-500);
+  color: var(--success-500);
 }
 
 /* ========================================
@@ -286,8 +287,8 @@
 }
 
 .draftStatus {
-  background: #edf2f7;
-  color: #4a5568;
+  background: var(--neutral-90);
+  color: var(--neutral-650);
   padding: 0.5rem 1rem;
   border-radius: 6px;
   font-size: 0.85rem;
@@ -300,8 +301,8 @@
    ======================================== */
 
 .safetyFraming {
-  background: linear-gradient(135deg, #ebf8ff 0%, #e6fffa 100%);
-  border: 1px solid #90cdf4;
+  background: linear-gradient(135deg, var(--info-100) 0%, var(--brand-25) 100%);
+  border: 1px solid var(--info-250);
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
@@ -310,13 +311,13 @@
 .safetyFramingHeader {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #2c5282;
+  color: var(--info-800);
   margin: 0 0 0.75rem 0;
 }
 
 .safetyFramingText {
   font-size: 1rem;
-  color: #2d3748;
+  color: var(--neutral-750);
   line-height: 1.6;
   margin: 0 0 1rem 0;
 }
@@ -326,8 +327,8 @@
   border-radius: 8px;
   padding: 0.875rem 1rem;
   font-size: 0.9rem;
-  color: #4a5568;
-  border-left: 3px solid #48bb78;
+  color: var(--neutral-650);
+  border-left: 3px solid var(--success-500);
 }
 
 /* ========================================
@@ -335,13 +336,13 @@
    ======================================== */
 
 .siReassurance {
-  background: #faf5ff;
-  border: 1px solid #d6bcfa;
+  background: var(--accent-purple-50);
+  border: 1px solid var(--accent-purple-100);
   border-radius: 8px;
   padding: 1rem 1.25rem;
   margin-bottom: 1.5rem;
   font-size: 0.95rem;
-  color: #553c9a;
+  color: var(--accent-purple-700);
   line-height: 1.6;
   font-style: italic;
 }
@@ -355,15 +356,16 @@
   gap: 1rem;
   margin-top: 2rem;
   padding-top: 1.5rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--neutral-200);
 }
 
 .saveButton {
+  composes: ui-button from global;
   flex: 1;
   padding: 0.875rem 1.5rem;
-  background: #edf2f7;
-  color: #4a5568;
-  border: 1px solid #cbd5e0;
+  background: var(--neutral-90);
+  color: var(--neutral-650);
+  border: 1px solid var(--neutral-300);
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 500;
@@ -372,13 +374,14 @@
 }
 
 .saveButton:hover:not(:disabled) {
-  background: #e2e8f0;
+  background: var(--neutral-200);
 }
 
 .submitButton {
+  composes: ui-button from global;
   flex: 2;
   padding: 0.875rem 1.5rem;
-  background: #3182ce;
+  background: var(--info-620);
   color: white;
   border: none;
   border-radius: 8px;
@@ -389,7 +392,7 @@
 }
 
 .submitButton:hover:not(:disabled) {
-  background: #2c5282;
+  background: var(--info-800);
 }
 
 .submitButton:disabled,
@@ -399,11 +402,12 @@
 }
 
 .backButton {
+  composes: ui-button from global;
   flex: 1;
   padding: 0.875rem 1.5rem;
   background: white;
-  color: #4a5568;
-  border: 1px solid #cbd5e0;
+  color: var(--neutral-650);
+  border: 1px solid var(--neutral-300);
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 500;
@@ -412,8 +416,8 @@
 }
 
 .backButton:hover {
-  background: #f7fafc;
-  border-color: #a0aec0;
+  background: var(--neutral-50);
+  border-color: var(--neutral-350);
 }
 
 /* ========================================
@@ -422,19 +426,19 @@
 
 .review h2 {
   font-size: 1.5rem;
-  color: #1a365d;
+  color: var(--info-900);
   margin-bottom: 0.75rem;
 }
 
 .reviewIntro {
-  color: #4a5568;
+  color: var(--neutral-650);
   line-height: 1.6;
   margin-bottom: 1.5rem;
 }
 
 .reviewSummary {
-  background: #f7fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--neutral-50);
+  border: 1px solid var(--neutral-200);
   border-radius: 8px;
   padding: 1.25rem 1.5rem;
   margin-bottom: 1.5rem;
@@ -442,11 +446,11 @@
 
 .reviewSummary p {
   margin: 0.5rem 0;
-  color: #4a5568;
+  color: var(--neutral-650);
 }
 
 .reviewSummary strong {
-  color: #2d3748;
+  color: var(--neutral-750);
 }
 
 /* ========================================
@@ -458,27 +462,27 @@
 }
 
 .riskWarning h2 {
-  color: #c53030;
+  color: var(--danger-500);
   font-size: 1.5rem;
   margin-bottom: 1rem;
 }
 
 .riskWarning > p {
-  color: #4a5568;
+  color: var(--neutral-650);
   line-height: 1.6;
   margin-bottom: 1.5rem;
 }
 
 .safetyInfo {
-  background: #fff5f5;
-  border: 1px solid #feb2b2;
+  background: var(--danger-75);
+  border: 1px solid var(--danger-200);
   border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
 }
 
 .safetyInfo h3 {
-  color: #c53030;
+  color: var(--danger-500);
   font-size: 1rem;
   margin-bottom: 0.75rem;
 }
@@ -490,7 +494,7 @@
 .safetyInfo ul {
   margin: 0;
   padding-left: 1.25rem;
-  color: #742a2a;
+  color: var(--danger-850);
 }
 
 .safetyInfo li {
@@ -499,7 +503,7 @@
 }
 
 .confirmText {
-  color: #718096;
+  color: var(--neutral-550);
   font-size: 0.95rem;
   margin-bottom: 1rem;
 }
@@ -509,27 +513,27 @@
    ======================================== */
 
 .confirmation h2 {
-  color: #1a365d;
+  color: var(--info-900);
   font-size: 1.5rem;
   margin-bottom: 1rem;
 }
 
 .confirmation > p {
-  color: #4a5568;
+  color: var(--neutral-650);
   line-height: 1.6;
   margin-bottom: 1.5rem;
 }
 
 .summaryNote {
-  background: #ebf8ff;
-  border: 1px solid #90cdf4;
+  background: var(--info-100);
+  border: 1px solid var(--info-250);
   border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
 }
 
 .summaryNote strong {
-  color: #2b6cb0;
+  color: var(--info-650);
   display: block;
   margin-bottom: 0.75rem;
 }
@@ -537,7 +541,7 @@
 .summaryNote ol {
   margin: 0;
   padding-left: 1.25rem;
-  color: #2c5282;
+  color: var(--info-800);
 }
 
 .summaryNote li {
@@ -557,7 +561,7 @@
 .completeIcon {
   width: 80px;
   height: 80px;
-  background: linear-gradient(135deg, #48bb78, #38a169);
+  background: linear-gradient(135deg, var(--success-500), var(--success-450));
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -570,14 +574,14 @@
 .completeHeader {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1a365d;
+  color: var(--info-900);
   line-height: 1.3;
   margin-bottom: 1rem;
 }
 
 .completePrimary {
   font-size: 1.05rem;
-  color: #4a5568;
+  color: var(--neutral-650);
   line-height: 1.6;
   margin-bottom: 2rem;
   max-width: 500px;
@@ -586,8 +590,8 @@
 }
 
 .whatHappensNext {
-  background: #ebf8ff;
-  border: 1px solid #90cdf4;
+  background: var(--info-100);
+  border: 1px solid var(--info-250);
   border-radius: 12px;
   padding: 1.5rem 2rem;
   margin-bottom: 1.5rem;
@@ -597,14 +601,14 @@
 .whatHappensNext h2 {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #2b6cb0;
+  color: var(--info-650);
   margin: 0 0 1rem 0;
 }
 
 .whatHappensNext ul {
   margin: 0;
   padding-left: 1.25rem;
-  color: #2c5282;
+  color: var(--info-800);
 }
 
 .whatHappensNext li {
@@ -613,20 +617,20 @@
 }
 
 .timeExpectation {
-  background: #f0fff4;
-  border: 1px solid #9ae6b4;
+  background: var(--success-75);
+  border: 1px solid var(--success-250);
   border-radius: 8px;
   padding: 1rem 1.5rem;
   margin-bottom: 1.5rem;
-  color: #276749;
+  color: var(--success-400);
 }
 
 .safetyReminder {
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
-  background: #fffaf0;
-  border: 1px solid #fbd38d;
+  background: var(--accent-orange-100);
+  border: 1px solid var(--warning-300);
   border-radius: 8px;
   padding: 1rem 1.25rem;
   margin-bottom: 2rem;
@@ -635,14 +639,15 @@
 
 .safetyReminder p {
   margin: 0;
-  color: #744210;
+  color: var(--accent-orange-700);
   font-size: 0.95rem;
   line-height: 1.5;
 }
 
 .dashboardButton {
+  composes: ui-button from global;
   padding: 0.875rem 2rem;
-  background: #3182ce;
+  background: var(--info-620);
   color: white;
   border: none;
   border-radius: 8px;
@@ -653,7 +658,7 @@
 }
 
 .dashboardButton:hover {
-  background: #2c5282;
+  background: var(--info-800);
 }
 
 /* ========================================

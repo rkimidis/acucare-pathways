@@ -80,7 +80,7 @@ export default function LoginPage() {
   return (
     <main className={styles.main}>
       <div className={styles.container}>
-        <div className={styles.logo}>AcuCare</div>
+        <div className={styles.logo}>AcuCare Pathways</div>
         <h1 className={styles.title}>Staff Sign In</h1>
 
         {!mfaRequired ? (

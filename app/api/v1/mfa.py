@@ -6,6 +6,7 @@ TOTP library like pyotp.
 """
 
 import secrets
+from urllib.parse import quote
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -75,7 +76,10 @@ def generate_provisioning_uri(secret: str, email: str) -> str:
     In production, use pyotp.TOTP(secret).provisioning_uri()
     """
     # Placeholder URI format
-    return f"otpauth://totp/AcuCare:{email}?secret={secret}&issuer=AcuCare"
+    issuer = "AcuCare Pathways"
+    label = quote(f"{issuer}:{email}")
+    issuer_param = quote(issuer)
+    return f"otpauth://totp/{label}?secret={secret}&issuer={issuer_param}"
 
 
 def verify_otp(secret: str, code: str) -> bool:

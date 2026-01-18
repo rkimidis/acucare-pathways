@@ -3,6 +3,94 @@
   max-width: 1200px;
 }
 
+/* Section Intro Header */
+.sectionIntro {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--neutral-200);
+}
+
+.sectionIntro h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--neutral-800);
+}
+
+.sectionIntro p {
+  margin: 0;
+  color: var(--neutral-600);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.introHint {
+  color: var(--neutral-500);
+  font-size: 0.875rem;
+}
+
+/* Empty States */
+.emptyStateBox {
+  background: var(--neutral-50);
+  border: 1px dashed var(--neutral-300);
+  border-radius: 0.75rem;
+  padding: 3rem 2rem;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.emptyStateIcon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.emptyStateText {
+  margin: 0;
+  color: var(--neutral-600);
+  font-size: 1rem;
+}
+
+.noAvailabilityBox {
+  background: var(--neutral-50);
+  border: 1px dashed var(--neutral-300);
+  border-radius: 0.75rem;
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+
+.noAvailabilityIcon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.noAvailabilityBox h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.125rem;
+  color: var(--neutral-800);
+}
+
+.noAvailabilityBox p {
+  margin: 0 0 1.25rem 0;
+  color: var(--neutral-600);
+}
+
+/* Tab Subtitle */
+.tabSubtitle {
+  margin: -0.5rem 0 1rem 0;
+  color: var(--neutral-500);
+  font-size: 0.875rem;
+}
+
+/* Patient Link */
+.patientLink {
+  color: var(--info-600);
+  text-decoration: none;
+}
+
+.patientLink:hover {
+  text-decoration: underline;
+}
+
 .error {
   background: var(--danger-100);
   border: 1px solid var(--danger-600);

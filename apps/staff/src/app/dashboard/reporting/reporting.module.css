@@ -1,102 +1,32 @@
-.layout {
-  display: flex;
-  min-height: 100vh;
-}
-
-.sidebar {
-  width: 250px;
-  background: #1e293b;
-  color: white;
-  display: flex;
-  flex-direction: column;
-}
-
-.sidebarHeader {
-  padding: 1.5rem;
-  border-bottom: 1px solid #334155;
-}
-
-.logo {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #60a5fa;
-}
-
-.nav {
-  flex: 1;
-  padding: 1rem 0;
-}
-
-.navItem,
-.navItemActive {
-  display: block;
-  padding: 0.75rem 1.5rem;
-  color: #94a3b8;
-  text-decoration: none;
-  transition: all 0.2s;
-}
-
-.navItem:hover {
-  background: #334155;
-  color: white;
-}
-
-.navItemActive {
-  background: #334155;
-  color: white;
-  border-left: 3px solid #60a5fa;
-}
-
-.main {
-  flex: 1;
-  background: #f8fafc;
-  padding: 2rem;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.header h1 {
-  margin: 0;
-  color: #1e293b;
-}
-
 .dateFilters {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: #64748b;
+  color: var(--neutral-500);
 }
 
 .dateInput {
+  composes: ui-input from global;
   padding: 0.5rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--neutral-200);
   border-radius: 0.375rem;
   font-size: 0.875rem;
 }
 
 .content {
+  padding: 2rem;
   max-width: 1400px;
 }
 
 .error {
-  background: #fef2f2;
-  border: 1px solid #dc2626;
-  color: #dc2626;
+  background: var(--danger-100);
+  border: 1px solid var(--danger-600);
+  color: var(--danger-600);
   padding: 1rem;
   border-radius: 0.5rem;
   margin-bottom: 1rem;
 }
 
-.loading {
-  text-align: center;
-  color: #64748b;
-  padding: 3rem;
-}
 
 /* Summary Cards */
 .summaryCards {
@@ -107,6 +37,7 @@
 }
 
 .summaryCard {
+  composes: ui-card from global;
   background: white;
   border-radius: 0.5rem;
   padding: 1.5rem;
@@ -118,13 +49,13 @@
   display: block;
   font-size: 2rem;
   font-weight: bold;
-  color: #1e293b;
+  color: var(--neutral-800);
 }
 
 .summaryLabel {
   display: block;
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--neutral-500);
   margin-top: 0.25rem;
 }
 
@@ -137,6 +68,7 @@
 }
 
 .chartCard {
+  composes: ui-card from global;
   background: white;
   border-radius: 0.5rem;
   padding: 1.5rem;
@@ -147,11 +79,11 @@
 .chartCard h2 {
   margin: 0 0 1.25rem 0;
   font-size: 1.1rem;
-  color: #1e293b;
+  color: var(--neutral-800);
 }
 
 .noData {
-  color: #94a3b8;
+  color: var(--neutral-400);
   font-style: italic;
   text-align: center;
   padding: 2rem;
@@ -188,7 +120,7 @@
 .tierBarTrack {
   flex: 1;
   height: 24px;
-  background: #f1f5f9;
+  background: var(--neutral-100);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -201,7 +133,7 @@
 
 .tierBarValue {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--neutral-500);
   min-width: 100px;
   text-align: right;
 }
@@ -222,26 +154,26 @@
 .pathwayName {
   font-size: 0.875rem;
   min-width: 120px;
-  color: #1e293b;
+  color: var(--neutral-800);
 }
 
 .pathwayBarTrack {
   flex: 1;
   height: 20px;
-  background: #f1f5f9;
+  background: var(--neutral-100);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .pathwayBarFill {
   height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  background: linear-gradient(90deg, var(--info-500), var(--info-400));
   border-radius: 4px;
 }
 
 .pathwayValue {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--neutral-500);
   min-width: 50px;
   text-align: right;
 }
@@ -260,13 +192,13 @@
 .slaTable td {
   padding: 0.75rem;
   text-align: left;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--neutral-200);
 }
 
 .slaTable th {
   font-size: 0.75rem;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--neutral-500);
   font-weight: 600;
 }
 
@@ -284,12 +216,12 @@
 }
 
 .breachHigh {
-  color: #dc2626;
+  color: var(--danger-600);
   font-weight: 600;
 }
 
 .breachLow {
-  color: #16a34a;
+  color: var(--success-600);
 }
 
 /* No-Show Stats */
@@ -309,7 +241,7 @@
   width: 150px;
   height: 150px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #f97316, #fb923c);
+  background: linear-gradient(135deg, var(--accent-orange-600), var(--accent-orange-500));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -339,14 +271,14 @@
 .noShowDetailLabel {
   display: block;
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--neutral-500);
 }
 
 .noShowDetailValue {
   display: block;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--neutral-800);
 }
 
 /* Alert Stats */
@@ -369,13 +301,13 @@
   display: block;
   font-size: 1.5rem;
   font-weight: bold;
-  color: #1e293b;
+  color: var(--neutral-800);
 }
 
 .alertStatLabel {
   display: block;
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--neutral-500);
 }
 
 .alertBySeverity {
@@ -383,7 +315,7 @@
   flex-direction: column;
   gap: 0.5rem;
   padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--neutral-200);
 }
 
 .severityRow {
@@ -394,11 +326,11 @@
 
 .severityLabel {
   text-transform: capitalize;
-  color: #1e293b;
+  color: var(--neutral-800);
 }
 
 .severityValue {
-  color: #64748b;
+  color: var(--neutral-500);
 }
 
 /* Trends Table */
@@ -415,13 +347,13 @@
 .trendsTable td {
   padding: 0.75rem;
   text-align: left;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--neutral-200);
 }
 
 .trendsTable th {
   font-size: 0.75rem;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--neutral-500);
   font-weight: 600;
 }
 
@@ -430,22 +362,22 @@
 }
 
 .trendCompleted {
-  color: #16a34a;
+  color: var(--success-600);
 }
 
 .trendDischarged {
-  color: #3b82f6;
+  color: var(--info-500);
 }
 
 .trendEscalated {
-  color: #f97316;
+  color: var(--accent-orange-600);
 }
 
 .trendDeclined {
-  color: #64748b;
+  color: var(--neutral-500);
 }
 
 .trendTotal {
   font-weight: 600;
-  color: #1e293b;
+  color: var(--neutral-800);
 }

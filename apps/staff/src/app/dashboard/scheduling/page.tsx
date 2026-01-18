@@ -133,9 +133,9 @@ export default function SchedulingPage() {
   const loadAppointments = async (clinicianId: string) => {
     try {
       const token = getToken();
-      // Get appointments for next 7 days
+      // Get appointments for next 14 days
       const startDate = new Date().toISOString().split('T')[0];
-      const endDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const endDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
       const res = await fetch(
         `/api/v1/scheduling/staff/clinicians/${clinicianId}/appointments?start_date=${startDate}&end_date=${endDate}`,
@@ -367,6 +367,16 @@ export default function SchedulingPage() {
       />
 
       <div className={styles.content}>
+        {/* Explanatory Header */}
+        <div className={styles.sectionIntro}>
+          <h2>Clinician availability &amp; capacity</h2>
+          <p>
+            Manage clinician availability and review upcoming appointments.
+            <br />
+            <span className={styles.introHint}>Patient booking is handled from triage cases or the patient portal.</span>
+          </p>
+        </div>
+
         {loading ? (
           <EmptyState title="Loading clinicians" variant="loading" />
         ) : (
@@ -386,6 +396,14 @@ export default function SchedulingPage() {
                 ))}
               </select>
             </div>
+
+            {/* Empty state before clinician selected */}
+            {!selectedClinician && (
+              <div className={styles.emptyStateBox}>
+                <div className={styles.emptyStateIcon}>📋</div>
+                <p className={styles.emptyStateText}>Select a clinician to view or manage availability</p>
+              </div>
+            )}
 
             {selectedClinician && (
               <>
@@ -423,46 +441,61 @@ export default function SchedulingPage() {
                         onClick={() => setShowAddSlot(true)}
                         className={styles.addButton}
                       >
-                        + Add Slot
+                        + Add availability
                       </button>
                     </div>
 
-                    <div className={styles.availabilityGrid}>
-                      {DAYS.map((day, idx) => (
-                        <div key={day} className={styles.dayColumn}>
-                          <h3>{day}</h3>
-                          {slotsByDay[idx].length === 0 ? (
-                            <p className={styles.noSlots}>No slots</p>
-                          ) : (
-                            slotsByDay[idx].map(slot => (
-                              <div
-                                key={slot.id}
-                                className={`${styles.slotCard} ${!slot.is_active ? styles.slotInactive : ''}`}
-                              >
-                                <span className={styles.slotTime}>
-                                  {slot.start_time} - {slot.end_time}
-                                </span>
-                                {slot.is_remote && <span className={styles.remoteBadge}>Video</span>}
-                                {slot.location && <span className={styles.location}>{slot.location}</span>}
-                                <button
-                                  onClick={() => handleToggleSlot(slot.id, slot.is_active)}
-                                  className={slot.is_active ? styles.deactivateBtn : styles.activateBtn}
+                    {availabilitySlots.length === 0 ? (
+                      <div className={styles.noAvailabilityBox}>
+                        <div className={styles.noAvailabilityIcon}>📅</div>
+                        <h3>No availability configured</h3>
+                        <p>This clinician has no available slots yet.</p>
+                        <button
+                          onClick={() => setShowAddSlot(true)}
+                          className={styles.addButton}
+                        >
+                          Add availability to enable booking
+                        </button>
+                      </div>
+                    ) : (
+                      <div className={styles.availabilityGrid}>
+                        {DAYS.map((day, idx) => (
+                          <div key={day} className={styles.dayColumn}>
+                            <h3>{day}</h3>
+                            {slotsByDay[idx].length === 0 ? (
+                              <p className={styles.noSlots}>No slots</p>
+                            ) : (
+                              slotsByDay[idx].map(slot => (
+                                <div
+                                  key={slot.id}
+                                  className={`${styles.slotCard} ${!slot.is_active ? styles.slotInactive : ''}`}
                                 >
-                                  {slot.is_active ? 'Deactivate' : 'Activate'}
-                                </button>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                                  <span className={styles.slotTime}>
+                                    {slot.start_time} - {slot.end_time}
+                                  </span>
+                                  {slot.is_remote && <span className={styles.remoteBadge}>Video</span>}
+                                  {slot.location && <span className={styles.location}>{slot.location}</span>}
+                                  <button
+                                    onClick={() => handleToggleSlot(slot.id, slot.is_active)}
+                                    className={slot.is_active ? styles.deactivateBtn : styles.activateBtn}
+                                  >
+                                    {slot.is_active ? 'Deactivate' : 'Activate'}
+                                  </button>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {/* Appointments Tab */}
                 {activeTab === 'appointments' && (
                   <div className={styles.tabContent}>
-                    <h2>Upcoming Appointments (Next 7 Days)</h2>
+                    <h2>Upcoming Appointments (Next 14 Days)</h2>
+                    <p className={styles.tabSubtitle}>Read-only view of scheduled appointments</p>
 
                     {appointments.length === 0 ? (
                       <EmptyState title="No appointments scheduled" />
@@ -470,22 +503,23 @@ export default function SchedulingPage() {
                       <table className={styles.table}>
                         <thead>
                           <tr>
-                            <th>Date & Time</th>
+                            <th>Date &amp; Time</th>
                             <th>Patient</th>
-                            <th>Status</th>
                             <th>Type</th>
-                            <th>Actions</th>
+                            <th>Status</th>
                           </tr>
                         </thead>
                         <tbody>
                           {appointments.map(apt => (
                             <tr key={apt.id}>
                               <td>{formatDateTime(apt.scheduled_start)}</td>
-                              <td>{apt.patient_id.substring(0, 8)}...</td>
                               <td>
-                                <span className={getStatusClass(apt.status)}>
-                                  {apt.status}
-                                </span>
+                                <a
+                                  href={`/dashboard/patients/${apt.patient_id}`}
+                                  className={styles.patientLink}
+                                >
+                                  {apt.patient_id.substring(0, 8)}...
+                                </a>
                               </td>
                               <td>
                                 {apt.is_remote ? 'Video' : 'In-person'}
@@ -494,19 +528,9 @@ export default function SchedulingPage() {
                                 )}
                               </td>
                               <td>
-                                <select
-                                  value={apt.status}
-                                  onChange={e => handleUpdateAppointmentStatus(apt.id, e.target.value)}
-                                  className={styles.statusSelect}
-                                >
-                                  <option value="scheduled">Scheduled</option>
-                                  <option value="confirmed">Confirmed</option>
-                                  <option value="checked_in">Checked In</option>
-                                  <option value="in_progress">In Progress</option>
-                                  <option value="completed">Completed</option>
-                                  <option value="cancelled">Cancelled</option>
-                                  <option value="no_show">No Show</option>
-                                </select>
+                                <span className={getStatusClass(apt.status)}>
+                                  {apt.status}
+                                </span>
                               </td>
                             </tr>
                           ))}

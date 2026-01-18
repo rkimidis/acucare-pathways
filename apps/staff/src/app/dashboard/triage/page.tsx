@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { getToken, removeToken } from '@/lib/auth';
+import { AppShell, EmptyState, PageHeader, SegmentedControl, StatCard, StatusBadge } from '@/ui/components';
 import styles from './triage.module.css';
 
 interface QueueItem {
@@ -132,7 +133,22 @@ export default function TriageQueuePage() {
       if (!response.ok) throw new Error('Failed to fetch queue');
 
       const data: QueueResponse = await response.json();
-      setQueue(data.items || []);
+
+      // Sort by tier priority (RED → AMBER → GREEN → BLUE) then by age (oldest first)
+      const tierPriority: Record<string, number> = {
+        red: 0,
+        amber: 1,
+        green: 2,
+        blue: 3,
+      };
+      const sortedItems = [...(data.items || [])].sort((a, b) => {
+        const tierA = tierPriority[a.tier?.toLowerCase() || 'green'] ?? 2;
+        const tierB = tierPriority[b.tier?.toLowerCase() || 'green'] ?? 2;
+        if (tierA !== tierB) return tierA - tierB;
+        // Oldest first (higher age_minutes first)
+        return (b.age_minutes || 0) - (a.age_minutes || 0);
+      });
+      setQueue(sortedItems);
       setCounts({
         total: data.total,
         red: data.red_count,
@@ -351,7 +367,92 @@ export default function TriageQueuePage() {
     return `${hours}h ${mins}m ago`;
   };
 
-  const formatRuleId = (ruleId: string) => ruleId.replace(/_/g, ' ');
+  // Map rule IDs to human-readable labels for the "Why here" display
+  const getRuleLabel = (ruleId: string): string => {
+    const ruleLabels: Record<string, string> = {
+      // Safety / escalation rules
+      'suicidal_ideation_active': 'Active safety concern',
+      'suicidal_ideation_passive': 'Safety monitoring needed',
+      'self_harm_recent': 'Recent self-harm',
+      'self_harm_history': 'Self-harm history',
+      'crisis_presentation': 'Crisis presentation',
+      'acute_risk_flagged': 'Acute risk flagged',
+      'safeguarding_concern': 'Safeguarding concern',
+
+      // Tier assignment rules
+      'red_tier_escalation': 'Urgent clinical review',
+      'amber_tier_clinical_review': 'Clinical review required',
+      'green_tier_default': 'Standard assessment',
+      'blue_tier_signpost': 'Signposting pathway',
+
+      // Pathway rules
+      'therapy_pathway_default': 'Therapy assessment',
+      'therapy_pathway_low_risk': 'Low risk – therapy pathway',
+      'medication_review_indicated': 'Medication review indicated',
+      'psychiatry_referral_indicated': 'Psychiatry referral',
+      'wellbeing_support': 'Wellbeing support',
+      'social_prescribing': 'Social prescribing',
+
+      // Assessment rules
+      'phq9_moderate': 'PHQ-9 moderate',
+      'phq9_severe': 'PHQ-9 severe',
+      'gad7_moderate': 'GAD-7 moderate',
+      'gad7_severe': 'GAD-7 severe',
+      'pcl5_threshold': 'PTSD screen positive',
+      'audit_hazardous': 'Alcohol use concern',
+
+      // Process rules
+      'incomplete_assessment': 'Incomplete assessment',
+      'consent_pending': 'Consent pending',
+      'awaiting_gp_response': 'Awaiting GP response',
+      'follow_up_due': 'Follow-up due',
+
+      // Default/fallback routing rules (human-friendly labels)
+      'FALLBACK_GREEN_THERAPY_ASSESSMENT': 'Default therapy assessment',
+      'FALLBACK_GREEN': 'Standard assessment',
+      'FALLBACK_BLUE': 'Signposting pathway',
+      'DEFAULT_THERAPY_PATHWAY': 'Default therapy assessment',
+      'DEFAULT_GREEN_ROUTING': 'Low risk – standard pathway',
+      'GREEN_THERAPY_ASSESSMENT': 'Therapy assessment',
+      'GREEN_DEFAULT': 'Low risk – standard pathway',
+      'BLUE_SIGNPOST': 'Signposting pathway',
+      'AMBER_CLINICAL_REVIEW': 'Clinical review required',
+      'RED_URGENT': 'Urgent clinical review',
+      'NO_RULES_MATCHED': 'Default assessment pathway',
+    };
+
+    // Check for exact match first
+    if (ruleLabels[ruleId]) {
+      return ruleLabels[ruleId];
+    }
+
+    // Check case-insensitive match
+    const lowerRuleId = ruleId.toLowerCase();
+    const lowerKey = Object.keys(ruleLabels).find(
+      (key) => key.toLowerCase() === lowerRuleId
+    );
+    if (lowerKey) {
+      return ruleLabels[lowerKey];
+    }
+
+    // Fallback: convert to readable format
+    // Remove common prefixes and convert to title case
+    let readable = ruleId
+      .replace(/^(FALLBACK_|DEFAULT_|RULE_)/i, '')
+      .replace(/_/g, ' ')
+      .toLowerCase();
+
+    // Title case the result
+    readable = readable.replace(/\b\w/g, (c) => c.toUpperCase());
+
+    // Make it more concise
+    readable = readable
+      .replace(/\bAssessment\b/i, 'assessment')
+      .replace(/\bPathway\b/i, 'pathway')
+      .replace(/\bTherapy\b/i, 'therapy');
+
+    return readable || 'Standard assessment';
+  };
 
   const getSlaIndicatorClass = (item: QueueItem): string => {
     if (item.sla_breached) return styles.slaBreach;
@@ -361,18 +462,27 @@ export default function TriageQueuePage() {
     return styles.slaNormal;
   };
 
-  const getTierBadgeClass = (tier: string | null): string => {
+  // Get age indicator class based on thresholds:
+  // <24h (1440 min) → neutral, 24-72h → amber, >72h → red
+  const getAgeIndicatorClass = (ageMinutes: number | null): string => {
+    if (ageMinutes === null) return '';
+    if (ageMinutes > 4320) return styles.ageRed;      // >72h
+    if (ageMinutes > 1440) return styles.ageAmber;    // 24-72h
+    return '';                                         // <24h neutral
+  };
+
+  const getTierTone = (tier: string | null) => {
     switch (tier) {
       case 'red':
-        return styles.tierRed;
+        return { tone: 'red' as const, label: 'Red' };
       case 'amber':
-        return styles.tierAmber;
+        return { tone: 'amber' as const, label: 'Amber' };
       case 'green':
-        return styles.tierGreen;
+        return { tone: 'green' as const, label: 'Green' };
       case 'blue':
-        return styles.tierBlue;
+        return { tone: 'blue' as const, label: 'Blue' };
       default:
-        return styles.tierPending;
+        return { tone: 'neutral' as const, label: 'Pending' };
     }
   };
 
@@ -393,300 +503,272 @@ export default function TriageQueuePage() {
   const dutyLabel = dutyRoster?.primary?.full_name || 'Not set';
   const assignmentValue = assignmentFilter ?? 'any';
 
-  return (
-    <div className={styles.layout}>
-      <aside className={styles.sidebar}>
-        <div className={styles.sidebarHeader}>
-          <span className={styles.logo}>AcuCare</span>
-        </div>
-        <nav className={styles.nav}>
-          <Link href="/dashboard" className={styles.navItem}>
-            Dashboard
-          </Link>
-          <Link href="/dashboard/triage" className={styles.navItemActive}>
-            Triage Queue
-          </Link>
-          <Link href="/dashboard/patients" className={styles.navItem}>
-            Patients
-          </Link>
-          <Link href="/dashboard/audit" className={styles.navItem}>
-            Audit Log
-          </Link>
-          <Link href="/governance/pilot-feedback" className={styles.navItem}>
-            Pilot Feedback
-          </Link>
-        </nav>
-      </aside>
+  const handleLogout = () => {
+    removeToken();
+    router.push('/');
+  };
 
-      <main className={styles.main}>
-        <header className={styles.header}>
-          <div>
-            <h1>Triage Queue</h1>
-            {counts && counts.breached > 0 && (
-              <div className={styles.breachAlert}>
-                {counts.breached} case{counts.breached !== 1 ? 's' : ''} breached SLA
-              </div>
-            )}
-          </div>
+  return (
+    <AppShell activeNav="triage" onSignOut={handleLogout}>
+      <PageHeader
+        title="Triage Queue"
+        breadcrumb={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Triage Queue' },
+        ]}
+        statusPill={
+          counts && counts.breached > 0 ? (
+            <StatusBadge
+              tone="red"
+              label={`${counts.breached} SLA breached`}
+            />
+          ) : undefined
+        }
+        actions={
           <div className={styles.headerActions}>
-            <div className={styles.assignmentFilters}>
-              <button
-                className={`${styles.filterChip} ${assignmentValue === 'any' ? styles.filterChipActive : ''}`}
-                onClick={() => handleAssignmentFilterChange('any')}
-              >
-                All
-              </button>
-              <button
-                className={`${styles.filterChip} ${assignmentValue === 'unassigned' ? styles.filterChipActive : ''}`}
-                onClick={() => handleAssignmentFilterChange('unassigned')}
-              >
-                Unassigned
-              </button>
-              <button
-                className={`${styles.filterChip} ${assignmentValue === 'me' ? styles.filterChipActive : ''}`}
-                onClick={() => handleAssignmentFilterChange('me')}
-              >
-                Assigned to me
-              </button>
-              <button
-                className={`${styles.filterChip} ${assignmentValue === 'others' ? styles.filterChipActive : ''}`}
-                onClick={() => handleAssignmentFilterChange('others')}
-              >
-                Assigned to others
-              </button>
-            </div>
+            <SegmentedControl
+              options={[
+                { label: 'All', value: 'any' },
+                { label: 'Unassigned', value: 'unassigned' },
+                { label: 'Assigned to me', value: 'me' },
+                { label: 'Assigned to others', value: 'others' },
+              ]}
+              value={assignmentValue}
+              onChange={(value) => handleAssignmentFilterChange(value as AssignmentFilter)}
+            />
             <span className={styles.dutyIndicator}>
               Duty clinician: {dutyLabel}
             </span>
           </div>
-        </header>
+        }
+      />
 
-        {error && <div className={styles.error}>{error}</div>}
-        {isStale && lastFetchedAt && (
-          <div className={styles.staleBanner}>
-            Warning: data may be stale (last refreshed {formatRelativeTime(lastFetchedAt.toISOString())})
-          </div>
-        )}
-
-        {/* Queue Counts */}
-        {counts && (
-          <div className={styles.countsGrid}>
-            <button
-              className={`${styles.countCard} ${filter === 'all' ? styles.countCardActive : ''}`}
-              onClick={() => handleFilterChange('all')}
-            >
-              <span className={styles.countValue}>{counts.total}</span>
-              <span className={styles.countLabel}>All Pending</span>
-            </button>
-            <button
-              className={`${styles.countCard} ${styles.countCardRed} ${filter === 'red' ? styles.countCardActive : ''}`}
-              onClick={() => handleFilterChange('red')}
-            >
-              <span className={styles.countValue}>{counts.red}</span>
-              <span className={styles.countLabel}>RED</span>
-            </button>
-            <button
-              className={`${styles.countCard} ${styles.countCardAmber} ${filter === 'amber' ? styles.countCardActive : ''}`}
-              onClick={() => handleFilterChange('amber')}
-            >
-              <span className={styles.countValue}>{counts.amber}</span>
-              <span className={styles.countLabel}>AMBER</span>
-            </button>
-            <button
-              className={`${styles.countCard} ${styles.countCardGreen} ${filter === 'green' ? styles.countCardActive : ''}`}
-              onClick={() => handleFilterChange('green')}
-            >
-              <span className={styles.countValue}>{counts.green}</span>
-              <span className={styles.countLabel}>GREEN</span>
-            </button>
-            <button
-              className={`${styles.countCard} ${styles.countCardBlue} ${filter === 'blue' ? styles.countCardActive : ''}`}
-              onClick={() => handleFilterChange('blue')}
-            >
-              <span className={styles.countValue}>{counts.blue}</span>
-              <span className={styles.countLabel}>BLUE</span>
-            </button>
-          </div>
-        )}
-
-        {/* Queue List */}
-        <section className={styles.section}>
-          {loading ? (
-            <p className={styles.loading}>Loading queue...</p>
-          ) : queue.length === 0 ? (
-            <p className={styles.emptyState}>
-              <span>✅ No active triage cases</span>
-              <span>You're all caught up.</span>
-            </p>
-          ) : (
-            <div className={styles.caseList}>
-              {queue.map((item) => {
-                const rules = item.rules_fired.slice(0, 2).map(formatRuleId);
-                const whyHere = rules.length > 0 ? rules.join(' · ') : '--';
-                const rulesetLabel = item.ruleset_version
-                  ? `ruleset v${item.ruleset_version}`
-                  : 'ruleset version unknown';
-                const slaText = item.sla_breached
-                  ? 'SLA: breached'
-                  : item.sla_minutes_remaining !== null
-                    ? `SLA: ${formatDuration(item.sla_minutes_remaining)} left`
-                    : 'SLA: --';
-                const assignedLabel = item.assigned_to_user_initials || '--';
-                const assignedTitle = item.assigned_to_user_name || 'Unassigned';
-                const isAssigned = !!item.assigned_to_user_id;
-                const isAssignedToMe = item.assigned_to_me;
-
-                return (
-                  <div key={item.id} className={styles.caseRow}>
-                    <div className={styles.caseMain}>
-                      <div className={styles.caseHeader}>
-                        <span
-                          className={getTierBadgeClass(item.tier)}
-                          title={`Highest current risk tier (${rulesetLabel})`}
-                        >
-                          {item.tier?.toUpperCase() || 'Pending'}
-                        </span>
-                        <Link
-                          href={`/dashboard/triage/${item.id}`}
-                          className={styles.patientRef}
-                          title="Internal reference — click to view full case"
-                        >
-                          {item.patient_ref}
-                        </Link>
-                        <span
-                          className={styles.pathwayLabel}
-                          title="Current recommended pathway"
-                        >
-                          {item.pathway || '--'}
-                        </span>
-                      </div>
-                      <div
-                        className={styles.caseReason}
-                        title={`Determined automatically using ${rulesetLabel}`}
-                      >
-                        Why here: {whyHere}
-                      </div>
-                      <div className={styles.caseUpdate}>
-                        Last update: {formatRelativeTime(item.last_staff_action_at)}
-                      </div>
-                    </div>
-                    <div className={styles.caseIndicators}>
-                      <span className={styles.caseIndicator}>
-                        Age: {formatDuration(item.age_minutes)}
-                      </span>
-                      <span className={`${styles.caseIndicator} ${getSlaIndicatorClass(item)}`}>
-                        {slaText}
-                      </span>
-                      <span className={styles.caseIndicator} title={assignedTitle}>
-                        Assigned: {assignedLabel}
-                      </span>
-                    </div>
-                    <div className={styles.caseActions}>
-                      <Link
-                        href={`/dashboard/triage/${item.id}`}
-                        className={styles.openCaseButton}
-                      >
-                        Open Case
-                      </Link>
-                      {!isAssigned && canClaimCase && (
-                        <button
-                          className={styles.claimButton}
-                          type="button"
-                          onClick={() => handleClaim(item.id)}
-                        >
-                          Claim
-                        </button>
-                      )}
-                      {isAssignedToMe && (
-                        <button
-                          className={styles.unassignButton}
-                          type="button"
-                          onClick={() => handleUnassign(item.id)}
-                        >
-                          Unassign
-                        </button>
-                      )}
-                      {isAssigned && !isAssignedToMe && canOverrideAssignment && (
-                        <button
-                          className={styles.reassignButton}
-                          type="button"
-                          onClick={() => handleReassign(item.id)}
-                        >
-                          Reassign
-                        </button>
-                      )}
-                      <div className={styles.menu}>
-                        <button
-                          type="button"
-                          className={styles.menuButton}
-                          onClick={() => setActiveMenuId(activeMenuId === item.id ? null : item.id)}
-                          aria-label="More actions"
-                        >
-                          ⋮
-                        </button>
-                        {activeMenuId === item.id && (
-                          <div className={styles.menuList}>
-                            {!isAssigned && canClaimCase && (
-                              <button
-                                type="button"
-                                className={styles.menuItem}
-                                onClick={() => {
-                                  setActiveMenuId(null);
-                                  handleClaim(item.id);
-                                }}
-                              >
-                                Claim case
-                              </button>
-                            )}
-                            {isAssignedToMe && (
-                              <button
-                                type="button"
-                                className={styles.menuItem}
-                                onClick={() => {
-                                  setActiveMenuId(null);
-                                  handleUnassign(item.id);
-                                }}
-                              >
-                                Unassign case
-                              </button>
-                            )}
-                            {isAssigned && !isAssignedToMe && canOverrideAssignment && (
-                              <button
-                                type="button"
-                                className={styles.menuItem}
-                                onClick={() => {
-                                  setActiveMenuId(null);
-                                  handleReassign(item.id);
-                                }}
-                              >
-                                Reassign case
-                              </button>
-                            )}
-                            <Link
-                              href={`/dashboard/incidents?case_id=${item.id}`}
-                              className={styles.menuItem}
-                              onClick={() => setActiveMenuId(null)}
-                            >
-                              Create incident
-                            </Link>
-                            <Link
-                              href={`/dashboard/audit?entity_id=${item.id}`}
-                              className={styles.menuItem}
-                              onClick={() => setActiveMenuId(null)}
-                            >
-                              View audit trail
-                            </Link>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+      <div className={styles.content}>
+          {error && <div className={styles.error}>{error}</div>}
+          {isStale && lastFetchedAt && (
+            <div className={styles.staleBanner}>
+              Warning: data may be stale (last refreshed {formatRelativeTime(lastFetchedAt.toISOString())})
             </div>
           )}
-        </section>
-      </main>
-    </div>
+
+          {/* Queue Counts */}
+          {counts && (
+            <div className={styles.countsGrid}>
+              <StatCard
+                label="All Pending"
+                value={counts.total}
+                active={filter === 'all'}
+                onClick={() => handleFilterChange('all')}
+              />
+              <StatCard
+                label="Red"
+                value={counts.red}
+                tone="red"
+                active={filter === 'red'}
+                onClick={() => handleFilterChange('red')}
+              />
+              <StatCard
+                label="Amber"
+                value={counts.amber}
+                tone="amber"
+                active={filter === 'amber'}
+                onClick={() => handleFilterChange('amber')}
+              />
+              <StatCard
+                label="Green"
+                value={counts.green}
+                tone="green"
+                active={filter === 'green'}
+                onClick={() => handleFilterChange('green')}
+              />
+              <StatCard
+                label="Blue"
+                value={counts.blue}
+                tone="blue"
+                active={filter === 'blue'}
+                onClick={() => handleFilterChange('blue')}
+              />
+            </div>
+          )}
+
+          {/* Queue List */}
+          <section className={styles.section}>
+            {loading ? (
+              <EmptyState title="Loading queue" variant="loading" />
+            ) : queue.length === 0 ? (
+              <EmptyState
+                title="No active triage cases"
+                message="You're all caught up."
+              />
+            ) : (
+              <div className={styles.caseList}>
+                {queue.map((item) => {
+                  const rules = item.rules_fired.slice(0, 2).map(getRuleLabel);
+                  const whyHere = rules.length > 0 ? rules.join(' · ') : '--';
+                  const rulesetLabel = item.ruleset_version
+                    ? `ruleset v${item.ruleset_version}`
+                    : 'ruleset version unknown';
+                  const slaText = item.sla_breached
+                    ? 'SLA: breached'
+                    : item.sla_minutes_remaining !== null
+                      ? `SLA: ${formatDuration(item.sla_minutes_remaining)} left`
+                      : 'SLA: Not started';
+                  const assignedLabel = item.assigned_to_user_initials || '--';
+                  const assignedTitle = item.assigned_to_user_name || 'Unassigned';
+                  const isAssigned = !!item.assigned_to_user_id;
+                  const isAssignedToMe = item.assigned_to_me;
+                  const tierStatus = getTierTone(item.tier);
+                  const ageClass = getAgeIndicatorClass(item.age_minutes);
+
+                  return (
+                    <div key={item.id} className={styles.caseRow}>
+                      <div className={styles.caseMain}>
+                        <div className={styles.caseHeader}>
+                          <StatusBadge
+                            tone={tierStatus.tone}
+                            label={tierStatus.label}
+                          />
+                          <Link
+                            href={`/dashboard/triage/${item.id}`}
+                            className={styles.patientRef}
+                            title="Internal reference — click to view full case"
+                          >
+                            {item.patient_ref}
+                          </Link>
+                          <span
+                            className={styles.pathwayLabel}
+                            title="Current recommended pathway"
+                          >
+                            {item.pathway || '--'}
+                          </span>
+                        </div>
+                        <div
+                          className={styles.caseReason}
+                          title={`Determined automatically using ${rulesetLabel}`}
+                        >
+                          Why here: {whyHere}
+                        </div>
+                        <div className={styles.caseUpdate}>
+                          Last update: {formatRelativeTime(item.last_staff_action_at)}
+                        </div>
+                      </div>
+                      <div className={styles.caseIndicators}>
+                        <span className={`${styles.caseIndicator} ${ageClass}`}>
+                          Age: {formatDuration(item.age_minutes)}
+                        </span>
+                        <span className={`${styles.caseIndicator} ${getSlaIndicatorClass(item)}`}>
+                          {slaText}
+                        </span>
+                        <span className={styles.caseIndicator} title={assignedTitle}>
+                          Assigned: {assignedLabel}
+                        </span>
+                      </div>
+                      <div className={styles.caseActions}>
+                        <Link
+                          href={`/dashboard/triage/${item.id}`}
+                          className={styles.openCaseButton}
+                        >
+                          Open Case
+                        </Link>
+                        {!isAssigned && canClaimCase && (
+                          <button
+                            className={styles.claimButton}
+                            type="button"
+                            onClick={() => handleClaim(item.id)}
+                          >
+                            Claim
+                          </button>
+                        )}
+                        {isAssignedToMe && (
+                          <button
+                            className={styles.unassignButton}
+                            type="button"
+                            onClick={() => handleUnassign(item.id)}
+                          >
+                            Unassign
+                          </button>
+                        )}
+                        {isAssigned && !isAssignedToMe && canOverrideAssignment && (
+                          <button
+                            className={styles.reassignButton}
+                            type="button"
+                            onClick={() => handleReassign(item.id)}
+                          >
+                            Reassign
+                          </button>
+                        )}
+                        <div className={styles.menu}>
+                          <button
+                            type="button"
+                            className={styles.menuButton}
+                            onClick={() => setActiveMenuId(activeMenuId === item.id ? null : item.id)}
+                            aria-label="More actions"
+                          >
+                            ⋮
+                          </button>
+                          {activeMenuId === item.id && (
+                            <div className={styles.menuList}>
+                              {!isAssigned && canClaimCase && (
+                                <button
+                                  type="button"
+                                  className={styles.menuItem}
+                                  onClick={() => {
+                                    setActiveMenuId(null);
+                                    handleClaim(item.id);
+                                  }}
+                                >
+                                  Claim case
+                                </button>
+                              )}
+                              {isAssignedToMe && (
+                                <button
+                                  type="button"
+                                  className={styles.menuItem}
+                                  onClick={() => {
+                                    setActiveMenuId(null);
+                                    handleUnassign(item.id);
+                                  }}
+                                >
+                                  Unassign case
+                                </button>
+                              )}
+                              {isAssigned && !isAssignedToMe && canOverrideAssignment && (
+                                <button
+                                  type="button"
+                                  className={styles.menuItem}
+                                  onClick={() => {
+                                    setActiveMenuId(null);
+                                    handleReassign(item.id);
+                                  }}
+                                >
+                                  Reassign case
+                                </button>
+                              )}
+                              <Link
+                                href={`/dashboard/incidents?case_id=${item.id}`}
+                                className={styles.menuItem}
+                                onClick={() => setActiveMenuId(null)}
+                              >
+                                Create incident
+                              </Link>
+                              <Link
+                                href={`/dashboard/audit?entity_id=${item.id}`}
+                                className={styles.menuItem}
+                                onClick={() => setActiveMenuId(null)}
+                              >
+                                View audit trail
+                              </Link>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+      </div>
+    </AppShell>
   );
 }

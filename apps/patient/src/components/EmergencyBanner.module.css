@@ -1,6 +1,6 @@
 .banner {
-  background: linear-gradient(135deg, #fef3cd 0%, #fff3cd 100%);
-  border: 2px solid #ffc107;
+  background: linear-gradient(135deg, var(--warning-75) 0%, var(--warning-50) 100%);
+  border: 2px solid var(--warning-400);
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1.5rem;
@@ -12,7 +12,7 @@
 }
 
 .icon {
-  color: #856404;
+  color: var(--warning-850);
   flex-shrink: 0;
   margin-top: 2px;
 }
@@ -23,13 +23,13 @@
 
 .content strong {
   display: block;
-  color: #856404;
+  color: var(--warning-850);
   font-size: 1rem;
   margin-bottom: 0.5rem;
 }
 
 .content p {
-  color: #664d03;
+  color: var(--warning-820);
   margin: 0 0 0.75rem 0;
   font-size: 0.9rem;
   line-height: 1.5;
@@ -42,7 +42,7 @@
 }
 
 .emergencyLink {
-  background: #dc3545;
+  background: var(--danger-550);
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 4px;
@@ -53,11 +53,11 @@
 }
 
 .emergencyLink:hover {
-  background: #c82333;
+  background: var(--danger-650);
 }
 
 .helplineLink {
-  background: #28a745;
+  background: var(--success-550);
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 4px;
@@ -68,16 +68,17 @@
 }
 
 .helplineLink:hover {
-  background: #218838;
+  background: var(--success-650);
 }
 
 .dismissButton {
+  composes: ui-button from global;
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
   background: transparent;
   border: none;
-  color: #856404;
+  color: var(--warning-850);
   cursor: pointer;
   padding: 0.25rem;
   opacity: 0.7;
@@ -90,8 +91,8 @@
 
 /* AMBER variant */
 .bannerAmber {
-  background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
-  border: 2px solid #f59e0b;
+  background: linear-gradient(135deg, var(--warning-50) 0%, var(--warning-60) 100%);
+  border: 2px solid var(--warning-500);
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1.5rem;
@@ -103,25 +104,25 @@
 }
 
 .bannerAmber .icon {
-  color: #92400e;
+  color: var(--warning-700);
 }
 
 .bannerAmber .content strong {
-  color: #92400e;
+  color: var(--warning-700);
 }
 
 .bannerAmber .content p {
-  color: #78350f;
+  color: var(--warning-900);
 }
 
 .bannerAmber .dismissButton {
-  color: #92400e;
+  color: var(--warning-700);
 }
 
 /* RED variant */
 .bannerRed {
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-  border: 2px solid #dc2626;
+  background: linear-gradient(135deg, var(--danger-150) 0%, var(--danger-300) 100%);
+  border: 2px solid var(--danger-600);
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1.5rem;
@@ -133,19 +134,19 @@
 }
 
 .bannerRed .icon {
-  color: #991b1b;
+  color: var(--danger-800);
 }
 
 .bannerRed .content strong {
-  color: #991b1b;
+  color: var(--danger-800);
 }
 
 .bannerRed .content p {
-  color: #7f1d1d;
+  color: var(--danger-900);
 }
 
 .bannerRed .dismissButton {
-  color: #991b1b;
+  color: var(--danger-800);
 }
 
 @media (max-width: 600px) {

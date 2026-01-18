@@ -49,6 +49,7 @@ PUBLIC_ENDPOINTS = {
     "/api/v1/auth/staff/login",
     "/api/v1/auth/patient/request-magic-link",
     "/api/v1/auth/patient/login",
+    "/api/v1/auth/patient/register",
     "/api/v1/auth/staff/mfa/verify",
 }
 

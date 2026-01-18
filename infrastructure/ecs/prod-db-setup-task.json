@@ -1,0 +1,36 @@
+{
+  "family": "acucare-prod-db-setup",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::326246079459:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "db-setup",
+      "image": "326246079459.dkr.ecr.eu-west-2.amazonaws.com/acucare-pathways/prod/api:latest",
+      "essential": true,
+      "entryPoint": ["sh", "-c"],
+      "command": [
+        "echo 'import asyncio, asyncpg, os\nurl = os.environ[\"DATABASE_URL\"].replace(\"postgresql+asyncpg://\", \"postgresql://\").replace(\"/nafs_health\", \"/postgres\")\nasync def run():\n    conn = await asyncpg.connect(url)\n    print(\"Connected to postgres database\")\n    exists = await conn.fetchval(\"SELECT 1 FROM pg_database WHERE datname = $1\", \"acucare_pathways\")\n    if exists:\n        print(\"Database acucare_pathways already exists\")\n    else:\n        await conn.execute(\"CREATE DATABASE acucare_pathways\")\n        print(\"Created database acucare_pathways\")\n    await conn.close()\n    print(\"Done\")\nasyncio.run(run())' > /tmp/setup.py && python /tmp/setup.py"
+      ],
+      "environment": [
+        {"name": "ENV", "value": "production"}
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:326246079459:secret:acucare-pathways/prod/database_url-cdv4Vl"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/acucare-pathways/prod/api",
+          "awslogs-region": "eu-west-2",
+          "awslogs-stream-prefix": "db-setup"
+        }
+      }
+    }
+  ]
+}

@@ -10,6 +10,7 @@ from app.api.v1 import (
     change_control,
     consent,
     dashboard,
+    duty_roster,
     evidence_export,
     health,
     incidents,
@@ -17,7 +18,9 @@ from app.api.v1 import (
     messaging,
     mfa,
     monitoring,
+    patients,
     pilot,
+    pilot_feedback,
     reporting,
     scheduling,
     triage_cases,
@@ -78,11 +81,24 @@ api_router.include_router(
     tags=["consent"],
 )
 
+# Patients
+api_router.include_router(
+    patients.router,
+    tags=["patients"],
+)
+
 # Staff Dashboard
 api_router.include_router(
     dashboard.router,
     prefix="/dashboard",
     tags=["dashboard"],
+)
+
+# Duty Roster
+api_router.include_router(
+    duty_roster.router,
+    prefix="/duty-roster",
+    tags=["duty-roster"],
 )
 
 # Scheduling (Sprint 5)
@@ -142,4 +158,10 @@ api_router.include_router(
     pilot.router,
     prefix="/pilot",
     tags=["pilot"],
+)
+
+# Pilot Feedback
+api_router.include_router(
+    pilot_feedback.router,
+    tags=["pilot-feedback"],
 )

@@ -4,7 +4,7 @@
   align-items: center;
   min-height: 100vh;
   padding: 2rem;
-  background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+  background: linear-gradient(135deg, var(--brand-600) 0%, var(--brand-800) 100%);
 }
 
 .container {
@@ -38,10 +38,11 @@
 }
 
 .primaryButton {
+  composes: ui-button from global;
   display: inline-block;
   padding: 0.875rem 2rem;
   background-color: white;
-  color: #0f766e;
+  color: var(--brand-600);
   border-radius: 0.5rem;
   font-weight: 600;
   text-decoration: none;

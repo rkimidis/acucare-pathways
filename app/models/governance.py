@@ -56,6 +56,15 @@ class IncidentCategory(str, Enum):
     OTHER = "other"
 
 
+class PilotFeedbackWindow(str, Enum):
+    """Pilot feedback submission windows."""
+
+    WEEK_1 = "WEEK_1"
+    WEEK_4 = "WEEK_4"
+    POST_CASE = "POST_CASE"
+    AD_HOC = "AD_HOC"
+
+
 class Incident(Base, TimestampMixin, SoftDeleteMixin):
     """Clinical incident linked to a triage case."""
 
@@ -154,6 +163,97 @@ class Incident(Base, TimestampMixin, SoftDeleteMixin):
             raise ValueError("Can only reopen CLOSED incidents")
         self.status = IncidentStatus.OPEN.value
         self.review_notes = (self.review_notes or "") + f"\n\nReopened: {reason}"
+
+
+class PilotFeedbackResponse(Base, TimestampMixin):
+    """Clinician pilot feedback response."""
+
+    __tablename__ = "pilot_feedback_responses"
+
+    submitted_by_user_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True,
+    )
+    window: Mapped[str] = mapped_column(
+        String(20),
+        default=PilotFeedbackWindow.AD_HOC.value,
+        nullable=False,
+        index=True,
+    )
+    case_id: Mapped[Optional[str]] = mapped_column(
+        String(36),
+        ForeignKey("triage_cases.id"),
+        nullable=True,
+        index=True,
+    )
+    role_snapshot: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+    )
+    answers_json: Mapped[dict] = mapped_column(
+        JSON,
+        nullable=False,
+    )
+    free_text_json: Mapped[Optional[dict]] = mapped_column(
+        JSON,
+        nullable=True,
+    )
+    environment: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="dev",
+    )
+    is_dummy: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+
+    __table_args__ = (
+        Index("ix_pilot_feedback_window_created", "window", "created_at"),
+    )
+
+
+class DutyRoster(Base, TimestampMixin):
+    """Duty roster assignment for on-call coverage."""
+
+    __tablename__ = "duty_roster"
+
+    starts_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        index=True,
+    )
+    ends_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        index=True,
+    )
+    primary_user_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("users.id"),
+        nullable=False,
+    )
+    backup_user_id: Mapped[Optional[str]] = mapped_column(
+        String(36),
+        ForeignKey("users.id"),
+        nullable=True,
+    )
+    notes: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True,
+    )
+    created_by_user_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("users.id"),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        Index("ix_duty_roster_window", "starts_at", "ends_at"),
+    )
 
 
 class ApprovalStatus(str, Enum):

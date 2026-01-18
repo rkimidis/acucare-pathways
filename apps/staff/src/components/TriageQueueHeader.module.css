@@ -5,27 +5,27 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  border: 1px solid #f59e0b;
+  background: linear-gradient(135deg, var(--warning-100) 0%, var(--warning-200) 100%);
+  border: 1px solid var(--warning-500);
   border-radius: 8px;
   margin-bottom: 1rem;
 }
 
 .icon {
-  color: #d97706;
+  color: var(--warning-600);
   flex-shrink: 0;
 }
 
 .text {
   margin: 0;
-  color: #92400e;
+  color: var(--warning-700);
   font-size: 0.9rem;
   font-weight: 500;
   flex: 1;
 }
 
 .count {
-  background: #f59e0b;
+  background: var(--warning-500);
   color: white;
   font-size: 0.8rem;
   font-weight: 600;

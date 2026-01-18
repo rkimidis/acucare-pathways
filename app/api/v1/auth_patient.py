@@ -5,10 +5,13 @@ from fastapi import APIRouter, HTTPException, Request, status
 from app.api.deps import DbSession, get_client_ip
 from app.core.config import settings
 from app.models.audit_event import ActorType
+from app.models.patient import Patient
 from app.schemas.auth import (
     MagicLinkRequest,
     MagicLinkResponse,
     PatientLoginRequest,
+    PatientRegisterRequest,
+    PatientRegisterResponse,
     TokenResponse,
 )
 from app.services.audit import write_audit_event
@@ -195,4 +198,77 @@ async def patient_login(
         access_token=access_token,
         token_type="bearer",
         expires_in=settings.access_token_expire_minutes * 60,
+    )
+
+
+@router.post(
+    "/register",
+    response_model=PatientRegisterResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Register new patient",
+    description="Register a new patient account. After registration, use request-magic-link to login.",
+)
+async def register_patient(
+    request: Request,
+    body: PatientRegisterRequest,
+    session: DbSession,
+) -> PatientRegisterResponse:
+    """Register a new patient account.
+
+    Creates a new patient in the system. The patient will need to use
+    magic link authentication to access their account.
+
+    Args:
+        request: FastAPI request
+        body: Patient registration details
+        session: Database session
+
+    Returns:
+        Created patient details
+
+    Raises:
+        HTTPException: If email already registered
+    """
+    auth_service = AuthService(session)
+
+    # Check if email already exists
+    existing = await auth_service.get_patient_by_email(body.email)
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A patient with this email already exists",
+        )
+
+    # Create patient
+    patient = Patient(
+        email=body.email.lower(),
+        first_name=body.first_name,
+        last_name=body.last_name,
+        phone_e164=body.phone,
+        is_active=True,
+    )
+    session.add(patient)
+    await session.commit()
+    await session.refresh(patient)
+
+    # Log registration
+    await write_audit_event(
+        session=session,
+        actor_type=ActorType.PATIENT,
+        actor_id=patient.id,
+        actor_email=patient.email,
+        action="patient_registered",
+        action_category="auth",
+        entity_type="patient",
+        entity_id=patient.id,
+        ip_address=get_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+    )
+
+    return PatientRegisterResponse(
+        id=patient.id,
+        email=patient.email,
+        first_name=patient.first_name,
+        last_name=patient.last_name,
+        message="Registration successful. Please request a magic link to sign in.",
     )

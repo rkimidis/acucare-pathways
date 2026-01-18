@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getToken, removeToken } from '@/lib/auth';
+import { AppShell, EmptyState, PageHeader, SegmentedControl, StatCard, StatusBadge } from '@/ui/components';
 import styles from './dashboard.module.css';
 
 interface QueueItem {
@@ -354,57 +355,42 @@ export default function DashboardPage() {
   const lastUpdatedMinutes = lastSuccessAt
     ? Math.floor((Date.now() - lastSuccessAt.getTime()) / 60000)
     : null;
+  const statusTone = error || isStale ? 'amber' : 'green';
+  const statusLabel = error || isStale ? 'Data delayed' : 'System operational';
 
   return (
-    <div className={styles.layout}>
-      <aside className={styles.sidebar}>
-        <div className={styles.sidebarHeader}>
-          <span className={styles.logo}>AcuCare</span>
-        </div>
-        <nav className={styles.nav}>
-          <Link href="/dashboard" className={styles.navItemActive}>
-            Dashboard
-          </Link>
-          <Link href="/dashboard/triage" className={styles.navItem}>
-            Triage Cases
-          </Link>
-          <Link href="/dashboard/patients" className={styles.navItem}>
-            Patients
-          </Link>
-          <Link href="/dashboard/referrals" className={styles.navItem}>
-            Referrals
-          </Link>
-          <Link href="/dashboard/audit" className={styles.navItem}>
-            Audit Log
-          </Link>
-          <Link href="/governance/pilot-feedback" className={styles.navItem}>
-            Pilot Feedback
-          </Link>
-        </nav>
-        <div className={styles.sidebarFooter}>
-          <button onClick={handleLogout} className={styles.logoutButton}>
-            Sign Out
-          </button>
-        </div>
-      </aside>
+    <AppShell activeNav="dashboard" onSignOut={handleLogout}>
+      <PageHeader
+        title="Dashboard"
+        metaText={`Last data refresh: ${formatLastSuccess(lastSuccessAt)}`}
+        statusPill={<StatusBadge tone={statusTone} label={statusLabel} />}
+        className={styles.pageHeader}
+      />
 
-      <main className={styles.main}>
-        <header className={styles.header}>
-          <h1>Dashboard</h1>
-        </header>
-
-        <div className={styles.content}>
-          <div className={`${styles.statusBanner} ${styles.statusBannerTop}`}>
-            {error || isStale ? (
+      <div className={styles.content}>
+          {/* Show warning banner only when there's an issue */}
+          {(error || isStale) && (
+            <div className={`${styles.statusBanner} ${styles.statusBannerWarning}`}>
               <p className={styles.statusTitle}>
                 Warning: some services delayed - triage data last updated{' '}
                 {lastUpdatedMinutes === null ? '--' : `${lastUpdatedMinutes}m`} ago
               </p>
-            ) : (
-              <p className={styles.statusTitle}>System operational</p>
-            )}
-            <p className={styles.statusMeta}>Last data refresh: {formatLastSuccess(lastSuccessAt)}</p>
-          </div>
+            </div>
+          )}
+
+          {/* Urgent action cue - only show when there are cases requiring attention */}
+          {urgentCases.length > 0 && (
+            <div className={styles.actionCue}>
+              <span className={styles.actionCueIcon}>⚠️</span>
+              <span>
+                <strong>{urgentCases.length} case{urgentCases.length !== 1 ? 's' : ''} require{urgentCases.length === 1 ? 's' : ''} review</strong>
+                {' '}— Oldest: {formatDuration(urgentCases[0]?.age_minutes)} ago
+              </span>
+              <Link href="/dashboard/triage?tier=red,amber" className={styles.actionCueLink}>
+                Review now →
+              </Link>
+            </div>
+          )}
 
           {feedbackConfig?.banner_enabled && feedbackWindowLabel && (
             <div className={styles.feedbackBanner}>
@@ -419,108 +405,97 @@ export default function DashboardPage() {
           )}
 
           <div className={styles.kpiStrip}>
-            <Link
+            <StatCard
               href={buildQueueLink('/dashboard/triage')}
-              className={`${styles.statCard} ${styles.statCardLink}`}
-            >
-              <span className={styles.statValue}>{statValue(queueCounts?.total ?? null)}</span>
-              <span className={styles.statLabel}>Active</span>
-              <span className={styles.statCta}>View cases -&gt;</span>
-            </Link>
-            <Link
+              label="Active"
+              value={statValue(queueCounts?.total ?? null)}
+              footer={<span className={styles.statCta}>View cases →</span>}
+            />
+            <StatCard
               href={buildQueueLink('/dashboard/triage?tier=red')}
-              className={`${styles.statCard} ${styles.statCardLink} ${
-                redOldestBreached ? styles.statCardBreach : ''
-              }`}
-            >
-              <span className={styles.statValue}>{statValue(queueCounts?.red ?? null)}</span>
-              <span className={styles.statLabel}>RED</span>
-              <span
-                className={`${styles.statSubtext} ${
-                  redOldestBreached ? styles.statSubtextBreach : ''
-                }`}
-              >
-                Oldest case: {formatOldest(redOldestMinutes)}
-              </span>
-              <span className={styles.statCta}>View cases -&gt;</span>
-            </Link>
-            <Link
+              label="Red"
+              value={statValue(queueCounts?.red ?? null)}
+              tone="red"
+              subtitle={
+                <span className={redOldestBreached ? styles.statSubtextBreach : undefined}>
+                  Oldest case: {formatOldest(redOldestMinutes)}
+                </span>
+              }
+              footer={<span className={styles.statCta}>View cases →</span>}
+            />
+            <StatCard
               href={buildQueueLink('/dashboard/triage?tier=amber')}
-              className={`${styles.statCard} ${styles.statCardLink} ${
-                amberOldestBreached ? styles.statCardBreach : ''
-              }`}
-            >
-              <span className={styles.statValue}>{statValue(queueCounts?.amber ?? null)}</span>
-              <span className={styles.statLabel}>AMBER</span>
-              <span
-                className={`${styles.statSubtext} ${
-                  amberOldestBreached ? styles.statSubtextBreach : ''
-                }`}
-              >
-                Oldest case: {formatOldest(amberOldestMinutes)}
-              </span>
-              <span className={styles.statCta}>View cases -&gt;</span>
-            </Link>
-            <Link
+              label="Amber"
+              value={statValue(queueCounts?.amber ?? null)}
+              tone="amber"
+              subtitle={
+                <span className={amberOldestBreached ? styles.statSubtextBreach : undefined}>
+                  Oldest case: {formatOldest(amberOldestMinutes)}
+                </span>
+              }
+              footer={<span className={styles.statCta}>View cases →</span>}
+            />
+            <StatCard
               href={buildQueueLink('/dashboard/triage?case_status=pending')}
-              className={`${styles.statCard} ${styles.statCardLink}`}
-            >
-              <span className={styles.statValue}>{statValue(pendingCount)}</span>
-              <span className={styles.statLabel}>Pending</span>
-              <span className={styles.statCta}>View cases -&gt;</span>
-            </Link>
+              label="Pending"
+              value={statValue(pendingCount)}
+              footer={<span className={styles.statCta}>View cases →</span>}
+            />
           </div>
 
           <section className={styles.dutyPanel}>
             <div>
               <h2>On duty today</h2>
-              <p className={styles.dutyLine}>
-                {dutyPrimaryName} <span>({dutyPrimaryRole || '—'})</span>
-              </p>
-              <p className={styles.dutyLine}>
-                Backup: {dutyBackupName} <span>({dutyBackupRole || '—'})</span>
-              </p>
+              {!dutyRoster?.primary ? (
+                <div className={styles.dutyWarning}>
+                  <span className={styles.dutyWarningIcon}>⚠️</span>
+                  <div>
+                    <p className={styles.dutyWarningText}>No duty clinician set for today</p>
+                    <p className={styles.dutyWarningHint}>Please assign one to ensure clear responsibility</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className={styles.dutyLine}>
+                    {dutyPrimaryName} <span>({dutyPrimaryRole || '—'})</span>
+                  </p>
+                  <p className={styles.dutyLine}>
+                    Backup: {dutyBackupName} <span>({dutyBackupRole || '—'})</span>
+                  </p>
+                </>
+              )}
             </div>
-            <div className={styles.myCases}>
+            <Link href="/dashboard/triage?assigned=me" className={styles.myCasesLink}>
               <p className={styles.myCasesLabel}>My active cases</p>
               <p className={styles.myCasesValue}>{statValue(myActiveCount)}</p>
-            </div>
+              <span className={styles.myCasesCta}>View my cases →</span>
+            </Link>
           </section>
 
           <section className={styles.prioritySection}>
             <div className={styles.priorityHeader}>
               <h2>Priority cases</h2>
               <div className={styles.priorityControls}>
-                <div className={styles.queueToggle}>
-                  <button
-                    className={`${styles.queueToggleButton} ${
-                      scopeValue === 'all' ? styles.queueToggleActive : ''
-                    }`}
-                    onClick={() => setQueueScope('all')}
-                  >
-                    All cases
-                  </button>
-                  <button
-                    className={`${styles.queueToggleButton} ${
-                      scopeValue === 'me' ? styles.queueToggleActive : ''
-                    }`}
-                    onClick={() => setQueueScope('me')}
-                  >
-                    My cases
-                  </button>
-                </div>
+                <SegmentedControl
+                  options={[
+                    { label: 'All cases', value: 'all' },
+                    { label: 'My cases', value: 'me' },
+                  ]}
+                  value={scopeValue}
+                  onChange={(value) => setQueueScope(value as QueueScope)}
+                />
                 <Link href={buildQueueLink('/dashboard/triage')} className={styles.priorityLink}>
                   View full queue
                 </Link>
               </div>
             </div>
             {loading && !hasData ? (
-              <p className={styles.emptyState}>Loading priority cases...</p>
+              <EmptyState title="Loading priority cases" variant="loading" />
             ) : urgentCases.length === 0 ? (
-              <p className={styles.emptyState}>
-                <span>✅ No urgent cases right now</span>
-                <span>You're all caught up.</span>
-              </p>
+              <EmptyState
+                title="No urgent cases right now"
+                message="You're all caught up."
+              />
             ) : (
               <div className={styles.priorityList}>
                 {urgentCases.map((item) => {
@@ -573,12 +548,11 @@ export default function DashboardPage() {
             <Link href="/dashboard/incidents" className={styles.footerLink}>
               System status
             </Link>
-            <Link href="/dashboard/monitoring" className={styles.footerLink}>
+            <Link href="/dashboard/monitoring" className={styles.footerLinkPrimary}>
               Help / escalation protocol
             </Link>
           </div>
-        </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

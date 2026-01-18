@@ -756,6 +756,91 @@ async def unassign_triage_case(
     return TriageCaseRead.model_validate(case)
 
 
+class HandoverRequest(BaseModel):
+    """Request body for handover with note."""
+
+    note: str = Field(..., min_length=3, max_length=2000, description="Handover note for the next clinician")
+
+
+@router.post(
+    "/{case_id}/handover",
+    response_model=TriageCaseRead,
+    status_code=status.HTTP_200_OK,
+    summary="Handover triage case",
+    description="Unassign triage case with a handover note for shift changes",
+    dependencies=[Depends(require_permissions(Permission.TRIAGE_WRITE))],
+)
+async def handover_triage_case(
+    case_id: str,
+    body: HandoverRequest,
+    session: DbSession,
+    user: CurrentUser,
+) -> TriageCaseRead:
+    """Unassign a triage case with a handover note for the next clinician."""
+    result = await session.execute(
+        select(TriageCase).where(TriageCase.id == case_id)
+    )
+    case = result.scalar_one_or_none()
+
+    if not case:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Triage case not found",
+        )
+
+    assigned_user_id = get_assigned_user_id(case)
+    if not assigned_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Case is not currently assigned",
+        )
+
+    now = datetime.now(timezone.utc)
+    roster = await get_current_duty_roster(session, now)
+    override_allowed = is_duty_user(user, roster) or user.role in (
+        UserRole.ADMIN,
+        UserRole.CLINICAL_LEAD,
+    )
+
+    if assigned_user_id != user.id and not override_allowed:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the assignee or duty clinician can handover this case",
+        )
+
+    # Append handover note to clinical notes
+    handover_timestamp = now.strftime("%Y-%m-%d %H:%M")
+    handover_prefix = f"\n\n--- Handover Note ({handover_timestamp}) ---\n"
+    if case.clinical_notes:
+        case.clinical_notes = case.clinical_notes + handover_prefix + body.note
+    else:
+        case.clinical_notes = handover_prefix.strip() + "\n" + body.note
+
+    # Unassign the case
+    case.assigned_to_user_id = None
+    case.assigned_clinician_id = None
+    case.assigned_at = None
+    await session.commit()
+    await session.refresh(case)
+
+    await write_audit_event(
+        session=session,
+        actor_type=ActorType.STAFF,
+        actor_id=user.id,
+        actor_email=user.email,
+        action="case_handover",
+        action_category="triage",
+        entity_type="triage_case",
+        entity_id=case.id,
+        metadata={
+            "previous_assignee_id": assigned_user_id,
+            "handover_note": body.note,
+        },
+    )
+
+    return TriageCaseRead.model_validate(case)
+
+
 @router.post(
     "/{case_id}/reassign",
     response_model=TriageCaseRead,

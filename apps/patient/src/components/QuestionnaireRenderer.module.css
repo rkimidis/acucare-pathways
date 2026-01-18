@@ -4,12 +4,12 @@
 
 .title {
   font-size: 1.5rem;
-  color: #1a365d;
+  color: var(--info-900);
   margin-bottom: 0.5rem;
 }
 
 .description {
-  color: #4a5568;
+  color: var(--neutral-650);
   margin-bottom: 1.5rem;
   line-height: 1.6;
 }
@@ -17,7 +17,7 @@
 .section {
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--neutral-200);
 }
 
 .section:last-child {
@@ -27,12 +27,12 @@
 
 .sectionTitle {
   font-size: 1.2rem;
-  color: #2d3748;
+  color: var(--neutral-750);
   margin-bottom: 0.5rem;
 }
 
 .sectionDescription {
-  color: #718096;
+  color: var(--neutral-550);
   font-size: 0.9rem;
   margin-bottom: 1rem;
 }
@@ -44,18 +44,18 @@
 .label {
   display: block;
   font-weight: 500;
-  color: #2d3748;
+  color: var(--neutral-750);
   margin-bottom: 0.5rem;
   font-size: 0.95rem;
 }
 
 .required {
-  color: #e53e3e;
+  color: var(--danger-520);
   margin-left: 0.25rem;
 }
 
 .fieldDescription {
-  color: #718096;
+  color: var(--neutral-550);
   font-size: 0.85rem;
   margin-bottom: 0.5rem;
   margin-top: -0.25rem;
@@ -64,9 +64,10 @@
 .input,
 .textarea,
 .select {
+  composes: ui-select from global;
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #cbd5e0;
+  border: 1px solid var(--neutral-300);
   border-radius: 6px;
   font-size: 1rem;
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -77,19 +78,19 @@
 .textarea:focus,
 .select:focus {
   outline: none;
-  border-color: #4299e1;
+  border-color: var(--info-400);
   box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
 }
 
 .input:disabled,
 .textarea:disabled,
 .select:disabled {
-  background: #f7fafc;
+  background: var(--neutral-50);
   cursor: not-allowed;
 }
 
 .inputError {
-  border-color: #e53e3e;
+  border-color: var(--danger-520);
 }
 
 .inputError:focus {
@@ -97,6 +98,7 @@
 }
 
 .textarea {
+  composes: ui-textarea from global;
   resize: vertical;
   min-height: 100px;
 }
@@ -112,7 +114,7 @@
   gap: 0.5rem;
   cursor: pointer;
   font-size: 0.95rem;
-  color: #4a5568;
+  color: var(--neutral-650);
 }
 
 .radioLabel input[type='radio'] {
@@ -133,7 +135,7 @@
   gap: 0.5rem;
   cursor: pointer;
   font-size: 0.95rem;
-  color: #4a5568;
+  color: var(--neutral-650);
 }
 
 .checkboxLabel input[type='checkbox'] {
@@ -143,7 +145,7 @@
 }
 
 .error {
-  color: #e53e3e;
+  color: var(--danger-520);
   font-size: 0.85rem;
   margin-top: 0.5rem;
 }

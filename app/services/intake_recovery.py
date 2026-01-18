@@ -260,30 +260,30 @@ class IntakeRecoveryService:
         patient_name = patient.preferred_name or patient.given_name or "there"
 
         if channel == MessageChannel.EMAIL:
-            subject = "Continue your AcuCare assessment"
+            subject = "Continue your AcuCare Pathways assessment"
             body = f"""Hi {patient_name},
 
 We noticed you started your mental health assessment but haven't completed it yet.
 
 Your wellbeing matters to us, and we want to make sure you get the support you need.
 
-You can continue where you left off by visiting your AcuCare portal.
+You can continue where you left off by visiting your AcuCare Pathways portal.
 
 If you're having any difficulties with the questionnaire, please don't hesitate to contact us at support@acucare.nhs.uk.
 
 Take care,
-The AcuCare Team"""
+The AcuCare Pathways Team"""
             html_body = f"""
 <p>Hi {patient_name},</p>
 <p>We noticed you started your mental health assessment but haven't completed it yet.</p>
 <p>Your wellbeing matters to us, and we want to make sure you get the support you need.</p>
-<p>You can continue where you left off by visiting your AcuCare portal.</p>
+<p>You can continue where you left off by visiting your AcuCare Pathways portal.</p>
 <p>If you're having any difficulties with the questionnaire, please don't hesitate to contact us at <a href="mailto:support@acucare.nhs.uk">support@acucare.nhs.uk</a>.</p>
-<p>Take care,<br>The AcuCare Team</p>
+<p>Take care,<br>The AcuCare Pathways Team</p>
 """
         else:  # SMS
             subject = None
-            body = f"Hi {patient_name}, you started your AcuCare assessment but haven't finished. Your wellbeing matters - log in to continue when you're ready."
+            body = f"Hi {patient_name}, you started your AcuCare Pathways assessment but haven't finished. Your wellbeing matters - log in to continue when you're ready."
             html_body = None
 
         return await self.messaging_service.send_message(
@@ -408,7 +408,7 @@ If something is holding you back, or if you'd prefer to speak to someone directl
 We're here to support you.
 
 Warm regards,
-The AcuCare Team
+The AcuCare Pathways Team
 
 This is our final reminder - we won't send any more emails about this assessment."""
             html_body = f"""
@@ -418,12 +418,12 @@ This is our final reminder - we won't send any more emails about this assessment
 <p>Your assessment will remain available for you to complete whenever you're ready.</p>
 <p>If something is holding you back, or if you'd prefer to speak to someone directly, please call us on <strong>0800 123 4567</strong> or email <a href="mailto:support@acucare.nhs.uk">support@acucare.nhs.uk</a>.</p>
 <p>We're here to support you.</p>
-<p>Warm regards,<br>The AcuCare Team</p>
+<p>Warm regards,<br>The AcuCare Pathways Team</p>
 <p style="color: #666; font-size: 0.9em;"><em>This is our final reminder - we won't send any more emails about this assessment.</em></p>
 """
         else:  # SMS
             subject = None
-            body = f"Hi {patient_name}, your AcuCare assessment is still waiting for you. Complete it anytime, or call 0800 123 4567 if you'd prefer to speak to someone. We're here to help."
+            body = f"Hi {patient_name}, your AcuCare Pathways assessment is still waiting for you. Complete it anytime, or call 0800 123 4567 if you'd prefer to speak to someone. We're here to help."
             html_body = None
 
         return await self.messaging_service.send_message(

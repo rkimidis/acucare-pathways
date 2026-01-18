@@ -57,6 +57,9 @@ DEFAULT_RATE_LIMITS: dict[tuple[str, str], RateLimitConfig] = {
     ("POST", "/api/v1/auth/patient/login"): RateLimitConfig(
         requests=10, window_seconds=60
     ),
+    ("POST", "/api/v1/auth/patient/register"): RateLimitConfig(
+        requests=5, window_seconds=3600  # 5 per hour
+    ),
     ("POST", "/api/v1/auth/staff/mfa/verify"): RateLimitConfig(
         requests=5, window_seconds=60
     ),

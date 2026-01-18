@@ -9,20 +9,21 @@
   align-items: center;
   padding: 1rem 2rem;
   background-color: white;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--neutral-200);
 }
 
 .header h1 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--neutral-900);
 }
 
 .logoutButton {
+  composes: ui-button from global;
   padding: 0.5rem 1rem;
   background-color: white;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
+  color: var(--neutral-500);
+  border: 1px solid var(--neutral-200);
   border-radius: 0.375rem;
   font-size: 0.875rem;
   cursor: pointer;
@@ -30,7 +31,7 @@
 }
 
 .logoutButton:hover {
-  background-color: #f8fafc;
+  background-color: var(--neutral-50);
 }
 
 .content {
@@ -42,6 +43,7 @@
 }
 
 .card {
+  composes: ui-card from global;
   background-color: white;
   border-radius: 0.5rem;
   padding: 1.5rem;
@@ -51,27 +53,28 @@
 .card h2 {
   font-size: 1rem;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--neutral-900);
   margin-bottom: 0.75rem;
 }
 
 .card p {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--neutral-500);
   line-height: 1.5;
 }
 
 .placeholder {
   padding: 1rem;
-  background-color: #f8fafc;
+  background-color: var(--neutral-50);
   border-radius: 0.375rem;
   text-align: center;
   font-style: italic;
 }
 
 .successCard {
-  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-  border: 1px solid #28a745;
+  composes: ui-card from global;
+  background: linear-gradient(135deg, var(--success-150) 0%, var(--success-100) 100%);
+  border: 1px solid var(--success-550);
   border-radius: 0.5rem;
   padding: 1.5rem;
 }
@@ -79,20 +82,21 @@
 .successCard h2 {
   font-size: 1rem;
   font-weight: 600;
-  color: #155724;
+  color: var(--success-950);
   margin-bottom: 0.75rem;
 }
 
 .successCard p {
   font-size: 0.875rem;
-  color: #155724;
+  color: var(--success-950);
   line-height: 1.5;
 }
 
 .primaryButton {
+  composes: ui-button from global;
   margin-top: 1rem;
   padding: 0.75rem 1.5rem;
-  background-color: #3182ce;
+  background-color: var(--info-620);
   color: white;
   border: none;
   border-radius: 0.375rem;
@@ -103,5 +107,5 @@
 }
 
 .primaryButton:hover {
-  background-color: #2c5282;
+  background-color: var(--info-800);
 }

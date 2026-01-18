@@ -155,7 +155,7 @@ async def create_patients_db():
                     email=patient["email"],
                     first_name=patient["first_name"],
                     last_name=patient["last_name"],
-                    phone=patient.get("phone"),
+                    phone_e164=patient.get("phone"),
                     is_active=True,
                 )
                 session.add(new_patient)
@@ -233,9 +233,57 @@ async def create_intake_questionnaire():
         schema = {
             "title": "Initial Assessment",
             "description": "Please answer the following questions to help us understand your needs.",
+            "sections": [
+                {"id": "background", "title": "Background Information", "description": "Tell us about yourself"},
+                {"id": "symptoms", "title": "Current Symptoms", "description": "How have you been feeling recently?"},
+                {"id": "safety", "title": "Safety Questions", "description": "These questions help us ensure your safety"},
+            ],
             "fields": [
+                # Background section
+                {
+                    "id": "reason_for_referral",
+                    "section": "background",
+                    "type": "select",
+                    "label": "What is the main reason you are seeking support?",
+                    "required": True,
+                    "options": [
+                        {"value": "depression", "label": "Depression or low mood"},
+                        {"value": "anxiety", "label": "Anxiety or worry"},
+                        {"value": "stress", "label": "Stress"},
+                        {"value": "trauma", "label": "Trauma or PTSD"},
+                        {"value": "relationship", "label": "Relationship difficulties"},
+                        {"value": "other", "label": "Other"},
+                    ],
+                },
+                {
+                    "id": "previous_treatment",
+                    "section": "background",
+                    "type": "select",
+                    "label": "Have you received mental health treatment before?",
+                    "required": True,
+                    "options": [
+                        {"value": "no", "label": "No, this is my first time"},
+                        {"value": "yes_helpful", "label": "Yes, and it was helpful"},
+                        {"value": "yes_not_helpful", "label": "Yes, but it wasn't helpful"},
+                        {"value": "yes_ongoing", "label": "Yes, I'm currently in treatment"},
+                    ],
+                },
+                {
+                    "id": "current_medication",
+                    "section": "background",
+                    "type": "select",
+                    "label": "Are you currently taking any psychiatric medication?",
+                    "required": True,
+                    "options": [
+                        {"value": "no", "label": "No"},
+                        {"value": "yes", "label": "Yes"},
+                        {"value": "unsure", "label": "Not sure"},
+                    ],
+                },
+                # Symptoms section - PHQ-9 items
                 {
                     "id": "phq9_1",
+                    "section": "symptoms",
                     "type": "select",
                     "label": "Over the last 2 weeks, how often have you had little interest or pleasure in doing things?",
                     "required": True,
@@ -248,6 +296,7 @@ async def create_intake_questionnaire():
                 },
                 {
                     "id": "phq9_2",
+                    "section": "symptoms",
                     "type": "select",
                     "label": "Over the last 2 weeks, how often have you felt down, depressed, or hopeless?",
                     "required": True,
@@ -258,8 +307,10 @@ async def create_intake_questionnaire():
                         {"value": 3, "label": "Nearly every day"},
                     ],
                 },
+                # Symptoms section - GAD-7 items
                 {
                     "id": "gad7_1",
+                    "section": "symptoms",
                     "type": "select",
                     "label": "Over the last 2 weeks, how often have you felt nervous, anxious, or on edge?",
                     "required": True,
@@ -272,6 +323,7 @@ async def create_intake_questionnaire():
                 },
                 {
                     "id": "gad7_2",
+                    "section": "symptoms",
                     "type": "select",
                     "label": "Over the last 2 weeks, how often have you not been able to stop or control worrying?",
                     "required": True,
@@ -282,10 +334,25 @@ async def create_intake_questionnaire():
                         {"value": 3, "label": "Nearly every day"},
                     ],
                 },
+                # Safety section
                 {
                     "id": "safety_thoughts",
+                    "section": "safety",
                     "type": "select",
-                    "label": "Have you had any thoughts of harming yourself or others?",
+                    "label": "Have you had any thoughts of harming yourself?",
+                    "required": True,
+                    "options": [
+                        {"value": "no", "label": "No"},
+                        {"value": "past", "label": "In the past, but not currently"},
+                        {"value": "sometimes", "label": "Sometimes"},
+                        {"value": "often", "label": "Often"},
+                    ],
+                },
+                {
+                    "id": "safety_others",
+                    "section": "safety",
+                    "type": "select",
+                    "label": "Have you had any thoughts of harming others?",
                     "required": True,
                     "options": [
                         {"value": "no", "label": "No"},
@@ -296,7 +363,8 @@ async def create_intake_questionnaire():
                 },
                 {
                     "id": "additional_concerns",
-                    "type": "text",
+                    "section": "background",
+                    "type": "textarea",
                     "label": "Is there anything else you would like us to know?",
                     "required": False,
                 },
@@ -316,11 +384,18 @@ async def create_intake_questionnaire():
             existing = result.scalar_one_or_none()
 
             if existing:
-                return False, "Intake questionnaire already exists"
+                # Update existing questionnaire with new schema
+                if existing.schema_hash != schema_hash:
+                    existing.schema = schema
+                    existing.schema_hash = schema_hash
+                    existing.version = "1.2"
+                    await session.commit()
+                    return True, "Updated intake questionnaire to v1.2"
+                return False, "Intake questionnaire already exists with same schema"
 
             definition = QuestionnaireDefinition(
                 name="intake",
-                version="1.0",
+                version="1.2",
                 description="Initial patient intake questionnaire",
                 schema=schema,
                 schema_hash=schema_hash,
@@ -329,7 +404,7 @@ async def create_intake_questionnaire():
             )
             session.add(definition)
             await session.commit()
-            return True, "Created intake questionnaire v1.0"
+            return True, "Created intake questionnaire v1.2"
 
     except Exception as e:
         return None, str(e)

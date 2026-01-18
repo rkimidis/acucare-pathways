@@ -1,162 +1,203 @@
-.container {
-  min-height: 100vh;
-  background: var(--neutral-50);
+.content {
   padding: 2rem;
-}
-
-.loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 50vh;
-  color: var(--neutral-500);
-  font-size: 1rem;
-}
-
-.error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 50vh;
-  gap: 1rem;
-  color: var(--danger-600);
-}
-
-.error p {
-  font-size: 1rem;
-}
-
-.header {
-  margin-bottom: 2rem;
-}
-
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--neutral-500);
-  margin-bottom: 0.5rem;
-}
-
-.breadcrumb a {
-  color: var(--info-600);
-  text-decoration: none;
-}
-
-.breadcrumb a:hover {
-  text-decoration: underline;
-}
-
-.breadcrumb span {
-  color: var(--neutral-400);
-}
-
-.header h1 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--neutral-800);
-  margin: 0 0 0.5rem 0;
-}
-
-.patientInfo {
-  font-size: 0.875rem;
-  color: var(--neutral-500);
-  margin: 0;
-}
-
-.main {
   max-width: 900px;
 }
 
-.emptyState {
-  background: white;
-  border-radius: 8px;
-  padding: 3rem;
-  text-align: center;
+/* Page intro - factual, understated */
+.pageIntro {
+  margin: 0 0 1.5rem 0;
   color: var(--neutral-500);
-  border: 1px solid var(--neutral-200);
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--neutral-200);
+  padding-bottom: 1rem;
 }
 
-.timeline {
+/* Patient header - subtle context */
+.patientHeader {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--neutral-50);
+  border-radius: 6px;
 }
 
-.updateCard {
-  composes: ui-card from global;
+.patientName {
+  font-weight: 600;
+  color: var(--neutral-800);
+  font-size: 0.9375rem;
+}
+
+.patientEmail {
+  color: var(--neutral-500);
+  font-size: 0.875rem;
+}
+
+.main {
   background: white;
   border-radius: 8px;
   border: 1px solid var(--neutral-200);
   overflow: hidden;
 }
 
-.updateHeader {
-  padding: 1rem 1.25rem;
-  background: var(--neutral-50);
-  border-bottom: 1px solid var(--neutral-200);
+/* Empty state - positive, confident */
+.emptyState {
+  padding: 3rem 2rem;
+  text-align: center;
 }
 
-.updateMeta {
+.emptyIcon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.emptyState h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--neutral-700);
+}
+
+.emptyState p {
+  margin: 0;
+  color: var(--neutral-500);
+  font-size: 0.875rem;
+}
+
+/* Partial error - soft warning, neutral yellow/grey */
+.partialError {
+  padding: 2rem;
+  text-align: center;
+  background: var(--warning-25);
+  border: 1px solid var(--warning-150);
+  border-radius: 6px;
+  margin: 1rem;
+}
+
+.partialError p {
+  margin: 0;
+  color: var(--neutral-700);
+  font-size: 0.9375rem;
+}
+
+.partialError p:first-child {
+  margin-bottom: 0.5rem;
+}
+
+.partialError p:last-child {
+  color: var(--neutral-500);
+  font-size: 0.875rem;
+}
+
+/* True error - red, serious */
+.errorState {
+  padding: 3rem 2rem;
+  text-align: center;
+  background: var(--danger-50);
+  border: 1px solid var(--danger-200);
+  border-radius: 8px;
+}
+
+.errorIcon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.errorState h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--danger-700);
+}
+
+.errorState p {
+  margin: 0 0 1.5rem 0;
+  color: var(--neutral-600);
+  font-size: 0.875rem;
+}
+
+.backLink {
+  composes: ui-button from global;
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1px solid var(--neutral-300);
+  border-radius: 6px;
+  color: var(--neutral-700);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.backLink:hover {
+  background: var(--neutral-50);
+}
+
+/* Timeline */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.updateCard {
+  composes: ui-card from global;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid var(--neutral-200);
+  overflow: hidden;
+}
+
+.updateHeader {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--neutral-50);
+  border-bottom: 1px solid var(--neutral-200);
 }
 
 .updateDate {
   font-weight: 500;
-  color: var(--neutral-800);
-  font-size: 0.875rem;
+  color: var(--neutral-700);
+  font-size: 0.8125rem;
 }
 
 .updateSource {
   display: inline-block;
-  padding: 0.25rem 0.5rem;
-  background: var(--info-200);
-  color: var(--info-700);
-  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  background: var(--neutral-200);
+  color: var(--neutral-600);
+  border-radius: 3px;
   font-size: 0.75rem;
-  font-weight: 500;
 }
 
 .updateActor {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--neutral-500);
 }
 
-.actorId {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-  font-size: 0.75rem;
-  color: var(--neutral-400);
-}
-
+/* Changes table - boring, factual */
 .changesTable {
-  padding: 1rem 1.25rem;
-  overflow-x: auto;
-}
-
-.changesTable table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
 }
 
 .changesTable thead th {
   text-align: left;
-  padding: 0.5rem;
+  padding: 0.5rem 1rem;
   color: var(--neutral-500);
   font-weight: 500;
   border-bottom: 1px solid var(--neutral-200);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .changesTable tbody td {
-  padding: 0.5rem;
+  padding: 0.5rem 1rem;
   border-bottom: 1px solid var(--neutral-100);
   vertical-align: top;
 }
@@ -167,58 +208,54 @@
 
 .fieldName {
   font-weight: 500;
-  color: var(--neutral-700);
+  color: var(--neutral-600);
   white-space: nowrap;
 }
 
+/* Values - neutral, no drama */
 .oldValue {
-  color: var(--danger-600);
-  background: var(--danger-100);
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-  font-size: 0.8125rem;
-  max-width: 200px;
+  color: var(--neutral-500);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .arrow {
-  color: var(--neutral-400);
+  color: var(--neutral-300);
   text-align: center;
-  font-weight: bold;
-  padding: 0 0.5rem;
+  padding: 0 0.25rem;
 }
 
 .newValue {
-  color: var(--success-600);
-  background: var(--success-50);
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-  font-size: 0.8125rem;
-  max-width: 200px;
+  color: var(--neutral-700);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+/* Reason - the killer feature, highlighted but not alarming */
 .reason {
-  padding: 0.75rem 1.25rem;
-  background: var(--warning-25);
-  border-top: 1px solid var(--warning-100);
-  font-size: 0.875rem;
+  padding: 0.75rem 1rem;
+  background: var(--neutral-50);
+  border-top: 1px solid var(--neutral-200);
+  font-size: 0.8125rem;
 }
 
 .reasonLabel {
-  font-weight: 500;
-  color: var(--warning-700);
+  font-weight: 600;
+  color: var(--neutral-600);
   margin-right: 0.5rem;
 }
 
 .reasonText {
-  color: var(--warning-900);
+  color: var(--neutral-700);
 }
 
+/* Load more */
 .loadMoreButton {
   composes: ui-button from global;
   display: block;
@@ -226,22 +263,22 @@
   padding: 0.75rem;
   background: white;
   border: 1px solid var(--neutral-200);
-  border-radius: 8px;
-  color: var(--info-600);
-  font-weight: 500;
+  border-radius: 6px;
+  color: var(--neutral-600);
+  font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .loadMoreButton:hover {
   background: var(--neutral-50);
-  border-color: var(--info-600);
+  border-color: var(--neutral-300);
 }
 
+/* Footer */
 .footer {
-  margin-top: 2rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--neutral-200);
+  margin-top: 1.5rem;
+  padding: 1rem 2rem;
 }
 
 .backButton {
@@ -250,7 +287,7 @@
   background: white;
   border: 1px solid var(--neutral-200);
   border-radius: 6px;
-  color: var(--neutral-700);
+  color: var(--neutral-600);
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.15s ease;

@@ -4,12 +4,12 @@
 
 .title {
   font-size: 1.5rem;
-  color: #1a365d;
+  color: var(--info-900);
   margin-bottom: 0.5rem;
 }
 
 .version {
-  color: #718096;
+  color: var(--neutral-550);
   font-size: 0.85rem;
   margin-bottom: 1.5rem;
 }
@@ -17,7 +17,7 @@
 .section {
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--neutral-200);
 }
 
 .section:last-of-type {
@@ -26,12 +26,12 @@
 
 .sectionTitle {
   font-size: 1.1rem;
-  color: #2d3748;
+  color: var(--neutral-750);
   margin-bottom: 0.5rem;
 }
 
 .sectionDescription {
-  color: #718096;
+  color: var(--neutral-550);
   font-size: 0.9rem;
   margin-bottom: 1rem;
 }
@@ -41,7 +41,7 @@
   align-items: flex-start;
   gap: 0.75rem;
   padding: 1rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--neutral-200);
   border-radius: 8px;
   margin-bottom: 0.75rem;
   cursor: pointer;
@@ -49,12 +49,12 @@
 }
 
 .consentItem:hover {
-  border-color: #cbd5e0;
-  background: #f7fafc;
+  border-color: var(--neutral-300);
+  background: var(--neutral-50);
 }
 
 .consentItem.required {
-  border-left: 3px solid #4299e1;
+  border-left: 3px solid var(--info-400);
 }
 
 .consentItem input[type='checkbox'] {
@@ -71,36 +71,36 @@
 
 .consentLabel {
   font-weight: 500;
-  color: #2d3748;
+  color: var(--neutral-750);
   display: block;
   margin-bottom: 0.25rem;
 }
 
 .requiredMark {
-  color: #e53e3e;
+  color: var(--danger-520);
   margin-left: 0.25rem;
 }
 
 .consentDescription {
-  color: #4a5568;
+  color: var(--neutral-650);
   font-size: 0.9rem;
   line-height: 1.5;
   margin: 0;
 }
 
 .consentDescription a {
-  color: #3182ce;
+  color: var(--info-620);
   text-decoration: underline;
 }
 
 .consentDescription a:hover {
-  color: #2c5282;
+  color: var(--info-800);
 }
 
 .error {
-  background: #fff5f5;
-  border: 1px solid #feb2b2;
-  color: #c53030;
+  background: var(--danger-75);
+  border: 1px solid var(--danger-200);
+  color: var(--danger-500);
   padding: 0.75rem 1rem;
   border-radius: 6px;
   margin-bottom: 1rem;
@@ -108,9 +108,10 @@
 }
 
 .continueButton {
+  composes: ui-button from global;
   width: 100%;
   padding: 1rem;
-  background: #3182ce;
+  background: var(--info-620);
   color: white;
   border: none;
   border-radius: 8px;
@@ -122,16 +123,16 @@
 }
 
 .continueButton:hover:not(:disabled) {
-  background: #2c5282;
+  background: var(--info-800);
 }
 
 .continueButton:disabled {
-  background: #a0aec0;
+  background: var(--neutral-350);
   cursor: not-allowed;
 }
 
 .note {
-  color: #718096;
+  color: var(--neutral-550);
   font-size: 0.85rem;
   text-align: center;
   line-height: 1.5;

@@ -1,6 +1,4 @@
-.container {
-  min-height: 100vh;
-  background: var(--neutral-50);
+.content {
   padding: 2rem;
 }
 
@@ -53,9 +51,14 @@
   max-width: 500px;
 }
 
+.searchInputWrapper {
+  flex: 1;
+  position: relative;
+}
+
 .searchInput {
   composes: ui-input from global;
-  flex: 1;
+  width: 100%;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--neutral-200);
   border-radius: 6px;
@@ -66,6 +69,15 @@
   outline: none;
   border-color: var(--brand-600);
   box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+}
+
+.searchingIndicator {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  color: var(--neutral-500);
 }
 
 .searchButton {
@@ -229,4 +241,65 @@
 .pageInfo {
   font-size: 0.875rem;
   color: var(--neutral-500);
+}
+
+/* Name Link */
+.nameLink {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.nameLink:hover .fullName {
+  color: var(--info-600);
+  text-decoration: underline;
+}
+
+/* Data Completeness Indicators */
+.completenessIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.completenessComplete {
+  background: var(--success-90);
+  color: var(--success-800);
+}
+
+.completenessPartial {
+  background: var(--warning-150);
+  color: var(--warning-800);
+}
+
+.completenessCritical {
+  background: var(--danger-100);
+  color: var(--danger-700);
+}
+
+/* Duplicate Warning */
+.duplicateWarning {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  color: var(--warning-700);
+  background: var(--warning-100);
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  margin-top: 0.25rem;
+}
+
+/* Search Highlight */
+.searchHighlight {
+  background: var(--warning-200);
+  color: var(--neutral-900);
+  padding: 0 0.1rem;
+  border-radius: 2px;
 }

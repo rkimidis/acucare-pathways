@@ -28,7 +28,7 @@ You can manage or reschedule your appointment via your patient portal.
 If you're unable to attend, please let us know as early as possible.
 
 Best regards,
-The AcuCare Team""",
+The AcuCare Pathways Team""",
         "html_body": """
 <!DOCTYPE html>
 <html>
@@ -77,7 +77,7 @@ The AcuCare Team""",
         </div>
         <div class="footer">
             <p>If you're unable to attend, please let us know as early as possible.</p>
-            <p>The AcuCare Team</p>
+            <p>The AcuCare Pathways Team</p>
         </div>
     </div>
 </body>
@@ -131,7 +131,7 @@ If you need to reschedule or cancel, please do so via your patient portal at lea
 
 We look forward to seeing you.
 
-The AcuCare Team""",
+The AcuCare Pathways Team""",
         "html_body": None,
         "variables": {
             "patient_name": "Patient's first name",
@@ -151,7 +151,7 @@ The AcuCare Team""",
         "template_type": MessageTemplateType.APPOINTMENT_REMINDER,
         "channel": MessageChannel.SMS,
         "subject": None,
-        "body": "Reminder: AcuCare appointment tomorrow at {{time}} with {{clinician_name}}. {{format}}. Need to reschedule? Visit your patient portal.",
+        "body": "Reminder: AcuCare Pathways appointment tomorrow at {{time}} with {{clinician_name}}. {{format}}. Need to reschedule? Visit your patient portal.",
         "html_body": None,
         "variables": {
             "time": "Appointment time",
@@ -166,19 +166,19 @@ The AcuCare Team""",
         "code": "intake_reminder_24h_email",
         "template_type": MessageTemplateType.INTAKE_REMINDER_24H,
         "channel": MessageChannel.EMAIL,
-        "subject": "Continue your AcuCare assessment",
+        "subject": "Continue your AcuCare Pathways assessment",
         "body": """Hi {{patient_name}},
 
 We noticed you started your mental health assessment but haven't completed it yet.
 
 Your wellbeing matters to us, and we want to make sure you get the support you need.
 
-You can continue where you left off by visiting your AcuCare portal.
+You can continue where you left off by visiting your AcuCare Pathways portal.
 
 If you're having any difficulties with the questionnaire, please don't hesitate to contact us at support@acucare.nhs.uk.
 
 Take care,
-The AcuCare Team""",
+The AcuCare Pathways Team""",
         "html_body": None,
         "variables": {
             "patient_name": "Patient's first name or 'there'",
@@ -206,7 +206,7 @@ If something is holding you back, or if you'd prefer to speak to someone directl
 We're here to support you.
 
 Warm regards,
-The AcuCare Team
+The AcuCare Pathways Team
 
 This is our final reminder - we won't send any more emails about this assessment.""",
         "html_body": None,
@@ -238,7 +238,7 @@ Please let us know if you can attend by clicking the link below or logging into 
 If you need to reschedule or cancel, please do so at least 24 hours before your appointment.
 
 Best regards,
-The AcuCare Team""",
+The AcuCare Pathways Team""",
         "html_body": None,
         "variables": {
             "patient_name": "Patient's first name",
@@ -268,7 +268,7 @@ Please log into your patient portal to confirm, reschedule, or cancel.
 If we don't hear from you, we'll keep your appointment as scheduled.
 
 Best regards,
-The AcuCare Team""",
+The AcuCare Pathways Team""",
         "html_body": None,
         "variables": {
             "patient_name": "Patient's first name",
@@ -298,7 +298,7 @@ Please take a moment to complete your check-in:
 
 If you're in immediate danger, please contact 999 or attend A&E.
 
-The AcuCare Team""",
+The AcuCare Pathways Team""",
         "html_body": None,
         "variables": {
             "patient_name": "Patient's first name",
@@ -338,7 +338,7 @@ A clinician will review this and may contact you to discuss next steps.
 
 If you feel unsafe, please contact 999 or attend A&E immediately.
 
-The AcuCare Team""",
+The AcuCare Pathways Team""",
         "html_body": None,
         "variables": {
             "patient_name": "Patient's first name",
@@ -376,7 +376,7 @@ A member of our clinical team will contact you within 24–72 hours.
 
 If you feel unsafe at any point, please contact 999 or attend A&E.
 
-The AcuCare Team""",
+The AcuCare Pathways Team""",
         "html_body": None,
         "variables": {
             "patient_name": "Patient's first name",

@@ -12,7 +12,7 @@ from app.core.config import settings
 from app.models.audit_event import ActorType
 from app.models.consent import Consent
 from app.models.questionnaire import QuestionnaireDefinition, QuestionnaireResponse
-from app.models.triage_case import TriageCase
+from app.models.triage_case import TriageCase, TriageCaseStatus
 from app.schemas.questionnaire import (
     IntakeDraftSave,
     IntakeResponseSubmit,
@@ -21,6 +21,7 @@ from app.schemas.questionnaire import (
     SafetyBannerResponse,
 )
 from app.services.audit import write_audit_event
+from app.services.triage import TriageService
 
 router = APIRouter(prefix="/intake", tags=["intake"])
 
@@ -252,6 +253,14 @@ async def submit_intake_response(
     await session.commit()
     await session.refresh(response)
 
+    # Run triage evaluation
+    triage_service = TriageService(session)
+    await triage_service.evaluate_case(
+        triage_case=triage_case,
+        questionnaire_response=response,
+        apply_result=True,
+    )
+
     # Audit event
     await write_audit_event(
         session=session,
@@ -262,7 +271,10 @@ async def submit_intake_response(
         action_category="clinical",
         entity_type="questionnaire_response",
         entity_id=response.id,
-        metadata={"questionnaire_version": definition.version},
+        metadata={
+            "questionnaire_version": definition.version,
+            "triage_tier": triage_case.tier.value if triage_case.tier else None,
+        },
         ip_address=get_client_ip(request),
         user_agent=request.headers.get("User-Agent"),
     )
@@ -275,7 +287,7 @@ async def _get_or_create_triage_case(patient_id: str, session: DbSession) -> Tri
     result = await session.execute(
         select(TriageCase)
         .where(TriageCase.patient_id == patient_id)
-        .where(TriageCase.status == "open")
+        .where(TriageCase.status == TriageCaseStatus.PENDING)
         .order_by(TriageCase.created_at.desc())
         .limit(1)
     )
@@ -284,7 +296,7 @@ async def _get_or_create_triage_case(patient_id: str, session: DbSession) -> Tri
     if not triage_case:
         triage_case = TriageCase(
             patient_id=patient_id,
-            status="open",
+            status=TriageCaseStatus.PENDING,
         )
         session.add(triage_case)
         await session.commit()

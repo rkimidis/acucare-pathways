@@ -4,12 +4,12 @@
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "512",
   "memory": "1024",
-  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
-  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/acucare-task-role",
+  "executionRoleArn": "arn:aws:iam::326246079459:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::326246079459:role/acucare-task-role",
   "containerDefinitions": [
     {
       "name": "api",
-      "image": "ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/acucare/api-backend:test",
+      "image": "326246079459.dkr.ecr.eu-west-2.amazonaws.com/acucare/api-backend:test",
       "essential": true,
       "portMappings": [
         {
@@ -26,11 +26,11 @@
       "secrets": [
         {
           "name": "DATABASE_URL",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:ACCOUNT_ID:secret:acucare/test/db-credentials:DATABASE_URL::"
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:326246079459:secret:acucare/test/db-credentials:DATABASE_URL::"
         },
         {
           "name": "SECRET_KEY",
-          "valueFrom": "arn:aws:secretsmanager:eu-west-2:ACCOUNT_ID:secret:acucare/test/secret-key:SECRET_KEY::"
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:326246079459:secret:acucare/test/secret-key:SECRET_KEY::"
         }
       ],
       "logConfiguration": {
@@ -40,13 +40,6 @@
           "awslogs-region": "eu-west-2",
           "awslogs-stream-prefix": "api"
         }
-      },
-      "healthCheck": {
-        "command": ["CMD-SHELL", "curl -f http://localhost:8000/api/v1/health || exit 1"],
-        "interval": 30,
-        "timeout": 5,
-        "retries": 3,
-        "startPeriod": 60
       }
     }
   ]

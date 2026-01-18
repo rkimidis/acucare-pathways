@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { getToken, removeToken } from '@/lib/auth';
+import { AppShell, EmptyState } from '@/ui/components';
 import styles from './case-detail.module.css';
 
 interface Score {
@@ -226,6 +227,10 @@ export default function CaseDetailPage() {
   const [showTimeline, setShowTimeline] = useState(false);
   const [whyPathwayStorageKey, setWhyPathwayStorageKey] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [showClaimPrompt, setShowClaimPrompt] = useState(false);
+  const [claimPromptDismissed, setClaimPromptDismissed] = useState(false);
+  const [showHandoverModal, setShowHandoverModal] = useState(false);
+  const [handoverNote, setHandoverNote] = useState('');
   const [patientDetails, setPatientDetails] = useState<PatientDetail | null>(null);
   const [patientDetailsLoading, setPatientDetailsLoading] = useState(false);
   const [patientDetailsError, setPatientDetailsError] = useState<string | null>(null);
@@ -749,6 +754,30 @@ export default function CaseDetailPage() {
     }
   }, [summary?.patient?.id, patientDetails, patientDetailsLoading]);
 
+  // Show claim prompt when opening an unassigned case
+  useEffect(() => {
+    if (
+      summary &&
+      !summary.case.assigned_to_user_id &&
+      !claimPromptDismissed &&
+      currentUserId &&
+      (currentUserRole === 'clinician' || currentUserRole === 'clinical_lead' || currentUserRole === 'admin')
+    ) {
+      setShowClaimPrompt(true);
+    }
+  }, [summary, claimPromptDismissed, currentUserId, currentUserRole]);
+
+  const handleClaimAndContinue = async () => {
+    setShowClaimPrompt(false);
+    setClaimPromptDismissed(true);
+    await handleClaimCase();
+  };
+
+  const handleSkipClaim = () => {
+    setShowClaimPrompt(false);
+    setClaimPromptDismissed(true);
+  };
+
   const handleClaimCase = async () => {
     try {
       const token = getToken();
@@ -788,6 +817,38 @@ export default function CaseDetailPage() {
       await fetchCaseSummary(token);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to unassign case');
+    }
+  };
+
+  const handleHandover = async () => {
+    if (!handoverNote.trim()) {
+      setError('Handover note is required');
+      return;
+    }
+
+    try {
+      const token = getToken();
+      if (!token) {
+        router.push('/auth/login');
+        return;
+      }
+
+      const response = await fetch(`/api/v1/triage-cases/${caseId}/handover`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ note: handoverNote }),
+      });
+
+      if (!response.ok) throw new Error('Failed to handover case');
+
+      setShowHandoverModal(false);
+      setHandoverNote('');
+      await fetchCaseSummary(token);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to handover case');
     }
   };
 
@@ -1057,6 +1118,18 @@ export default function CaseDetailPage() {
     return false;
   };
 
+  // Check for missing critical patient fields
+  const getMissingCriticalFields = (): string[] => {
+    const missing: string[] = [];
+    if (!patientDetails) return missing;
+
+    if (!patientDetails.date_of_birth) missing.push('Date of birth');
+    if (!patientDetails.postcode) missing.push('Postcode');
+    if (!patientDetails.phone_e164 && !patientDetails.email) missing.push('Contact details');
+
+    return missing;
+  };
+
   const formatTimelineActor = (entry: TimelineEntry): string => {
     if (entry.actor_type === 'system') return 'System';
     if (entry.actor_name) return entry.actor_name;
@@ -1071,27 +1144,33 @@ export default function CaseDetailPage() {
       .replace(/\b\w/g, (c) => c.toUpperCase());
   };
 
-  // Determine primary action based on tier
+  // Determine primary action based on tier and disposition status
   const getPrimaryAction = () => {
-    if (!summary || summary.final_disposition) return null;
+    if (!summary) return null;
 
     const tier = summary.case.tier?.toLowerCase();
+    const isConfirmed = !!summary.final_disposition;
 
+    // For GREEN/BLUE: Book Appointment only after disposition confirmed
     if (tier === 'green' || tier === 'blue') {
-      return {
-        label: 'Book Appointment',
-        shortcut: 'B',
-        action: handleBookAppointment,
-        className: styles.primaryActionBook,
-      };
-    } else if (tier === 'amber') {
+      if (isConfirmed) {
+        return {
+          label: 'Book Appointment',
+          shortcut: 'B',
+          action: handleBookAppointment,
+          className: styles.primaryActionBook,
+        };
+      }
+      // Before confirmation, no primary book action (it will be shown disabled)
+      return null;
+    } else if (tier === 'amber' && !isConfirmed) {
       return {
         label: 'Call Patient',
         shortcut: 'C',
         action: () => window.open(`tel:${summary.patient?.phone || ''}`),
         className: styles.primaryActionCall,
       };
-    } else if (tier === 'red') {
+    } else if (tier === 'red' && !isConfirmed) {
       return {
         label: 'Escalate to Crisis',
         shortcut: 'E',
@@ -1116,22 +1195,22 @@ export default function CaseDetailPage() {
 
   if (loading) {
     return (
-      <div className={styles.layout}>
-        <main className={styles.main}>
-          <p>Loading case...</p>
-        </main>
-      </div>
+      <AppShell activeNav="triage">
+        <EmptyState title="Loading case" variant="loading" />
+      </AppShell>
     );
   }
 
   if (!summary) {
     return (
-      <div className={styles.layout}>
-        <main className={styles.main}>
-          <p>Case not found</p>
-          <Link href="/dashboard/triage">Back to Queue</Link>
-        </main>
-      </div>
+      <AppShell activeNav="triage">
+        <EmptyState
+          title="Case not found"
+          actionLabel="Back to Queue"
+          onAction={() => router.push('/dashboard/triage')}
+          variant="error"
+        />
+      </AppShell>
     );
   }
 
@@ -1161,26 +1240,14 @@ export default function CaseDetailPage() {
   const safetyLine = hasSafetyConcerns() ? 'Safety concerns flagged' : 'No current safety concerns';
   const rulesetVersion = summary.draft_disposition?.ruleset_version || summary.case.ruleset_version || 'Unknown';
 
-  return (
-    <div className={styles.layout}>
-      <aside className={styles.sidebar}>
-        <div className={styles.sidebarHeader}>
-          <span className={styles.logo}>AcuCare</span>
-        </div>
-        <nav className={styles.nav}>
-          <Link href="/dashboard" className={styles.navItem}>
-            Dashboard
-          </Link>
-          <Link href="/dashboard/triage" className={styles.navItemActive}>
-            Triage Queue
-          </Link>
-          <Link href="/governance/pilot-feedback" className={styles.navItem}>
-            Pilot Feedback
-          </Link>
-        </nav>
-      </aside>
+  const handleLogout = () => {
+    removeToken();
+    router.push('/');
+  };
 
-      <main className={styles.main}>
+  return (
+    <AppShell activeNav="triage" onSignOut={handleLogout}>
+      <div className={styles.main}>
         {/* Navigation Bar */}
         <div className={styles.navBar}>
           <Link href="/dashboard/triage" className={styles.backLink}>
@@ -1237,6 +1304,65 @@ export default function CaseDetailPage() {
           </div>
         )}
 
+        {/* Claim Prompt Modal - shown when opening unassigned case */}
+        {showClaimPrompt && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.claimPromptModal}>
+              <h4>Claim this case?</h4>
+              <p>This case is currently unassigned. Do you want to claim it while reviewing?</p>
+              <div className={styles.claimPromptActions}>
+                <button
+                  className={styles.claimPromptPrimary}
+                  onClick={handleClaimAndContinue}
+                >
+                  Claim &amp; open
+                </button>
+                <button
+                  className={styles.claimPromptSecondary}
+                  onClick={handleSkipClaim}
+                >
+                  Open without claiming
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Handover Modal - for shift changes and duty transitions */}
+        {showHandoverModal && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.handoverModal}>
+              <h4>Handover case</h4>
+              <p>Add a note for the next clinician before unassigning.</p>
+              <textarea
+                className={styles.handoverTextarea}
+                value={handoverNote}
+                onChange={(e) => setHandoverNote(e.target.value)}
+                placeholder="e.g., Awaiting GP callback, patient prefers afternoon appointments, needs follow-up on medication query..."
+                rows={4}
+              />
+              <div className={styles.handoverActions}>
+                <button
+                  className={styles.handoverPrimary}
+                  onClick={handleHandover}
+                  disabled={!handoverNote.trim()}
+                >
+                  Unassign with note
+                </button>
+                <button
+                  className={styles.handoverSecondary}
+                  onClick={() => {
+                    setShowHandoverModal(false);
+                    setHandoverNote('');
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Clinical Review Banner - RED/AMBER cases */}
         {summary && !isFinalized && (summary.case.tier?.toLowerCase() === 'red' || summary.case.tier?.toLowerCase() === 'amber') && (
           <div className={`${styles.clinicalReviewBanner} ${summary.case.tier?.toLowerCase() === 'red' ? styles.bannerRed : styles.bannerAmber}`}>
@@ -1274,11 +1400,22 @@ export default function CaseDetailPage() {
 
             {/* Patient & Case Info */}
             <div className={styles.caseInfo}>
-              <h1 className={styles.patientName}>
-                {summary.patient
-                  ? `${summary.patient.first_name} ${summary.patient.last_name}`
-                  : 'Unknown Patient'}
-              </h1>
+              <div className={styles.patientNameRow}>
+                <h1 className={styles.patientName}>
+                  {summary.patient
+                    ? `${summary.patient.first_name} ${summary.patient.last_name}`
+                    : 'Unknown Patient'}
+                </h1>
+                {getMissingCriticalFields().length > 0 && (
+                  <button
+                    className={styles.missingDataBadge}
+                    onClick={() => setActiveTab('patient-details')}
+                    title={`Missing: ${getMissingCriticalFields().join(', ')}`}
+                  >
+                    ⚠️ Incomplete patient details
+                  </button>
+                )}
+              </div>
               <div className={styles.caseMetaRow}>
                 <span className={styles.caseId}>Case {caseId.substring(0, 8)}</span>
                 <span className={styles.pathwayBadge}>{summary.case.pathway || 'No pathway'}</span>
@@ -1310,13 +1447,23 @@ export default function CaseDetailPage() {
               </button>
             )}
             {assignedUserId && isAssignedToMe && canClaimCase && (
-              <button
-                type="button"
-                className={styles.ownershipAction}
-                onClick={handleUnassignCase}
-              >
-                Unassign
-              </button>
+              <>
+                <button
+                  type="button"
+                  className={styles.ownershipAction}
+                  onClick={handleUnassignCase}
+                >
+                  Unassign
+                </button>
+                <button
+                  type="button"
+                  className={styles.handoverAction}
+                  onClick={() => setShowHandoverModal(true)}
+                  title="Unassign with handover note for shift change"
+                >
+                  Handover
+                </button>
+              </>
             )}
           </div>
 
@@ -1443,6 +1590,17 @@ export default function CaseDetailPage() {
                 <kbd>{primaryAction.shortcut}</kbd>
               </button>
             )}
+            {/* Disabled Book Appointment for GREEN/BLUE before disposition confirmed */}
+            {isBookableTier && !isFinalized && (
+              <button
+                className={styles.restrictedButton}
+                disabled
+                title="Confirm disposition before booking"
+              >
+                Book Appointment
+              </button>
+            )}
+            {/* Disabled Book Appointment for RED/AMBER (restricted tiers) */}
             {isBookingRestricted && (
               <button
                 className={styles.restrictedButton}
@@ -1475,6 +1633,19 @@ export default function CaseDetailPage() {
                 📋 Incident
               </button>
             )}
+            <button onClick={handleDownloadPdf} className={styles.downloadButton}>
+              PDF
+            </button>
+          </div>
+        )}
+
+        {/* POST-DISPOSITION ACTION BAR for GREEN/BLUE */}
+        {isFinalized && isBookableTier && (
+          <div className={styles.actionBar}>
+            <button className={styles.primaryActionBook} onClick={handleBookAppointment}>
+              Book Appointment
+              <kbd>B</kbd>
+            </button>
             <button onClick={handleDownloadPdf} className={styles.downloadButton}>
               PDF
             </button>
@@ -3192,8 +3363,8 @@ export default function CaseDetailPage() {
             </div>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }
 

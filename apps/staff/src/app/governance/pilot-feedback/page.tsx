@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { getToken } from '@/lib/auth';
+import { getToken, removeToken } from '@/lib/auth';
+import { AppShell, PageHeader } from '@/ui/components';
 import styles from './pilot-feedback.module.css';
 
 type LikertValue = 'strongly_agree' | 'agree' | 'neutral' | 'disagree' | 'strongly_disagree';
@@ -168,175 +168,164 @@ export default function PilotFeedbackPage() {
 
   const allLikertAnswered = likertQuestions.every((q) => Boolean(likertAnswers[q.id]));
 
+  const handleLogout = () => {
+    removeToken();
+    router.push('/');
+  };
+
   return (
-    <div className={styles.layout}>
-      <aside className={styles.sidebar}>
-        <div className={styles.sidebarHeader}>
-          <span className={styles.logo}>AcuCare</span>
-        </div>
-        <nav className={styles.nav}>
-          <Link href="/dashboard" className={styles.navItem}>
-            Dashboard
-          </Link>
-          <Link href="/dashboard/triage" className={styles.navItem}>
-            Triage Queue
-          </Link>
-          <Link href="/governance/pilot-feedback" className={styles.navItemActive}>
-            Pilot Feedback
-          </Link>
-        </nav>
-      </aside>
+    <AppShell activeNav="pilot" onSignOut={handleLogout}>
+      <PageHeader
+        title="Pilot Feedback"
+        breadcrumb={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Pilot Feedback' },
+        ]}
+        metaText={`10-12 questions, about 5 minutes. Window: ${windowLabel}${
+          caseIdParam ? ` (Case ${caseIdParam.slice(0, 8)})` : ''
+        }`}
+      />
 
-      <main className={styles.main}>
-        <header className={styles.header}>
-          <h1>Pilot Feedback</h1>
-          <p className={styles.headerMeta}>
-            10-12 questions, about 5 minutes. Window: {windowLabel}
-            {caseIdParam ? ` (Case ${caseIdParam.slice(0, 8)})` : ''}
-          </p>
-        </header>
+      <div className={styles.content}>
+        {success && (
+          <div className={styles.success}>
+            Thanks for sharing feedback. It will be reviewed weekly during the pilot.
+          </div>
+        )}
+        {error && <div className={styles.error}>{error}</div>}
 
-        <div className={styles.content}>
-          {success && (
-            <div className={styles.success}>
-              Thanks for sharing feedback. It will be reviewed weekly during the pilot.
-            </div>
-          )}
-          {error && <div className={styles.error}>{error}</div>}
-
-          <form onSubmit={handleSubmit}>
-            <section className={styles.section}>
-              <h2>Safety and trust</h2>
-              {likertQuestions
-                .filter((q) => q.section === 'Safety and trust')
-                .map((question) => (
-                  <div key={question.id} className={styles.question}>
-                    <div className={styles.questionLabel}>{question.text}</div>
-                    <div className={styles.options}>
-                      {likertOptions.map((option) => (
-                        <label key={option.value} className={styles.optionLabel}>
-                          <input
-                            type="radio"
-                            name={question.id}
-                            value={option.value}
-                            checked={likertAnswers[question.id] === option.value}
-                            onChange={() =>
-                              setLikertAnswers((prev) => ({
-                                ...prev,
-                                [question.id]: option.value,
-                              }))
-                            }
-                            required
-                          />
-                          {option.label}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-            </section>
-
-            <section className={styles.section}>
-              <h2>Workflow efficiency</h2>
-              {likertQuestions
-                .filter((q) => q.section === 'Workflow efficiency')
-                .map((question) => (
-                  <div key={question.id} className={styles.question}>
-                    <div className={styles.questionLabel}>{question.text}</div>
-                    <div className={styles.options}>
-                      {likertOptions.map((option) => (
-                        <label key={option.value} className={styles.optionLabel}>
-                          <input
-                            type="radio"
-                            name={question.id}
-                            value={option.value}
-                            checked={likertAnswers[question.id] === option.value}
-                            onChange={() =>
-                              setLikertAnswers((prev) => ({
-                                ...prev,
-                                [question.id]: option.value,
-                              }))
-                            }
-                            required
-                          />
-                          {option.label}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-            </section>
-
-            <section className={styles.section}>
-              <h2>Escalation and monitoring</h2>
-              {likertQuestions
-                .filter((q) => q.section === 'Escalation and monitoring')
-                .map((question) => (
-                  <div key={question.id} className={styles.question}>
-                    <div className={styles.questionLabel}>{question.text}</div>
-                    <div className={styles.options}>
-                      {likertOptions.map((option) => (
-                        <label key={option.value} className={styles.optionLabel}>
-                          <input
-                            type="radio"
-                            name={question.id}
-                            value={option.value}
-                            checked={likertAnswers[question.id] === option.value}
-                            onChange={() =>
-                              setLikertAnswers((prev) => ({
-                                ...prev,
-                                [question.id]: option.value,
-                              }))
-                            }
-                            required
-                          />
-                          {option.label}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-            </section>
-
-            <section className={styles.section}>
-              <h2>Open text</h2>
-              {openQuestions.map((question) => (
+        <form onSubmit={handleSubmit}>
+          <section className={styles.section}>
+            <h2>Safety and trust</h2>
+            {likertQuestions
+              .filter((q) => q.section === 'Safety and trust')
+              .map((question) => (
                 <div key={question.id} className={styles.question}>
                   <div className={styles.questionLabel}>{question.text}</div>
-                  <textarea
-                    className={styles.textArea}
-                    rows={3}
-                    value={openAnswers[question.id] || ''}
-                    onChange={(e) =>
-                      setOpenAnswers((prev) => ({
-                        ...prev,
-                        [question.id]: e.target.value,
-                      }))
-                    }
-                  />
+                  <div className={styles.options}>
+                    {likertOptions.map((option) => (
+                      <label key={option.value} className={styles.optionLabel}>
+                        <input
+                          type="radio"
+                          name={question.id}
+                          value={option.value}
+                          checked={likertAnswers[question.id] === option.value}
+                          onChange={() =>
+                            setLikertAnswers((prev) => ({
+                              ...prev,
+                              [question.id]: option.value,
+                            }))
+                          }
+                          required
+                        />
+                        {option.label}
+                      </label>
+                    ))}
+                  </div>
                 </div>
               ))}
-              <p className={styles.helperNote}>
-                Responses are reviewed weekly and categorized into safety, UX friction, or training
-                gaps. This is not a performance review.
-              </p>
-            </section>
+          </section>
 
-            <div className={styles.actions}>
-              <button
-                type="submit"
-                className={styles.submitButton}
-                disabled={!allLikertAnswered || submitting}
-              >
-                {submitting ? 'Submitting...' : 'Submit feedback'}
-              </button>
-            </div>
-            <p className={styles.footerNote}>
-              Thank you for helping improve safety and usability during the pilot.
+          <section className={styles.section}>
+            <h2>Workflow efficiency</h2>
+            {likertQuestions
+              .filter((q) => q.section === 'Workflow efficiency')
+              .map((question) => (
+                <div key={question.id} className={styles.question}>
+                  <div className={styles.questionLabel}>{question.text}</div>
+                  <div className={styles.options}>
+                    {likertOptions.map((option) => (
+                      <label key={option.value} className={styles.optionLabel}>
+                        <input
+                          type="radio"
+                          name={question.id}
+                          value={option.value}
+                          checked={likertAnswers[question.id] === option.value}
+                          onChange={() =>
+                            setLikertAnswers((prev) => ({
+                              ...prev,
+                              [question.id]: option.value,
+                            }))
+                          }
+                          required
+                        />
+                        {option.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+          </section>
+
+          <section className={styles.section}>
+            <h2>Escalation and monitoring</h2>
+            {likertQuestions
+              .filter((q) => q.section === 'Escalation and monitoring')
+              .map((question) => (
+                <div key={question.id} className={styles.question}>
+                  <div className={styles.questionLabel}>{question.text}</div>
+                  <div className={styles.options}>
+                    {likertOptions.map((option) => (
+                      <label key={option.value} className={styles.optionLabel}>
+                        <input
+                          type="radio"
+                          name={question.id}
+                          value={option.value}
+                          checked={likertAnswers[question.id] === option.value}
+                          onChange={() =>
+                            setLikertAnswers((prev) => ({
+                              ...prev,
+                              [question.id]: option.value,
+                            }))
+                          }
+                          required
+                        />
+                        {option.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+          </section>
+
+          <section className={styles.section}>
+            <h2>Open text</h2>
+            {openQuestions.map((question) => (
+              <div key={question.id} className={styles.question}>
+                <div className={styles.questionLabel}>{question.text}</div>
+                <textarea
+                  className={styles.textArea}
+                  rows={3}
+                  value={openAnswers[question.id] || ''}
+                  onChange={(e) =>
+                    setOpenAnswers((prev) => ({
+                      ...prev,
+                      [question.id]: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+            ))}
+            <p className={styles.helperNote}>
+              Responses are reviewed weekly and categorized into safety, UX friction, or training
+              gaps. This is not a performance review.
             </p>
-          </form>
-        </div>
-      </main>
-    </div>
+          </section>
+
+          <div className={styles.actions}>
+            <button
+              type="submit"
+              className={styles.submitButton}
+              disabled={!allLikertAnswered || submitting}
+            >
+              {submitting ? 'Submitting...' : 'Submit feedback'}
+            </button>
+          </div>
+          <p className={styles.footerNote}>
+            Thank you for helping improve safety and usability during the pilot.
+          </p>
+        </form>
+      </div>
+    </AppShell>
   );
 }

@@ -7,9 +7,9 @@ export default function Home() {
   return (
     <main className={styles.main}>
       <div className={styles.container}>
-        <h1 className={styles.title}>AcuCare Patient Portal</h1>
+        <h1 className={styles.title}>AcuCare Pathways Patient Portal</h1>
         <p className={styles.description}>
-          Welcome to the AcuCare patient portal. Please sign in to access your
+          Welcome to the AcuCare Pathways patient portal. Please sign in to access your
           appointments, questionnaires, and clinical information.
         </p>
         <div className={styles.actions}>
@@ -18,6 +18,9 @@ export default function Home() {
           </Link>
           <Link href="/auth/request-link" className={styles.secondaryButton}>
             Request Magic Link
+          </Link>
+          <Link href="/auth/register" className={styles.secondaryButton}>
+            Register New Account
           </Link>
         </div>
         <footer className={styles.footer}>

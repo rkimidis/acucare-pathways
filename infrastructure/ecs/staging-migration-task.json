@@ -1,0 +1,33 @@
+{
+  "family": "acucare-staging-migrations",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::326246079459:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "migrations",
+      "image": "326246079459.dkr.ecr.eu-west-2.amazonaws.com/acucare/api-backend:staging",
+      "essential": true,
+      "command": ["python", "-m", "alembic", "upgrade", "head"],
+      "environment": [
+        {"name": "ENV", "value": "staging"}
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:326246079459:secret:acucare-pathways/staging/database_url-ep2yKQ"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/acucare-migrations",
+          "awslogs-region": "eu-west-2",
+          "awslogs-stream-prefix": "staging-migrations"
+        }
+      }
+    }
+  ]
+}

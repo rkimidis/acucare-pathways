@@ -64,6 +64,17 @@ if settings.is_dev:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+elif settings.is_test:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "http://acucare-test-alb-1438060142.eu-west-2.elb.amazonaws.com",
+            "https://acucare-test-alb-1438060142.eu-west-2.elb.amazonaws.com",
+        ],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 
 # Global exception handler

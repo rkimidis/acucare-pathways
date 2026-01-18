@@ -9,7 +9,8 @@ from app.api.deps import CurrentPatient, DbSession, get_client_ip
 from app.core.config import settings
 from app.models.consent import Consent
 from app.schemas.consent import ConsentCapture, ConsentRead, ConsentStatus
-from app.services.audit import AuditService
+from app.models.audit_event import ActorType
+from app.services.audit import write_audit_event
 
 router = APIRouter(prefix="/consent", tags=["consent"])
 
@@ -118,9 +119,9 @@ async def capture_consent(
     await session.commit()
 
     # Audit event
-    audit_service = AuditService(session)
-    await audit_service.log_event(
-        actor_type="patient",
+    await write_audit_event(
+        session=session,
+        actor_type=ActorType.PATIENT,
         actor_id=patient.id,
         actor_email=patient.email,
         action="consent_captured",

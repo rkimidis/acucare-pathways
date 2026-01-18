@@ -8,7 +8,7 @@
   "containerDefinitions": [
     {
       "name": "api",
-      "image": "326246079459.dkr.ecr.eu-west-2.amazonaws.com/acucare/api-backend:20260114000045",
+      "image": "326246079459.dkr.ecr.eu-west-2.amazonaws.com/acucare/api-backend:20260114084500",
       "essential": true,
       "portMappings": [
         {

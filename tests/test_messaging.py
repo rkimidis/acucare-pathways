@@ -244,7 +244,7 @@ class TestMessageTemplateRendering:
             code="WELCOME",
             template_type=MessageTemplateType.WELCOME,
             channel=MessageChannel.EMAIL,
-            subject="Welcome to AcuCare",
+            subject="Welcome to AcuCare Pathways",
             body="Welcome, {{patient_name}}!",
             html_body="<h1>Welcome, {{patient_name}}!</h1><p>We're glad you're here.</p>",
         )

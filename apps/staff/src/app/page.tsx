@@ -7,10 +7,10 @@ export default function Home() {
   return (
     <main className={styles.main}>
       <div className={styles.container}>
-        <div className={styles.logo}>AcuCare</div>
+        <div className={styles.logo}>AcuCare Pathways</div>
         <h1 className={styles.title}>Staff Console</h1>
         <p className={styles.description}>
-          Clinical workflow management for AcuCare staff. Sign in to access
+          Clinical workflow management for AcuCare Pathways staff. Sign in to access
           patient triage, appointments, and clinical tools.
         </p>
         <div className={styles.actions}>

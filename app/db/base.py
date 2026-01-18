@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, MetaData
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column, registry
 
 # Naming convention for constraints (important for migrations)
 convention = {
@@ -16,11 +16,15 @@ convention = {
     "pk": "pk_%(table_name)s",
 }
 
+# Shared registry for all models
+_mapper_registry = registry(metadata=MetaData(naming_convention=convention))
+
 
 class Base(DeclarativeBase):
-    """Base class for all SQLAlchemy models."""
+    """Base class for all SQLAlchemy models with UUID id."""
 
-    metadata = MetaData(naming_convention=convention)
+    registry = _mapper_registry
+    metadata = _mapper_registry.metadata
 
     # Common columns for all models
     id: Mapped[str] = mapped_column(
@@ -35,6 +39,16 @@ class Base(DeclarativeBase):
         # Convert CamelCase to snake_case
         name = cls.__name__
         return "".join(["_" + c.lower() if c.isupper() else c for c in name]).lstrip("_")
+
+
+class BaseNoId(DeclarativeBase):
+    """Base class for models that don't use a standard UUID id column.
+
+    Use this for tables where the primary key is a foreign key (1:1 relationships).
+    """
+
+    registry = _mapper_registry
+    metadata = _mapper_registry.metadata
 
 
 class TimestampMixin:

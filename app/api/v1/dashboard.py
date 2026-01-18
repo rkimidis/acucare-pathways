@@ -29,6 +29,10 @@ class QueueCountsResponse(BaseModel):
     blue: int
     total: int
     breached: int
+    red_oldest_minutes: int | None = None
+    red_oldest_breached: bool = False
+    amber_oldest_minutes: int | None = None
+    amber_oldest_breached: bool = False
 
 
 class QueueItemResponse(BaseModel):
@@ -47,7 +51,7 @@ class QueueItemResponse(BaseModel):
     sla_status: str
     sla_breached: bool
     clinician_review_required: bool
-    assigned_clinician_id: str | None
+    assigned_to_user_id: str | None
 
 
 class QueueResponse(BaseModel):
@@ -75,6 +79,8 @@ async def get_queue_counts(
 
     counts = await dashboard.get_queue_counts()
     breached = await dashboard.get_breached_cases_count()
+    red_oldest = await dashboard.get_oldest_case_info(TriageTier.RED)
+    amber_oldest = await dashboard.get_oldest_case_info(TriageTier.AMBER)
 
     return QueueCountsResponse(
         red=counts["red"],
@@ -83,6 +89,10 @@ async def get_queue_counts(
         blue=counts["blue"],
         total=counts["total"],
         breached=breached,
+        red_oldest_minutes=red_oldest["age_minutes"],
+        red_oldest_breached=bool(red_oldest["sla_breached"]),
+        amber_oldest_minutes=amber_oldest["age_minutes"],
+        amber_oldest_breached=bool(amber_oldest["sla_breached"]),
     )
 
 

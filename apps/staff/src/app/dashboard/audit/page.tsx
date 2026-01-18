@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { getToken, removeToken } from '@/lib/auth';
+import { AppShell, Button, EmptyState, PageHeader, StatusBadge } from '@/ui/components';
 import styles from './audit.module.css';
 
 interface AuditEvent {
@@ -177,146 +177,159 @@ export default function AuditLogPage() {
 
   const hasFilters = entityId || entityType || actorId || action || filterCategory;
 
-  return (
-    <div className={styles.container}>
-      <header className={styles.header}>
-        <div className={styles.breadcrumb}>
-          <Link href="/dashboard">Dashboard</Link>
-          <span>/</span>
-          <span>Audit Log</span>
-        </div>
-        <h1>Audit Log</h1>
-        <p className={styles.subtitle}>
-          System activity and change history (read-only)
-        </p>
-      </header>
+  const handleLogout = () => {
+    removeToken();
+    router.push('/');
+  };
 
-      <div className={styles.toolbar}>
-        <div className={styles.filters}>
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className={styles.filterSelect}
-          >
-            <option value="">All Categories</option>
-            <option value="clinical">Clinical</option>
-            <option value="authentication">Authentication</option>
-            <option value="system">System</option>
-            <option value="admin">Admin</option>
-          </select>
+  return (
+    <AppShell activeNav="audit" onSignOut={handleLogout}>
+      <PageHeader
+        title="Audit Log"
+        breadcrumb={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Audit Log' },
+        ]}
+        metaText="System activity and change history (read-only)"
+      />
+
+      <div className={styles.content}>
+        <div className={styles.toolbar}>
+          <div className={styles.filters}>
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className={styles.filterSelect}
+            >
+              <option value="">All Categories</option>
+              <option value="clinical">Clinical</option>
+              <option value="authentication">Authentication</option>
+              <option value="system">System</option>
+              <option value="admin">Admin</option>
+            </select>
+
+            {hasFilters && (
+              <Button variant="tertiary" onClick={clearFilters}>
+                Clear Filters
+              </Button>
+            )}
+          </div>
 
           {hasFilters && (
-            <button onClick={clearFilters} className={styles.clearButton}>
-              Clear Filters
-            </button>
+            <div className={styles.activeFilters}>
+              {entityId && <span className={styles.filterTag}>Entity: {entityId.slice(0, 8)}...</span>}
+              {entityType && <span className={styles.filterTag}>Type: {ENTITY_TYPE_LABELS[entityType] || entityType}</span>}
+              {actorId && <span className={styles.filterTag}>Actor: {actorId.slice(0, 8)}...</span>}
+              {action && <span className={styles.filterTag}>Action: {ACTION_LABELS[action] || action}</span>}
+              {filterCategory && <span className={styles.filterTag}>Category: {CATEGORY_LABELS[filterCategory] || filterCategory}</span>}
+            </div>
           )}
         </div>
 
-        {hasFilters && (
-          <div className={styles.activeFilters}>
-            {entityId && <span className={styles.filterTag}>Entity: {entityId.slice(0, 8)}...</span>}
-            {entityType && <span className={styles.filterTag}>Type: {ENTITY_TYPE_LABELS[entityType] || entityType}</span>}
-            {actorId && <span className={styles.filterTag}>Actor: {actorId.slice(0, 8)}...</span>}
-            {action && <span className={styles.filterTag}>Action: {ACTION_LABELS[action] || action}</span>}
-            {filterCategory && <span className={styles.filterTag}>Category: {CATEGORY_LABELS[filterCategory] || filterCategory}</span>}
-          </div>
-        )}
-      </div>
-
-      <main className={styles.main}>
-        {loading ? (
-          <div className={styles.loading}>Loading audit events...</div>
-        ) : error ? (
-          <div className={styles.error}>
-            <p>{error}</p>
-            <button onClick={() => window.location.reload()} className={styles.retryButton}>
-              Retry
-            </button>
-          </div>
-        ) : events.length === 0 ? (
-          <div className={styles.emptyState}>
-            <p>No audit events found{hasFilters ? ' matching the current filters' : ''}.</p>
-          </div>
-        ) : (
-          <>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Timestamp</th>
-                  <th>Action</th>
-                  <th>Category</th>
-                  <th>Entity</th>
-                  <th>Actor</th>
-                  <th>Details</th>
-                </tr>
-              </thead>
-              <tbody>
-                {events.map((event) => (
-                  <tr key={event.id}>
-                    <td className={styles.timestampCell}>
-                      {formatDate(event.created_at)}
-                    </td>
-                    <td>
-                      <span className={styles.actionLabel}>
-                        {ACTION_LABELS[event.action] || event.action}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`${styles.categoryBadge} ${styles[event.action_category] || ''}`}>
-                        {CATEGORY_LABELS[event.action_category] || event.action_category}
-                      </span>
-                    </td>
-                    <td className={styles.entityCell}>
-                      <span className={styles.entityType}>
-                        {ENTITY_TYPE_LABELS[event.entity_type] || event.entity_type}
-                      </span>
-                      <span className={styles.entityId}>
-                        {event.entity_id.slice(0, 8)}...
-                      </span>
-                    </td>
-                    <td className={styles.actorCell}>
-                      {event.actor_email ? (
-                        <>
-                          <span className={styles.actorEmail}>{event.actor_email}</span>
-                          <span className={styles.actorType}>{event.actor_type}</span>
-                        </>
-                      ) : (
-                        <span className={styles.actorType}>{event.actor_type}</span>
-                      )}
-                    </td>
-                    <td className={styles.detailsCell}>
-                      {event.metadata && Object.keys(event.metadata).length > 0 ? (
-                        <details className={styles.metadataDetails}>
-                          <summary>View</summary>
-                          <pre className={styles.metadataContent}>
-                            {JSON.stringify(event.metadata, null, 2)}
-                          </pre>
-                        </details>
-                      ) : (
-                        <span className={styles.noDetails}>-</span>
-                      )}
-                    </td>
+        <main className={styles.main}>
+          {loading ? (
+            <EmptyState title="Loading audit events" variant="loading" />
+          ) : error ? (
+            <EmptyState
+              title="Failed to load audit events"
+              message={error}
+              actionLabel="Retry"
+              onAction={() => window.location.reload()}
+              variant="error"
+            />
+          ) : events.length === 0 ? (
+            <EmptyState
+              title="No audit events found"
+              message={hasFilters ? 'No results match the current filters.' : 'No audit events yet.'}
+            />
+          ) : (
+            <>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Action</th>
+                    <th>Category</th>
+                    <th>Entity</th>
+                    <th>Actor</th>
+                    <th>Details</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {events.map((event) => (
+                    <tr key={event.id}>
+                      <td className={styles.timestampCell}>
+                        {formatDate(event.created_at)}
+                      </td>
+                      <td>
+                        <span className={styles.actionLabel}>
+                          {ACTION_LABELS[event.action] || event.action}
+                        </span>
+                      </td>
+                      <td>
+                        <StatusBadge
+                          tone={event.action_category === 'clinical'
+                            ? 'green'
+                            : event.action_category === 'authentication'
+                              ? 'blue'
+                              : event.action_category === 'system'
+                                ? 'amber'
+                                : 'neutral'}
+                          label={CATEGORY_LABELS[event.action_category] || event.action_category}
+                        />
+                      </td>
+                      <td className={styles.entityCell}>
+                        <span className={styles.entityType}>
+                          {ENTITY_TYPE_LABELS[event.entity_type] || event.entity_type}
+                        </span>
+                        <span className={styles.entityId}>
+                          {event.entity_id.slice(0, 8)}...
+                        </span>
+                      </td>
+                      <td className={styles.actorCell}>
+                        {event.actor_email ? (
+                          <>
+                            <span className={styles.actorEmail}>{event.actor_email}</span>
+                            <span className={styles.actorType}>{event.actor_type}</span>
+                          </>
+                        ) : (
+                          <span className={styles.actorType}>{event.actor_type}</span>
+                        )}
+                      </td>
+                      <td className={styles.detailsCell}>
+                        {event.metadata && Object.keys(event.metadata).length > 0 ? (
+                          <details className={styles.metadataDetails}>
+                            <summary>View</summary>
+                            <pre className={styles.metadataContent}>
+                              {JSON.stringify(event.metadata, null, 2)}
+                            </pre>
+                          </details>
+                        ) : (
+                          <span className={styles.noDetails}>-</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
-            {hasMore && (
-              <div className={styles.loadMore}>
-                <button onClick={loadMore} className={styles.loadMoreButton}>
-                  Load More
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </main>
+              {hasMore && (
+                <div className={styles.loadMore}>
+                  <Button onClick={loadMore} variant="secondary">
+                    Load More
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </main>
 
-      <footer className={styles.footer}>
-        <p className={styles.footerNote}>
-          Audit events are append-only and cannot be modified or deleted.
-        </p>
-      </footer>
-    </div>
+        <footer className={styles.footer}>
+          <p className={styles.footerNote}>
+            Audit events are append-only and cannot be modified or deleted.
+          </p>
+        </footer>
+      </div>
+    </AppShell>
   );
 }

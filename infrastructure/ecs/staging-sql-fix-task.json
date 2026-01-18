@@ -1,0 +1,36 @@
+{
+  "family": "acucare-staging-sql-fix",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::326246079459:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "sql-fix",
+      "image": "326246079459.dkr.ecr.eu-west-2.amazonaws.com/acucare/api-backend:staging",
+      "essential": true,
+      "entryPoint": ["sh", "-c"],
+      "command": [
+        "echo 'import asyncio, asyncpg, os\nurl = os.environ[\"DATABASE_URL\"].replace(\"postgresql+asyncpg://\", \"postgresql://\")\nasync def run():\n    conn = await asyncpg.connect(url)\n    print(\"Connected to database\")\n    await conn.execute(\"ALTER TABLE patients ADD COLUMN IF NOT EXISTS cancellation_count_90d INTEGER NOT NULL DEFAULT 0\")\n    print(\"Added cancellation_count_90d\")\n    await conn.execute(\"ALTER TABLE patients ADD COLUMN IF NOT EXISTS no_show_count_90d INTEGER NOT NULL DEFAULT 0\")\n    print(\"Added no_show_count_90d\")\n    await conn.execute(\"ALTER TABLE patients ADD COLUMN IF NOT EXISTS last_behavior_reset_at TIMESTAMP WITH TIME ZONE\")\n    print(\"Added last_behavior_reset_at\")\n    await conn.close()\n    print(\"Migration complete\")\nasyncio.run(run())' > /tmp/fix.py && python /tmp/fix.py"
+      ],
+      "environment": [
+        {"name": "ENV", "value": "staging"}
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:326246079459:secret:acucare-pathways/staging/database_url-ep2yKQ"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/acucare-migrations",
+          "awslogs-region": "eu-west-2",
+          "awslogs-stream-prefix": "staging-sql-fix"
+        }
+      }
+    }
+  ]
+}

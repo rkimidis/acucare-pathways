@@ -432,7 +432,7 @@ Please let us know if you can attend by logging into your patient portal.
 If you need to reschedule or cancel, please do so at least 24 hours before your appointment.
 
 Best regards,
-The AcuCare Team"""
+The AcuCare Pathways Team"""
             html_body = None
         else:
             subject = None
@@ -506,7 +506,7 @@ We'll see you on {appt_date} at {appt_time}.
 
 If anything changes, you can reschedule through your patient portal.
 
-The AcuCare Team"""
+The AcuCare Pathways Team"""
 
         await self.messaging_service.send_message(
             patient_id=patient.id,
@@ -719,7 +719,7 @@ Please log into your patient portal to confirm, reschedule, or cancel.
 If we don't hear from you, we'll keep your appointment as scheduled.
 
 Best regards,
-The AcuCare Team"""
+The AcuCare Pathways Team"""
             html_body = None
         else:
             subject = None

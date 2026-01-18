@@ -1,55 +1,4 @@
-.layout {
-  display: flex;
-  min-height: 100vh;
-}
-
-.sidebar {
-  width: 250px;
-  background: var(--neutral-800);
-  color: white;
-  display: flex;
-  flex-direction: column;
-}
-
-.sidebarHeader {
-  padding: 1.5rem;
-  border-bottom: 1px solid var(--neutral-700);
-}
-
-.logo {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: var(--info-400);
-}
-
-.nav {
-  flex: 1;
-  padding: 1rem 0;
-}
-
-.navItem,
-.navItemActive {
-  display: block;
-  padding: 0.75rem 1.5rem;
-  color: var(--neutral-400);
-  text-decoration: none;
-  transition: all 0.2s;
-}
-
-.navItem:hover {
-  background: var(--neutral-700);
-  color: white;
-}
-
-.navItemActive {
-  background: var(--neutral-700);
-  color: white;
-  border-left: 3px solid var(--info-400);
-}
-
-.main {
-  flex: 1;
-  background: var(--neutral-50);
+.content {
   padding: 2rem;
 }
 
@@ -488,6 +437,21 @@
   border: 1px solid var(--danger-600);
   background: var(--danger-100);
   font-weight: 700;
+}
+
+/* Age indicator color thresholds */
+.ageAmber {
+  color: var(--warning-700);
+  background: var(--warning-25);
+  border: 1px solid var(--warning-300);
+  font-weight: 600;
+}
+
+.ageRed {
+  color: var(--danger-700);
+  background: var(--danger-100);
+  border: 1px solid var(--danger-300);
+  font-weight: 600;
 }
 
 .reviewButton {

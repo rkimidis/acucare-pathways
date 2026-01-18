@@ -64,3 +64,22 @@ class TokenPayload(BaseModel):
     iat: int
     role: str | None = None
     actor_type: str | None = None  # "staff" or "patient"
+
+
+class PatientRegisterRequest(BaseModel):
+    """Patient registration request."""
+
+    email: LenientEmail
+    first_name: str = Field(min_length=1, max_length=100)
+    last_name: str = Field(min_length=1, max_length=100)
+    phone: str | None = Field(default=None, max_length=20)
+
+
+class PatientRegisterResponse(BaseModel):
+    """Patient registration response."""
+
+    id: str
+    email: str
+    first_name: str
+    last_name: str
+    message: str

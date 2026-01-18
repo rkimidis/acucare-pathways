@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import styles from './QuestionnaireRenderer.module.css';
 
 interface FieldOption {
-  value: string;
+  value: string | number;
   label: string;
 }
 
@@ -133,15 +133,25 @@ export default function QuestionnaireRenderer({
         return (
           <select
             id={field.id}
-            value={(value as string) || ''}
-            onChange={(e) => handleChange(field.id, e.target.value || null)}
+            value={value !== undefined && value !== null ? String(value) : ''}
+            onChange={(e) => {
+              if (!e.target.value) {
+                handleChange(field.id, null);
+                return;
+              }
+              // Find the original option to preserve its value type (number vs string)
+              const selectedOption = field.options?.find(
+                (opt) => String(opt.value) === e.target.value
+              );
+              handleChange(field.id, selectedOption?.value ?? e.target.value);
+            }}
             className={`${styles.select} ${error ? styles.inputError : ''}`}
             disabled={disabled}
             required={field.required}
           >
             <option value="">Select an option...</option>
             {field.options?.map((opt) => (
-              <option key={opt.value} value={opt.value}>
+              <option key={String(opt.value)} value={String(opt.value)}>
                 {opt.label}
               </option>
             ))}

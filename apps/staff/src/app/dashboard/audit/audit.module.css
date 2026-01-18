@@ -1,6 +1,4 @@
-.container {
-  min-height: 100vh;
-  background: var(--neutral-50);
+.content {
   padding: 2rem;
 }
 

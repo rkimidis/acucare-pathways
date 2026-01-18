@@ -116,7 +116,10 @@ class QueueFilter(BaseModel):
         description="Filter by SLA status: 'breached', 'at_risk' (within 15 min), 'ok'",
     )
     status: Optional[str] = Field(None, description="Filter by case status")
-    assigned_to_me: bool = Field(False, description="Only show cases assigned to current user")
+    assigned: Optional[str] = Field(
+        None,
+        description="Assignment filter: 'me', 'unassigned', 'others', 'any'",
+    )
     needs_review: bool = Field(False, description="Only show cases requiring clinician review")
 
 
@@ -125,6 +128,7 @@ class QueueItem(BaseModel):
 
     id: str
     patient_id: str
+    patient_ref: str
     tier: Optional[str]
     pathway: Optional[str]
     status: str
@@ -132,7 +136,15 @@ class QueueItem(BaseModel):
     sla_breached: bool
     sla_minutes_remaining: Optional[int]
     clinician_review_required: bool
-    assigned_clinician_id: Optional[str]
+    assigned_to_user_id: Optional[str]
+    assigned_to_user_initials: Optional[str] = None
+    assigned_to_user_name: Optional[str] = None
+    assigned_to_me: bool = False
+    assigned_at: Optional[datetime] = None
+    rules_fired: list[str] = Field(default_factory=list)
+    ruleset_version: Optional[str] = None
+    last_staff_action_at: Optional[datetime] = None
+    age_minutes: Optional[int] = None
     created_at: datetime
     triaged_at: Optional[datetime]
 
@@ -175,7 +187,8 @@ class CaseSummary(BaseModel):
     sla_minutes_remaining: Optional[int]
 
     # Assignment
-    assigned_clinician_id: Optional[str]
+    assigned_to_user_id: Optional[str]
+    assigned_at: Optional[datetime]
     clinical_notes: Optional[str]
 
     # Review status

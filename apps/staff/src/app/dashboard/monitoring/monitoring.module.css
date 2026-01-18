@@ -1,75 +1,12 @@
-.layout {
-  display: flex;
-  min-height: 100vh;
-}
-
-.sidebar {
-  width: 250px;
-  background: #1e293b;
-  color: white;
-  display: flex;
-  flex-direction: column;
-}
-
-.sidebarHeader {
-  padding: 1.5rem;
-  border-bottom: 1px solid #334155;
-}
-
-.logo {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #60a5fa;
-}
-
-.nav {
-  flex: 1;
-  padding: 1rem 0;
-}
-
-.navItem,
-.navItemActive {
-  display: block;
-  padding: 0.75rem 1.5rem;
-  color: #94a3b8;
-  text-decoration: none;
-  transition: all 0.2s;
-}
-
-.navItem:hover {
-  background: #334155;
-  color: white;
-}
-
-.navItemActive {
-  background: #334155;
-  color: white;
-  border-left: 3px solid #60a5fa;
-}
-
-.main {
-  flex: 1;
-  background: #f8fafc;
-  padding: 2rem;
-}
-
-.header {
-  margin-bottom: 1.5rem;
-}
-
-.header h1 {
-  margin: 0;
-  color: #1e293b;
-}
-
 .content {
+  padding: 2rem;
   max-width: 1000px;
 }
 
 .error {
-  background: #fef2f2;
-  border: 1px solid #dc2626;
-  color: #dc2626;
+  background: var(--danger-100);
+  border: 1px solid var(--danger-600);
+  color: var(--danger-600);
   padding: 1rem;
   border-radius: 0.5rem;
   margin-bottom: 1rem;
@@ -83,6 +20,7 @@
 }
 
 .summaryCard {
+  composes: ui-card from global;
   flex: 1;
   padding: 1.25rem;
   border-radius: 0.5rem;
@@ -93,27 +31,31 @@
 }
 
 .summaryCard.selected {
-  border-color: #1e293b;
+  border-color: var(--neutral-800);
   transform: scale(1.02);
 }
 
 .criticalCard {
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  composes: ui-card from global;
+  background: linear-gradient(135deg, var(--danger-600) 0%, var(--danger-700) 100%);
   color: white;
 }
 
 .highCard {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  composes: ui-card from global;
+  background: linear-gradient(135deg, var(--accent-orange-600) 0%, var(--accent-orange-550) 100%);
   color: white;
 }
 
 .mediumCard {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  composes: ui-card from global;
+  background: linear-gradient(135deg, var(--warning-500) 0%, var(--warning-600) 100%);
   color: white;
 }
 
 .lowCard {
-  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+  composes: ui-card from global;
+  background: linear-gradient(135deg, var(--neutral-500) 0%, var(--neutral-600) 100%);
   color: white;
 }
 
@@ -140,18 +82,18 @@
 .alertsList h2 {
   margin: 0 0 1rem 0;
   font-size: 1.1rem;
-  color: #1e293b;
+  color: var(--neutral-800);
 }
 
 .alertCount {
   font-weight: normal;
-  color: #64748b;
+  color: var(--neutral-500);
   margin-left: 0.5rem;
 }
 
 .emptyState {
   text-align: center;
-  color: #64748b;
+  color: var(--neutral-500);
   padding: 3rem;
   font-style: italic;
 }
@@ -163,30 +105,31 @@
 }
 
 .alertCard {
-  border: 1px solid #e2e8f0;
+  composes: ui-card from global;
+  border: 1px solid var(--neutral-200);
   border-radius: 0.5rem;
   padding: 1rem;
   border-left-width: 4px;
 }
 
 .severityCritical {
-  border-left-color: #dc2626;
-  background: #fef2f2;
+  border-left-color: var(--danger-600);
+  background: var(--danger-100);
 }
 
 .severityHigh {
-  border-left-color: #f97316;
-  background: #fff7ed;
+  border-left-color: var(--accent-orange-600);
+  background: var(--accent-orange-50);
 }
 
 .severityMedium {
-  border-left-color: #f59e0b;
-  background: #fffbeb;
+  border-left-color: var(--warning-500);
+  background: var(--warning-25);
 }
 
 .severityLow {
-  border-left-color: #64748b;
-  background: #f8fafc;
+  border-left-color: var(--neutral-500);
+  background: var(--neutral-50);
 }
 
 .alertHeader {
@@ -198,7 +141,7 @@
 
 .alertType {
   padding: 0.25rem 0.5rem;
-  background: #1e293b;
+  background: var(--neutral-800);
   color: white;
   border-radius: 0.25rem;
   font-size: 0.625rem;
@@ -208,17 +151,17 @@
 .alertTitle {
   flex: 1;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--neutral-800);
 }
 
 .alertTime {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--neutral-500);
 }
 
 .alertDescription {
   font-size: 0.875rem;
-  color: #475569;
+  color: var(--neutral-600);
   margin: 0 0 0.75rem 0;
   line-height: 1.4;
 }
@@ -232,16 +175,16 @@
 .score {
   font-size: 0.75rem;
   padding: 0.25rem 0.5rem;
-  background: #e2e8f0;
+  background: var(--neutral-200);
   border-radius: 0.25rem;
-  color: #1e293b;
+  color: var(--neutral-800);
   font-weight: 500;
 }
 
 .escalatedBadge {
   display: inline-block;
   padding: 0.25rem 0.5rem;
-  background: #f59e0b;
+  background: var(--warning-500);
   color: white;
   border-radius: 0.25rem;
   font-size: 0.75rem;
@@ -257,7 +200,7 @@
 
 .viewCaseLink {
   font-size: 0.875rem;
-  color: #3b82f6;
+  color: var(--info-500);
   text-decoration: none;
 }
 
@@ -266,9 +209,10 @@
 }
 
 .acknowledgeButton {
+  composes: ui-button from global;
   padding: 0.375rem 0.75rem;
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--info-200);
+  color: var(--info-700);
   border: none;
   border-radius: 0.25rem;
   font-size: 0.75rem;
@@ -276,18 +220,19 @@
 }
 
 .acknowledgeButton:hover {
-  background: #bfdbfe;
+  background: var(--info-180);
 }
 
 .acknowledgedLabel {
   font-size: 0.75rem;
-  color: #16a34a;
+  color: var(--success-600);
   font-weight: 500;
 }
 
 .resolveButton {
+  composes: ui-button from global;
   padding: 0.375rem 0.75rem;
-  background: #16a34a;
+  background: var(--success-600);
   color: white;
   border: none;
   border-radius: 0.25rem;
@@ -296,7 +241,7 @@
 }
 
 .resolveButton:hover {
-  background: #15803d;
+  background: var(--success-700);
 }
 
 /* Modal */
@@ -321,11 +266,11 @@
 .modalContent h2 {
   margin: 0 0 0.5rem 0;
   font-size: 1.1rem;
-  color: #1e293b;
+  color: var(--neutral-800);
 }
 
 .modalDescription {
-  color: #64748b;
+  color: var(--neutral-500);
   font-size: 0.875rem;
   margin-bottom: 1.5rem;
 }
@@ -338,7 +283,7 @@
   display: block;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #1e293b;
+  color: var(--neutral-800);
   margin-bottom: 0.5rem;
 }
 
@@ -346,7 +291,7 @@
 .formGroup textarea {
   width: 100%;
   padding: 0.5rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--neutral-200);
   border-radius: 0.375rem;
   font-size: 0.875rem;
 }
@@ -363,17 +308,19 @@
 }
 
 .cancelButton {
+  composes: ui-button from global;
   padding: 0.5rem 1rem;
   background: white;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
+  color: var(--neutral-500);
+  border: 1px solid var(--neutral-200);
   border-radius: 0.375rem;
   cursor: pointer;
 }
 
 .saveButton {
+  composes: ui-button from global;
   padding: 0.5rem 1rem;
-  background: #16a34a;
+  background: var(--success-600);
   color: white;
   border: none;
   border-radius: 0.375rem;
@@ -381,5 +328,5 @@
 }
 
 .saveButton:hover {
-  background: #15803d;
+  background: var(--success-700);
 }

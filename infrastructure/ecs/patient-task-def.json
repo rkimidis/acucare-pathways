@@ -8,7 +8,7 @@
   "containerDefinitions": [
     {
       "name": "patient-portal",
-      "image": "326246079459.dkr.ecr.eu-west-2.amazonaws.com/acucare/patient-portal:test",
+      "image": "326246079459.dkr.ecr.eu-west-2.amazonaws.com/acucare/patient-portal:20260114144042",
       "essential": true,
       "portMappings": [
         {

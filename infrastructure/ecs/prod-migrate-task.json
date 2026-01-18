@@ -1,0 +1,33 @@
+{
+  "family": "acucare-prod-migrate",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::326246079459:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "migrate",
+      "image": "326246079459.dkr.ecr.eu-west-2.amazonaws.com/acucare-pathways/prod/api:latest",
+      "essential": true,
+      "command": ["python", "-m", "alembic", "upgrade", "head"],
+      "environment": [
+        {"name": "ENV", "value": "prod"}
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:eu-west-2:326246079459:secret:acucare-pathways/prod/database_url-cdv4Vl"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/acucare-pathways/prod/api",
+          "awslogs-region": "eu-west-2",
+          "awslogs-stream-prefix": "migrate"
+        }
+      }
+    }
+  ]
+}

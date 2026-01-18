@@ -17,7 +17,8 @@ class TriageCaseUpdate(BaseModel):
     """Schema for updating a triage case."""
 
     status: TriageCaseStatus | None = None
-    assigned_clinician_id: str | None = None
+    assigned_to_user_id: str | None = None
+    assigned_at: datetime | None = None
     clinical_notes: str | None = Field(None, max_length=10000)
 
 
@@ -32,7 +33,8 @@ class TriageCaseRead(BaseModel):
     ruleset_version: str | None
     ruleset_hash: str | None
     tier_explanation: dict | None
-    assigned_clinician_id: str | None
+    assigned_to_user_id: str | None
+    assigned_at: datetime | None
     clinical_notes: str | None
     created_at: datetime
     updated_at: datetime | None

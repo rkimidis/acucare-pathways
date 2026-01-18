@@ -5,6 +5,7 @@ from app.models.consent import Consent
 from app.models.disposition import DispositionDraft, DispositionFinal, RiskFlag, RiskFlagType, RiskSeverity
 from app.models.governance import (
     ApprovalStatus,
+    DutyRoster,
     EvidenceExport,
     Incident,
     IncidentCategory,
@@ -12,6 +13,8 @@ from app.models.governance import (
     IncidentStatus,
     LLMSummary,
     LLMSummaryStatus,
+    PilotFeedbackResponse,
+    PilotFeedbackWindow,
     QuestionnaireVersion,
     RulesetApproval,
 )
@@ -30,7 +33,26 @@ from app.models.monitoring import (
     MonitoringSchedule,
     WaitingListCheckIn,
 )
-from app.models.patient import Patient, PatientMagicLink
+from app.models.patient import (
+    AddressType,
+    AppointmentFormatPreference,
+    ContactMethod,
+    ContactType,
+    IdentifierType,
+    Patient,
+    PatientAddress,
+    PatientClinicalProfile,
+    PatientContact,
+    PatientIdentifier,
+    PatientMagicLink,
+    PatientPreferences,
+    PatientRecordUpdate,
+    PreviousTreatment,
+    RecordUpdateActorType,
+    RecordUpdateSource,
+    SexAtBirth,
+    SubstanceUseLevel,
+)
 from app.models.questionnaire import QuestionnaireDefinition, QuestionnaireResponse
 from app.models.referral import Referral, ReferralSource, ReferralStatus
 from app.models.ruleset import RulesetDefinition
@@ -56,7 +78,24 @@ __all__ = [
     "Permission",
     # Patient
     "Patient",
+    "PatientAddress",
+    "PatientClinicalProfile",
+    "PatientContact",
+    "PatientIdentifier",
     "PatientMagicLink",
+    "PatientPreferences",
+    "PatientRecordUpdate",
+    # Patient enums
+    "AddressType",
+    "AppointmentFormatPreference",
+    "ContactMethod",
+    "ContactType",
+    "IdentifierType",
+    "PreviousTreatment",
+    "RecordUpdateActorType",
+    "RecordUpdateSource",
+    "SexAtBirth",
+    "SubstanceUseLevel",
     # Triage
     "TriageCase",
     "TriageTier",
@@ -115,8 +154,11 @@ __all__ = [
     "IncidentCategory",
     "RulesetApproval",
     "ApprovalStatus",
+    "DutyRoster",
     "QuestionnaireVersion",
     "EvidenceExport",
     "LLMSummary",
     "LLMSummaryStatus",
+    "PilotFeedbackResponse",
+    "PilotFeedbackWindow",
 ]

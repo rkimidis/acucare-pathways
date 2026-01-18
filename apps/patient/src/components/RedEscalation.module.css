@@ -14,6 +14,7 @@
 }
 
 .card {
+  composes: ui-card from global;
   background: white;
   border-radius: 12px;
   max-width: 500px;
@@ -33,30 +34,30 @@
   justify-content: center;
   width: 80px;
   height: 80px;
-  background: #fef2f2;
+  background: var(--danger-100);
   border-radius: 50%;
   margin-bottom: 1rem;
-  color: #dc2626;
+  color: var(--danger-600);
 }
 
 .title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--neutral-800);
   margin: 0;
   line-height: 1.3;
 }
 
 .primaryInstruction {
   font-size: 1.1rem;
-  color: #374151;
+  color: var(--neutral-700);
   line-height: 1.6;
   margin: 0 0 1.5rem 0;
 }
 
 /* Action box - most prominent element */
 .actionBox {
-  background: #dc2626;
+  background: var(--danger-600);
   border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
@@ -74,9 +75,10 @@
 }
 
 .emergencyButton {
+  composes: ui-button from global;
   display: inline-block;
   background: white;
-  color: #dc2626;
+  color: var(--danger-600);
   font-size: 1.25rem;
   font-weight: 700;
   padding: 1rem 2.5rem;
@@ -97,7 +99,7 @@
 /* Firm statement - clear boundary */
 .firmStatement {
   font-size: 0.95rem;
-  color: #6b7280;
+  color: var(--neutral-500);
   margin: 0 0 1rem 0;
   font-weight: 500;
 }
@@ -105,24 +107,24 @@
 /* Optional message - softer */
 .optionalMessage {
   font-size: 0.9rem;
-  color: #6b7280;
+  color: var(--neutral-500);
   margin: 0 0 1.5rem 0;
   padding: 0.75rem 1rem;
-  background: #f9fafb;
+  background: var(--neutral-25);
   border-radius: 6px;
   font-style: italic;
 }
 
 /* Additional resources - secondary */
 .additionalResources {
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--neutral-150);
   padding-top: 1.25rem;
   margin-top: 0.5rem;
 }
 
 .resourcesLabel {
   font-size: 0.85rem;
-  color: #9ca3af;
+  color: var(--neutral-400);
   margin: 0 0 0.75rem 0;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -139,35 +141,36 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  background: #f9fafb;
+  background: var(--neutral-25);
   border-radius: 6px;
   text-decoration: none;
   transition: background 0.2s;
 }
 
 .resourceLink:hover {
-  background: #f3f4f6;
+  background: var(--neutral-75);
 }
 
 .resourceName {
   font-size: 0.9rem;
-  color: #374151;
+  color: var(--neutral-700);
   font-weight: 500;
 }
 
 .resourceNumber {
   font-size: 0.9rem;
-  color: #2563eb;
+  color: var(--info-600);
   font-weight: 600;
 }
 
 /* Acknowledge button - if used */
 .acknowledgeButton {
+  composes: ui-button from global;
   margin-top: 1.5rem;
   padding: 0.75rem 2rem;
-  background: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  background: var(--neutral-75);
+  color: var(--neutral-700);
+  border: 1px solid var(--neutral-125);
   border-radius: 6px;
   font-size: 0.95rem;
   font-weight: 500;
@@ -176,7 +179,7 @@
 }
 
 .acknowledgeButton:hover {
-  background: #e5e7eb;
+  background: var(--neutral-150);
 }
 
 /* Mobile adjustments */

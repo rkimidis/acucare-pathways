@@ -12,6 +12,12 @@ const nextConfig = {
       {
         source: '/api/:path*',
         destination: `${apiUrl}/api/:path*`,
+        basePath: false,
+      },
+      {
+        source: '/staff/api/:path*',
+        destination: `${apiUrl}/api/:path*`,
+        basePath: false,
       },
     ];
   },
